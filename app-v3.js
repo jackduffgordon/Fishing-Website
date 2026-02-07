@@ -7,7 +7,7 @@ const { useState, useEffect, useRef, useMemo, useContext, createContext, useCall
 // ============================================================================
 // API CONFIGURATION
 // ============================================================================
-const API_URL = 'http://localhost:3001/api';
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api';
 
 // API Helper
 const api = {

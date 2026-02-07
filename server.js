@@ -7,26 +7,31 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
-const nodemailer = require('nodemailer');
-
-// Email transporter — configure with SMTP env vars (see launch guide)
-const emailTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || ''
-  }
-});
+let nodemailer;
+let emailTransporter;
+try {
+  nodemailer = require('nodemailer');
+  emailTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER || '',
+      pass: process.env.SMTP_PASS || ''
+    }
+  });
+  console.log('[EMAIL] Nodemailer loaded');
+} catch (e) {
+  console.log('[EMAIL] Nodemailer not installed — emails disabled. Run: npm install nodemailer');
+}
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'calypsoheights@gmail.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@tightlines.co.uk';
 
-// Helper to send emails (fails silently if SMTP not configured)
+// Helper to send emails (fails silently if nodemailer not installed or SMTP not configured)
 const sendEmail = async (to, subject, html) => {
-  if (!process.env.SMTP_USER) {
-    console.log(`[EMAIL NOT SENT - SMTP not configured] To: ${to}, Subject: ${subject}`);
+  if (!emailTransporter || !process.env.SMTP_USER) {
+    console.log(`[EMAIL NOT SENT - not configured] To: ${to}, Subject: ${subject}`);
     return false;
   }
   try {
