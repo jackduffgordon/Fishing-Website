@@ -1,0 +1,447 @@
+// ============================================
+// VENUE DETAIL PAGE
+// Enhanced fishery detail page with 6 tabs, map, booking variants
+// ============================================
+import { useState } from 'react';
+import {
+  ChevronLeft, MapPin, Star, Check, Clock, Phone, Mail, ExternalLink,
+  Car, Coffee, Fish, Accessibility, Moon, Users, Home, Calendar
+} from 'lucide-react';
+import { PhotoCarousel } from '../components/common/PhotoCarousel';
+import { DatePickerCalendar, DateRangePicker } from '../components/common/DatePickerCalendar';
+import { WhatToExpect } from '../components/sections/WhatToExpect';
+import { ReviewsList } from '../components/sections/ReviewsList';
+import { NearbyStaysMap, MapLegend } from '../components/maps/NearbyStaysMap';
+import { AccommodationCard } from '../components/cards/AccommodationCard';
+
+// Facility icons mapping
+const facilityIcons = {
+  'parking': Car,
+  'toilets': Home,
+  'cafe': Coffee,
+  'tackle-shop': Fish,
+  'boat-hire': Fish,
+  'disabled-access': Accessibility,
+  'night-fishing': Moon,
+  'showers': Home,
+  'fishing-hut': Home,
+  'ghillie': Users,
+  'lunch': Coffee,
+  'wading': Fish,
+  'rod-room': Home
+};
+
+const tabs = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'species', label: 'Species & Records' },
+  { id: 'facilities', label: 'Facilities' },
+  { id: 'rules', label: 'Rules' },
+  { id: 'reviews', label: 'Reviews' },
+  { id: 'nearby', label: 'Nearby Stays' }
+];
+
+export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [enquiryMessage, setEnquiryMessage] = useState('');
+  const [bookingSubmitted, setBookingSubmitted] = useState(false);
+
+  const handleBooking = () => {
+    if (!user) {
+      onSignIn();
+      return;
+    }
+    setBookingSubmitted(true);
+  };
+
+  // Success state
+  if (bookingSubmitted) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-lg">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+            <Check className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">
+            {fishery.bookingType === 'instant' ? 'Booking Confirmed!' : 'Enquiry Sent!'}
+          </h2>
+          <p className="text-stone-600 mb-6">
+            {fishery.bookingType === 'instant'
+              ? `Your day ticket for ${fishery.name} has been booked. Check your email for confirmation.`
+              : `Your enquiry has been sent to ${fishery.name}. They'll respond within 24-48 hours.`}
+          </p>
+          <button
+            onClick={onBack}
+            className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800"
+          >
+            Back to Search
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Get selected price from availability
+  const getSelectedPrice = () => {
+    if (!selectedDate || !fishery.availability) return fishery.price;
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    return fishery.availability[dateStr]?.price || fishery.price;
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50">
+      {/* Hero Image / Carousel */}
+      <div className="relative">
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 z-10 px-4 py-2 bg-white/90 rounded-lg flex items-center gap-2 text-stone-700 hover:bg-white transition"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <PhotoCarousel images={fishery.gallery || [fishery.image]} alt={fishery.name} />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main content */}
+          <div className="flex-1">
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+              {/* Header */}
+              <div className="p-6 border-b border-stone-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-stone-900">{fishery.name}</h1>
+                    <div className="flex flex-wrap items-center gap-4 mt-2">
+                      <span className="flex items-center text-stone-500">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {fishery.location}, {fishery.region}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span className="font-medium">{fishery.rating}</span>
+                        <span className="text-stone-400">({fishery.reviews} reviews)</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {fishery.species.map((s) => (
+                    <span key={s} className="px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-sm">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-stone-200 overflow-x-auto">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium capitalize transition whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? 'text-brand-700 border-b-2 border-brand-700'
+                        : 'text-stone-500 hover:text-stone-700'
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.id === 'reviews' && fishery.reviewsList && (
+                      <span className="ml-1 text-stone-400">({fishery.reviewsList.length})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-6">
+                {/* Overview Tab */}
+                {activeTab === 'overview' && (
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3">About This Water</h3>
+                      <p className="text-stone-600 whitespace-pre-line">{fishery.fullDescription}</p>
+                    </div>
+
+                    {fishery.season && (
+                      <div>
+                        <h3 className="font-semibold text-lg mb-3">Season</h3>
+                        <div className="flex items-center gap-2 text-stone-600 mb-2">
+                          <Calendar className="w-5 h-5 text-brand-600" />
+                          <span>Opens: <strong>{fishery.season.opens}</strong></span>
+                          <span className="mx-2">•</span>
+                          <span>Closes: <strong>{fishery.season.closes}</strong></span>
+                        </div>
+                        {fishery.season.bestMonths && (
+                          <p className="text-stone-600">
+                            Best months: <strong>{fishery.season.bestMonths.join(', ')}</strong>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <WhatToExpect fishery={fishery} />
+                  </div>
+                )}
+
+                {/* Species & Records Tab */}
+                {activeTab === 'species' && (
+                  <div className="space-y-6">
+                    <h3 className="font-semibold text-lg mb-3">Target Species</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {fishery.species.map((species) => (
+                        <div key={species} className="flex items-center gap-3 p-4 bg-stone-50 rounded-xl">
+                          <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
+                            <Fish className="w-6 h-6 text-brand-700" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-stone-900">{species}</h4>
+                            <p className="text-sm text-stone-500">Available year-round</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {fishery.expectations?.recordFish && (
+                      <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <h4 className="font-semibold text-amber-800 mb-1">Record Fish</h4>
+                        <p className="text-amber-700">{fishery.expectations.recordFish}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Facilities Tab */}
+                {activeTab === 'facilities' && (
+                  <div className="space-y-6">
+                    <h3 className="font-semibold text-lg mb-3">Amenities</h3>
+                    {fishery.amenities && fishery.amenities.length > 0 ? (
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {fishery.amenities.map((amenity) => {
+                          const iconKey = amenity.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-');
+                          const Icon = facilityIcons[iconKey] || Check;
+                          return (
+                            <div key={amenity} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                <Icon className="w-4 h-4 text-green-700" />
+                              </div>
+                              <span className="text-stone-700">{amenity}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-stone-500">Contact the fishery for facility information.</p>
+                    )}
+
+                    {fishery.rods && (
+                      <div className="mt-6">
+                        <h4 className="font-semibold mb-2">Rod Allocation</h4>
+                        <p className="text-stone-600">{fishery.rods} rods available</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Rules Tab */}
+                {activeTab === 'rules' && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-4">Fishery Rules</h3>
+                    {fishery.rules && fishery.rules.length > 0 ? (
+                      <ul className="space-y-3">
+                        {fishery.rules.map((rule, i) => (
+                          <li key={i} className="flex items-start gap-3 text-stone-600">
+                            <span className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-brand-700 text-sm font-medium">{i + 1}</span>
+                            </span>
+                            {rule}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-stone-500">Contact the fishery for specific rules.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Reviews Tab */}
+                {activeTab === 'reviews' && (
+                  <ReviewsList reviews={fishery.reviewsList || []} />
+                )}
+
+                {/* Nearby Stays Tab */}
+                {activeTab === 'nearby' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-3">Nearby Accommodation</h3>
+                      <p className="text-stone-600 mb-4">
+                        Find places to stay within 10 miles of {fishery.name}.
+                      </p>
+
+                      {fishery.coordinates && (
+                        <>
+                          <NearbyStaysMap
+                            waterCoordinates={fishery.coordinates}
+                            waterName={fishery.name}
+                            nearbyStays={fishery.nearbyStays || []}
+                          />
+                          <MapLegend />
+                        </>
+                      )}
+                    </div>
+
+                    {fishery.nearbyStays && fishery.nearbyStays.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-4">Featured Stays</h4>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {fishery.nearbyStays.map((stay) => (
+                            <AccommodationCard key={stay.id} accommodation={stay} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Booking sidebar */}
+          <div className="w-full lg:w-96 flex-shrink-0">
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sticky top-24">
+              {/* Price */}
+              <div className="text-center mb-6">
+                {fishery.price === 0 ? (
+                  <span className="text-3xl font-bold text-green-600">Free Access</span>
+                ) : (
+                  <>
+                    <span className="text-3xl font-bold text-stone-900">
+                      £{selectedDate ? getSelectedPrice() : fishery.price}
+                    </span>
+                    <span className="text-stone-500 ml-1">/{fishery.priceType}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Booking form based on type */}
+              {fishery.bookingType === 'instant' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-2">
+                      Select Date
+                    </label>
+                    <DatePickerCalendar
+                      selected={selectedDate}
+                      onChange={setSelectedDate}
+                      availability={fishery.availability || {}}
+                      placeholder="Choose your fishing date"
+                    />
+                  </div>
+                  <button
+                    onClick={handleBooking}
+                    disabled={!selectedDate}
+                    className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {user ? 'Book Now' : 'Sign In to Book'}
+                  </button>
+                  <p className="text-center text-sm text-stone-500">
+                    <Check className="w-4 h-4 inline mr-1" />
+                    Instant confirmation
+                  </p>
+                </div>
+              )}
+
+              {fishery.bookingType === 'enquiry' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-stone-600 text-center">
+                    This is a premium beat with limited availability. Send an enquiry to check dates.
+                  </p>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-2">
+                      Preferred Date(s)
+                    </label>
+                    <DateRangePicker
+                      startDate={dateRange[0]}
+                      endDate={dateRange[1]}
+                      onChange={(dates) => setDateRange(dates)}
+                      placeholder="Select preferred dates"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">
+                      Message
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={enquiryMessage}
+                      onChange={(e) => setEnquiryMessage(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
+                      placeholder="Tell them about your experience, number in party, etc."
+                    />
+                  </div>
+                  <button
+                    onClick={handleBooking}
+                    className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 transition"
+                  >
+                    {user ? 'Send Enquiry' : 'Sign In to Enquire'}
+                  </button>
+                </div>
+              )}
+
+              {fishery.bookingType === 'free' && (
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                    <Check className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                    <h4 className="font-semibold text-green-800 mb-1">No Booking Required</h4>
+                    <p className="text-sm text-green-700">
+                      This water is freely accessible with a valid EA rod licence.
+                    </p>
+                  </div>
+                  {fishery.openingHours && (
+                    <div className="text-sm text-stone-600">
+                      <p className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <strong>Opening times:</strong>
+                      </p>
+                      <p className="ml-6">Weekdays: {fishery.openingHours.weekday}</p>
+                      <p className="ml-6">Weekends: {fishery.openingHours.weekend}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Contact info */}
+              {fishery.contact && (
+                <div className="mt-6 pt-6 border-t border-stone-200">
+                  <p className="text-sm text-stone-500 mb-2">Questions? Contact</p>
+                  <p className="font-medium text-stone-800">{fishery.contact.name}</p>
+                  {fishery.contact.email && (
+                    <a
+                      href={`mailto:${fishery.contact.email}`}
+                      className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-800 mt-1"
+                    >
+                      <Mail className="w-4 h-4" />
+                      {fishery.contact.email}
+                    </a>
+                  )}
+                  {fishery.contact.phone && (
+                    <a
+                      href={`tel:${fishery.contact.phone}`}
+                      className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-800 mt-1"
+                    >
+                      <Phone className="w-4 h-4" />
+                      {fishery.contact.phone}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VenueDetailPage;

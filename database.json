@@ -1,0 +1,419 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "test@example.com",
+      "password": "$2a$10$OTnBaaz2U5nFpSgzTRGVTe5xju6DF6VLN/wyADl6jerbwbiUKbLim",
+      "name": "Test User",
+      "createdAt": "2026-02-05T23:13:26.297Z"
+    },
+    {
+      "id": 2,
+      "email": "jackduffgordon@gmail.com",
+      "password": "$2a$10$SuklBrOU//WWyjLqDDYXCuos02SLAjIXAFCaO5XvcJNM3jNfuOwKS",
+      "name": "Jack DG",
+      "createdAt": "2026-02-05T23:18:19.783Z"
+    },
+    {
+      "id": 3,
+      "email": "testflow@example.com",
+      "password": "$2a$10$A7QQQ5YXEgf8l6sjDTNANOHpZ4t4JPjRnpmRk4/BX4pvclzmSnfd6",
+      "name": "Flow Tester",
+      "createdAt": "2026-02-05T23:24:23.755Z"
+    },
+    {
+      "id": 4,
+      "email": "admin@tightlines.co.uk",
+      "password": "$2a$10$U6OROqT2uPl0Ee80bMpo5O594m2ow2u.KJt4mRzpFAT42JELU.Buy",
+      "name": "Admin",
+      "role": "admin",
+      "createdAt": "2026-02-06T14:03:00.188Z"
+    },
+    {
+      "id": 5,
+      "email": "john@test.com",
+      "password": "$2a$10$2/3b6H/g3j/R20wmBSk4P./2cN5jh93oFyM83kT5uq2YZrHVV2Cze",
+      "name": "John Smith",
+      "phone": "07700123456",
+      "role": "water_owner",
+      "createdAt": "2026-02-06T14:08:03.861Z"
+    },
+    {
+      "id": 6,
+      "email": "user@test.com",
+      "password": "$2a$10$hafYFjnrzvG2jUR9Q1FkMeH9OSJVe6BqEypeGNlGCA7i1rmKcp0.2",
+      "name": "Test User",
+      "role": "user",
+      "createdAt": "2026-02-06T14:08:03.934Z"
+    }
+  ],
+  "waters": [
+    {
+      "id": 1,
+      "name": "River Test",
+      "ownerId": null,
+      "type": "game",
+      "region": "south-west",
+      "description": "One of England's finest chalk streams, world-renowned for its wild brown trout and grayling fishing.",
+      "species": [
+        "Brown Trout",
+        "Grayling",
+        "Rainbow Trout"
+      ],
+      "price": 150,
+      "bookingType": "enquiry",
+      "rating": 4.9,
+      "reviewCount": 127,
+      "facilities": [
+        "Parking",
+        "Ghillie Service",
+        "Rod Hire"
+      ],
+      "rules": [
+        "Catch & Release",
+        "Barbless Hooks Only",
+        "No Wading"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 2,
+      "name": "Loch Lomond",
+      "ownerId": null,
+      "type": "game",
+      "region": "scotland",
+      "description": "Scotland's largest freshwater loch offering exceptional salmon, trout and pike fishing.",
+      "species": [
+        "Atlantic Salmon",
+        "Brown Trout",
+        "Pike",
+        "Perch"
+      ],
+      "price": 45,
+      "bookingType": "instant",
+      "rating": 4.7,
+      "reviewCount": 89,
+      "facilities": [
+        "Boat Hire",
+        "Parking",
+        "Tackle Shop"
+      ],
+      "rules": [
+        "Permit Required",
+        "Catch Limits Apply"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 3,
+      "name": "Linear Fisheries",
+      "ownerId": null,
+      "type": "coarse",
+      "region": "south-east",
+      "description": "Premier carp fishing complex with multiple lakes holding fish to 50lb+.",
+      "species": [
+        "Carp",
+        "Tench",
+        "Bream",
+        "Roach"
+      ],
+      "price": 35,
+      "bookingType": "instant",
+      "rating": 4.8,
+      "reviewCount": 234,
+      "facilities": [
+        "24hr Fishing",
+        "On-site Shop",
+        "Cafe",
+        "Showers"
+      ],
+      "rules": [
+        "Unhooking Mats Required",
+        "No Keepnets"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 4,
+      "name": "Chesil Beach",
+      "ownerId": null,
+      "type": "sea",
+      "region": "south-west",
+      "description": "Iconic 18-mile shingle beach famous for bass, cod and mackerel fishing.",
+      "species": [
+        "Bass",
+        "Cod",
+        "Mackerel",
+        "Plaice"
+      ],
+      "price": 0,
+      "bookingType": "free",
+      "rating": 4.5,
+      "reviewCount": 156,
+      "facilities": [
+        "Free Parking",
+        "Tackle Shops Nearby"
+      ],
+      "rules": [
+        "Bass Size Limits",
+        "Check Local Bylaws"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 5,
+      "name": "River Wye",
+      "ownerId": null,
+      "type": "game",
+      "region": "wales",
+      "description": "Beautiful Welsh river famous for salmon and wild brown trout.",
+      "species": [
+        "Atlantic Salmon",
+        "Brown Trout",
+        "Grayling"
+      ],
+      "price": 80,
+      "bookingType": "enquiry",
+      "rating": 4.6,
+      "reviewCount": 98,
+      "facilities": [
+        "Parking",
+        "Guides Available"
+      ],
+      "rules": [
+        "Catch & Release for Salmon",
+        "Fly Only Sections"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 6,
+      "name": "Bewl Water",
+      "ownerId": null,
+      "type": "game",
+      "region": "south-east",
+      "description": "England's largest reservoir in the South East, stocked with quality rainbow and brown trout.",
+      "species": [
+        "Rainbow Trout",
+        "Brown Trout"
+      ],
+      "price": 32,
+      "bookingType": "instant",
+      "rating": 4.4,
+      "reviewCount": 167,
+      "facilities": [
+        "Boat Hire",
+        "Lodge",
+        "Restaurant",
+        "Tackle Shop"
+      ],
+      "rules": [
+        "Catch Limits Apply",
+        "Barbless Hooks"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 7,
+      "name": "Test Lake",
+      "ownerId": 5,
+      "ownerName": "John Smith",
+      "ownerEmail": "john@test.com",
+      "ownerPhone": "07700123456",
+      "type": "coarse",
+      "region": "midlands",
+      "description": "A beautiful lake",
+      "species": [
+        "Carp",
+        "Tench"
+      ],
+      "price": 25,
+      "bookingType": "instant",
+      "rating": 0,
+      "reviewCount": 0,
+      "facilities": [],
+      "rules": [],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:08:03.861Z"
+    }
+  ],
+  "instructors": [
+    {
+      "id": 1,
+      "userId": null,
+      "name": "James Morrison",
+      "email": "james@example.com",
+      "specialties": [
+        "Fly Fishing",
+        "Salmon",
+        "Trout"
+      ],
+      "region": "scotland",
+      "experience": "15 years",
+      "bio": "AAPGAI qualified instructor specializing in salmon and trout fishing across the Scottish Highlands.",
+      "price": 250,
+      "rating": 4.9,
+      "reviewCount": 67,
+      "certifications": [
+        "AAPGAI",
+        "SGAIC"
+      ],
+      "availability": [
+        "Weekdays",
+        "Weekends"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 2,
+      "userId": null,
+      "name": "Sarah Williams",
+      "email": "sarah@example.com",
+      "specialties": [
+        "Carp Fishing",
+        "Coarse",
+        "Beginners"
+      ],
+      "region": "midlands",
+      "experience": "10 years",
+      "bio": "Passionate about introducing newcomers to fishing. Patient, friendly approach perfect for beginners.",
+      "price": 150,
+      "rating": 4.8,
+      "reviewCount": 89,
+      "certifications": [
+        "Level 2 Angling Coach"
+      ],
+      "availability": [
+        "Weekends"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 3,
+      "userId": null,
+      "name": "Mike Thompson",
+      "email": "mike@example.com",
+      "specialties": [
+        "Sea Fishing",
+        "Bass",
+        "Shore Fishing"
+      ],
+      "region": "south-west",
+      "experience": "20 years",
+      "bio": "Expert sea angler with decades of experience along the South West coast. Specializing in bass fishing.",
+      "price": 180,
+      "rating": 4.7,
+      "reviewCount": 45,
+      "certifications": [
+        "RYA Powerboat",
+        "First Aid"
+      ],
+      "availability": [
+        "Weekdays",
+        "Weekends"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    },
+    {
+      "id": 4,
+      "userId": null,
+      "name": "Emma Clarke",
+      "email": "emma@example.com",
+      "specialties": [
+        "Fly Tying",
+        "Fly Fishing",
+        "Women's Courses"
+      ],
+      "region": "south-east",
+      "experience": "8 years",
+      "bio": "Dedicated to making fly fishing accessible to everyone. Runs popular women-only introduction courses.",
+      "price": 175,
+      "rating": 4.9,
+      "reviewCount": 72,
+      "certifications": [
+        "GAIA",
+        "Level 2 Coach"
+      ],
+      "availability": [
+        "Weekdays"
+      ],
+      "images": [],
+      "status": "approved",
+      "createdAt": "2026-02-06T14:03:00.115Z"
+    }
+  ],
+  "pendingWaters": [],
+  "pendingInstructors": [],
+  "favourite_waters": [
+    {
+      "userId": 1,
+      "waterId": 1,
+      "createdAt": "2026-02-05T23:13:32.665Z"
+    },
+    {
+      "userId": 3,
+      "waterId": 1,
+      "createdAt": "2026-02-05T23:24:23.834Z"
+    },
+    {
+      "userId": 3,
+      "waterId": 2,
+      "createdAt": "2026-02-05T23:24:23.850Z"
+    },
+    {
+      "userId": 6,
+      "waterId": 1,
+      "createdAt": "2026-02-06T14:08:03.940Z"
+    }
+  ],
+  "favourite_instructors": [
+    {
+      "userId": 1,
+      "instructorId": 2,
+      "createdAt": "2026-02-05T23:13:37.942Z"
+    },
+    {
+      "userId": 3,
+      "instructorId": 1,
+      "createdAt": "2026-02-05T23:24:23.865Z"
+    }
+  ],
+  "catches": [],
+  "inquiries": [],
+  "nextUserId": 7,
+  "nextWaterId": 8,
+  "nextInstructorId": 5,
+  "nextCatchId": 2,
+  "nextInquiryId": 1,
+  "catch_reports": [
+    {
+      "id": 1,
+      "userId": 3,
+      "waterId": 1,
+      "species": "Brown Trout",
+      "weight": 4.5,
+      "method": "Fly",
+      "comment": "Great day",
+      "createdAt": "2026-02-05T23:24:30.675Z"
+    }
+  ]
+}

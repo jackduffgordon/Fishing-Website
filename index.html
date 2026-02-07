@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TightLines - Book Fishing Across the UK</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        /* IMPROVED: Much larger, easier to grab slider thumbs */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 12px;
+            background: #e7e5e4;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #0d9488;
+            cursor: grab;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+            background: #0f766e;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #0d9488;
+            cursor: grab;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.1);
+        }
+        input[type="range"]::-moz-range-thumb:active {
+            cursor: grabbing;
+            background: #0f766e;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.3), 0 2px 8px rgba(0,0,0,0.3);
+        }
+        /* Leaflet popup styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div id="root">
+        <!-- Loading state -->
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-stone-500">Loading TightLines...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- React -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Leaflet JS for Maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- App -->
+    <script type="text/babel" src="app-v3.js"></script>
+</body>
+</html>
