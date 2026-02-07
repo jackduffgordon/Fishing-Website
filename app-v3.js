@@ -2254,20 +2254,15 @@ const SignInModal = ({ isOpen, onClose }) => {
           setLoading(false);
           return;
         }
-        const resetData = await api.request('/auth/forgot-password', {
+        await api.request('/auth/forgot-password', {
           method: 'POST',
           body: JSON.stringify({ email })
         });
-        if (resetData.newPassword) {
-          setSuccess(`Password reset! Your new password is: ${resetData.newPassword}`);
-        } else {
-          setSuccess('If that email is registered, a reset has been sent.');
-        }
-        // Give user time to copy the password before switching back
+        setSuccess('If that email is registered, a new password has been sent to your inbox. Check your email!');
         setTimeout(() => {
           setMode('signin');
           setSuccess('');
-        }, 15000);
+        }, 5000);
       }
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -2295,7 +2290,7 @@ const SignInModal = ({ isOpen, onClose }) => {
           <p className="text-teal-100 mt-1">
             {mode === 'signin' && 'Sign in to access your bookings'}
             {mode === 'signup' && 'Join the TightLines community'}
-            {mode === 'forgot' && "We'll send you a reset link"}
+            {mode === 'forgot' && "We'll email you a new password"}
           </p>
         </div>
 
@@ -3862,6 +3857,7 @@ const FisheryCard = ({ fishery, onClick, onSignInRequired }) => {
   const isFavourited = auth.isWaterFavourited(fishery.id);
 
   const handleFavourite = async () => {
+    if (!auth.user) { onSignInRequired?.(); return; }
     await auth.toggleFavouriteWater(fishery.id);
   };
 
@@ -3924,6 +3920,7 @@ const InstructorCard = ({ instructor, onClick, onSignInRequired }) => {
   const isFavourited = auth.isInstructorFavourited(instructor.id);
 
   const handleFavourite = async () => {
+    if (!auth.user) { onSignInRequired?.(); return; }
     await auth.toggleFavouriteInstructor(instructor.id);
   };
 
@@ -3974,6 +3971,7 @@ const FeaturedFisheryCard = ({ fishery, onClick, onSignInRequired, catchCount, h
   const isFavourited = auth.isWaterFavourited(fishery.id);
 
   const handleFavourite = async () => {
+    if (!auth.user) { onSignInRequired?.(); return; }
     await auth.toggleFavouriteWater(fishery.id);
   };
 
@@ -4037,6 +4035,8 @@ const FeaturedFisheryCard = ({ fishery, onClick, onSignInRequired, catchCount, h
 const HomePage = ({ onNavigate, onSignInRequired }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState('');
+  const [searchRadius, setSearchRadius] = useState(15);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -4099,13 +4099,37 @@ const HomePage = ({ onNavigate, onSignInRequired }) => {
                   <option value="sea">Sea</option>
                 </select>
                 <button
-                  onClick={() => onNavigate('search', { query: searchQuery, ...(searchType && { type: searchType }) })}
+                  onClick={() => {
+                    const params = { query: searchQuery, ...(searchType && { type: searchType }) };
+                    if (selectedLocation?.type === 'region') {
+                      params.region = selectedLocation.id;
+                    } else if (selectedLocation?.type === 'location') {
+                      params.location = selectedLocation.item;
+                      params.radius = searchRadius;
+                    }
+                    onNavigate('search', params);
+                  }}
                   className="px-8 py-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 whitespace-nowrap transition"
                 >
                   <Icons.Search />
                   <span>Search</span>
                 </button>
               </div>
+              {/* Radius selector — shows when a location is selected */}
+              {selectedLocation?.type === 'location' && (
+                <div className="flex items-center justify-center gap-3 mt-3 text-stone-600">
+                  <span className="text-sm">Search within</span>
+                  <select value={searchRadius} onChange={(e) => setSearchRadius(Number(e.target.value))} className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-teal-500">
+                    <option value={5}>5 miles</option>
+                    <option value={10}>10 miles</option>
+                    <option value={15}>15 miles</option>
+                    <option value={25}>25 miles</option>
+                    <option value={50}>50 miles</option>
+                    <option value={100}>100 miles</option>
+                  </select>
+                  <button onClick={() => { setSelectedLocation(null); setSearchQuery(''); }} className="text-xs text-stone-400 hover:text-stone-600 underline">Clear</button>
+                </div>
+              )}
             </div>
 
             {showSuggestions && searchSuggestions.length > 0 && (
@@ -4117,9 +4141,13 @@ const HomePage = ({ onNavigate, onSignInRequired }) => {
                       if (suggestion.type === 'fishery') {
                         onNavigate('venue', { id: suggestion.item.id });
                       } else if (suggestion.type === 'region') {
-                        onNavigate('search', { region: suggestion.item.id });
+                        setSearchQuery(suggestion.item.name);
+                        setSelectedLocation({ type: 'region', id: suggestion.item.id });
+                        setShowSuggestions(false);
                       } else {
-                        onNavigate('search', { location: suggestion.item });
+                        setSearchQuery(suggestion.item.name);
+                        setSelectedLocation({ type: 'location', item: suggestion.item });
+                        setShowSuggestions(false);
                       }
                     }}
                     className="w-full px-6 py-3 text-left hover:bg-stone-50 flex items-center gap-3 text-stone-800"

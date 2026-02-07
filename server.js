@@ -7,6 +7,37 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
+
+// Email transporter — configure with SMTP env vars (see launch guide)
+const emailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || ''
+  }
+});
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'calypsoheights@gmail.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@tightlines.co.uk';
+
+// Helper to send emails (fails silently if SMTP not configured)
+const sendEmail = async (to, subject, html) => {
+  if (!process.env.SMTP_USER) {
+    console.log(`[EMAIL NOT SENT - SMTP not configured] To: ${to}, Subject: ${subject}`);
+    return false;
+  }
+  try {
+    await emailTransporter.sendMail({ from: FROM_EMAIL, to, subject, html });
+    console.log(`[EMAIL SENT] To: ${to}, Subject: ${subject}`);
+    return true;
+  } catch (err) {
+    console.error('[EMAIL ERROR]', err.message);
+    return false;
+  }
+};
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -386,7 +417,29 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     console.log(`New Password: ${newPassword}`);
     console.log(`=====================\n`);
 
-    res.json({ message: 'If that email is registered, a new password has been generated.', newPassword });
+    // Send email to user with new password
+    await sendEmail(email, 'TightLines — Your Password Has Been Reset', `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #0d9488, #059669); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+          <p style="color: #99f6e4; margin: 8px 0 0;">Password Reset</p>
+        </div>
+        <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
+          <p style="color: #44403c;">Hi ${user.name || 'there'},</p>
+          <p style="color: #44403c;">Your password has been reset. Here's your new temporary password:</p>
+          <div style="background: white; border: 2px solid #0d9488; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+            <code style="font-size: 20px; font-weight: bold; color: #0d9488; letter-spacing: 2px;">${newPassword}</code>
+          </div>
+          <p style="color: #78716c; font-size: 14px;">We recommend changing this once you sign in.</p>
+          <p style="color: #44403c;">Tight lines!</p>
+        </div>
+      </div>
+    `);
+
+    // Also notify admin
+    await sendEmail(ADMIN_EMAIL, `[TightLines] Password reset for ${email}`, `<p>User <strong>${email}</strong> requested a password reset.</p>`);
+
+    res.json({ message: 'If that email is registered, a new password has been sent to your inbox.' });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Password reset failed' });
