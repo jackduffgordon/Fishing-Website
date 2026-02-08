@@ -7,37 +7,38 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
-let nodemailer;
-let emailTransporter;
-try {
-  nodemailer = require('nodemailer');
-  emailTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || ''
-    }
-  });
-  console.log('[EMAIL] Nodemailer loaded');
-} catch (e) {
-  console.log('[EMAIL] Nodemailer not installed — emails disabled. Run: npm install nodemailer');
-}
-
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'calypsoheights@gmail.com';
 
-// Helper to send emails (fails silently if nodemailer not installed or SMTP not configured)
+// Helper to send emails via Resend (simple HTTP API — no SMTP needed)
 const sendEmail = async (to, subject, html) => {
-  if (!emailTransporter || !process.env.SMTP_USER) {
-    console.log(`[EMAIL NOT SENT - not configured] To: ${to}, Subject: ${subject}`);
+  if (!RESEND_API_KEY) {
+    console.log(`[EMAIL NOT SENT - RESEND_API_KEY not set] To: ${to}, Subject: ${subject}`);
     return false;
   }
   try {
-    const fromAddress = process.env.SMTP_USER;
-    await emailTransporter.sendMail({ from: `TightLines <${fromAddress}>`, to, subject, html });
-    console.log(`[EMAIL SENT] To: ${to}, Subject: ${subject}`);
-    return true;
+    console.log(`[EMAIL] Sending to ${to}...`);
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'TightLines <onboarding@resend.dev>',
+        to: [to],
+        subject,
+        html
+      })
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      console.log(`[EMAIL SENT] To: ${to}, ID: ${data.id}`);
+      return true;
+    } else {
+      console.error(`[EMAIL ERROR] ${resp.status}:`, JSON.stringify(data));
+      return false;
+    }
   } catch (err) {
     console.error('[EMAIL ERROR]', err.message);
     return false;
