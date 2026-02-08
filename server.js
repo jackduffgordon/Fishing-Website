@@ -26,7 +26,6 @@ try {
 }
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'calypsoheights@gmail.com';
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@tightlines.co.uk';
 
 // Helper to send emails (fails silently if nodemailer not installed or SMTP not configured)
 const sendEmail = async (to, subject, html) => {
@@ -35,7 +34,8 @@ const sendEmail = async (to, subject, html) => {
     return false;
   }
   try {
-    await emailTransporter.sendMail({ from: FROM_EMAIL, to, subject, html });
+    const fromAddress = process.env.SMTP_USER;
+    await emailTransporter.sendMail({ from: `TightLines <${fromAddress}>`, to, subject, html });
     console.log(`[EMAIL SENT] To: ${to}, Subject: ${subject}`);
     return true;
   } catch (err) {
@@ -422,8 +422,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     console.log(`New Password: ${newPassword}`);
     console.log(`=====================\n`);
 
-    // Send email to user with new password
-    await sendEmail(email, 'TightLines — Your Password Has Been Reset', `
+    // Send response immediately so the modal doesn't hang
+    res.json({ message: 'If that email is registered, a new password has been sent to your inbox.' });
+
+    // Send emails in background (don't await — user already got their response)
+    sendEmail(email, 'TightLines - Your Password Has Been Reset', `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #0d9488, #059669); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
@@ -431,7 +434,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         </div>
         <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
           <p style="color: #44403c;">Hi ${user.name || 'there'},</p>
-          <p style="color: #44403c;">Your password has been reset. Here's your new temporary password:</p>
+          <p style="color: #44403c;">Your password has been reset. Here is your new temporary password:</p>
           <div style="background: white; border: 2px solid #0d9488; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
             <code style="font-size: 20px; font-weight: bold; color: #0d9488; letter-spacing: 2px;">${newPassword}</code>
           </div>
@@ -439,12 +442,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           <p style="color: #44403c;">Tight lines!</p>
         </div>
       </div>
-    `);
+    `).catch(err => console.error('[EMAIL FAILED]', err.message));
 
     // Also notify admin
-    await sendEmail(ADMIN_EMAIL, `[TightLines] Password reset for ${email}`, `<p>User <strong>${email}</strong> requested a password reset.</p>`);
-
-    res.json({ message: 'If that email is registered, a new password has been sent to your inbox.' });
+    sendEmail(ADMIN_EMAIL, `[TightLines] Password reset for ${email}`, `<p>User <strong>${email}</strong> requested a password reset.</p>`)
+      .catch(err => console.error('[ADMIN EMAIL FAILED]', err.message));
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Password reset failed' });
