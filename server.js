@@ -726,7 +726,7 @@ app.get('/api/catches/water/:id', (req, res) => {
 
 app.post('/api/register/water', async (req, res) => {
   try {
-    const { ownerName, ownerEmail, ownerPhone, waterName, waterType, region, description, species, price, bookingType, facilities, rules } = req.body;
+    const { ownerName, ownerEmail, ownerPhone, waterName, waterType, region, description, species, price, bookingType, facilities, rules, bookingOptions } = req.body;
 
     // Create or find user
     let user = db.users.find(u => u.email === ownerEmail?.toLowerCase());
@@ -749,6 +749,24 @@ app.post('/api/register/water', async (req, res) => {
       isNewUser = true;
     }
 
+    // Process booking options - assign sequential IDs
+    const processedOptions = (bookingOptions || []).map((opt, i) => ({
+      id: `opt-${Date.now()}-${i}`,
+      category: opt.category || 'day-tickets',
+      name: opt.name,
+      description: opt.description || '',
+      price: parseInt(opt.price) || 0,
+      priceType: opt.priceType || 'day',
+      bookingType: opt.bookingType || 'enquiry'
+    }));
+
+    // Derive legacy price from cheapest option for backward compat
+    const prices = processedOptions.map(o => o.price).filter(p => p > 0);
+    const derivedPrice = prices.length > 0 ? Math.min(...prices) : (parseInt(price) || 0);
+    const derivedBookingType = processedOptions.length > 0
+      ? (processedOptions.some(o => o.bookingType === 'instant') ? 'instant' : 'enquiry')
+      : (bookingType || 'enquiry');
+
     const water = {
       id: db.nextWaterId++,
       name: waterName,
@@ -760,8 +778,9 @@ app.post('/api/register/water', async (req, res) => {
       region,
       description,
       species: species || [],
-      price: parseInt(price) || 0,
-      bookingType: bookingType || 'enquiry',
+      price: derivedPrice,
+      bookingType: derivedBookingType,
+      bookingOptions: processedOptions,
       rating: 0,
       reviewCount: 0,
       facilities: facilities || [],

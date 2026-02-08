@@ -1,8 +1,9 @@
 // ============================================
 // FISHERY CARD COMPONENT
 // Card display for fishery listings
+// Now supports multiple booking options display
 // ============================================
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Tag } from 'lucide-react';
 
 const typeColors = {
   game: 'bg-blue-50 text-blue-700',
@@ -17,6 +18,29 @@ const typeLabels = {
 };
 
 export const FisheryCard = ({ fishery, onClick }) => {
+  // Determine pricing display
+  const hasBookingOptions = fishery.bookingOptions && fishery.bookingOptions.length > 0;
+
+  const getLowestPrice = () => {
+    if (!hasBookingOptions) return fishery.price;
+    const prices = fishery.bookingOptions.map(o => parseInt(o.price)).filter(p => !isNaN(p) && p > 0);
+    return prices.length > 0 ? Math.min(...prices) : fishery.price;
+  };
+
+  const getPriceType = () => {
+    if (!hasBookingOptions) return fishery.priceType;
+    const lowestPrice = getLowestPrice();
+    const cheapestOption = fishery.bookingOptions.find(o => parseInt(o.price) === lowestPrice);
+    return cheapestOption?.priceType || 'day';
+  };
+
+  const optionCount = hasBookingOptions ? fishery.bookingOptions.length : 0;
+  const hasInstant = hasBookingOptions
+    ? fishery.bookingOptions.some(o => o.bookingType === 'instant')
+    : fishery.bookingType === 'instant';
+  const isFree = !hasBookingOptions && fishery.bookingType === 'free';
+  const lowestPrice = getLowestPrice();
+
   return (
     <div
       onClick={onClick}
@@ -39,16 +63,23 @@ export const FisheryCard = ({ fishery, onClick }) => {
         </div>
 
         {/* Booking type badge */}
-        {fishery.bookingType === 'instant' && (
-          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-500 text-white">
-            Instant Book
-          </span>
-        )}
-        {fishery.bookingType === 'free' && (
-          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
-            Free Access
-          </span>
-        )}
+        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+          {hasInstant && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-brand-500 text-white">
+              Instant Book
+            </span>
+          )}
+          {isFree && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-500 text-white">
+              Free Access
+            </span>
+          )}
+          {optionCount > 1 && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/90 text-stone-700">
+              {optionCount} options
+            </span>
+          )}
+        </div>
 
         {/* Water type */}
         <div className="absolute bottom-3 left-3 right-3">
@@ -85,6 +116,22 @@ export const FisheryCard = ({ fishery, onClick }) => {
           )}
         </div>
 
+        {/* Booking options preview (if multiple) */}
+        {optionCount > 1 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {fishery.bookingOptions.slice(0, 3).map((opt, i) => (
+              <span key={i} className="px-2 py-0.5 bg-brand-50 text-brand-600 text-xs rounded-full">
+                {opt.name}
+              </span>
+            ))}
+            {optionCount > 3 && (
+              <span className="px-2 py-0.5 bg-brand-50 text-brand-500 text-xs rounded-full">
+                +{optionCount - 3} more
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-stone-100">
           <div className="flex items-center gap-1">
@@ -93,12 +140,13 @@ export const FisheryCard = ({ fishery, onClick }) => {
             <span className="text-stone-400 text-sm">({fishery.reviews})</span>
           </div>
           <div>
-            {fishery.price === 0 ? (
+            {isFree ? (
               <span className="text-lg font-bold text-green-600">Free</span>
             ) : (
               <>
-                <span className="text-lg font-bold text-stone-900">£{fishery.price}</span>
-                <span className="text-stone-500 text-sm ml-1">/{fishery.priceType}</span>
+                {hasBookingOptions && <span className="text-stone-500 text-xs">from </span>}
+                <span className="text-lg font-bold text-stone-900">£{lowestPrice}</span>
+                <span className="text-stone-500 text-sm ml-1">/{getPriceType()}</span>
               </>
             )}
           </div>

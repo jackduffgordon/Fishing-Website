@@ -52,6 +52,13 @@ export const fisheries = [
       "linear-gradient(135deg, #5d8a7a 0%, #4a6a60 100%)"
     ],
     bookingType: "enquiry",
+    bookingOptions: [
+      { id: "opt-wye-1", category: "day-tickets", name: "Day Rod", description: "Full day on the beat, 1 rod", price: 150, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-wye-2", category: "day-tickets", name: "Half Day Rod", description: "Morning or afternoon session", price: 90, priceType: "half-day", bookingType: "enquiry" },
+      { id: "opt-wye-3", category: "guided", name: "Guided Day with Ghillie", description: "Expert ghillie included, all advice and assistance", price: 250, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-wye-4", category: "accommodation", name: "2-Night Fishing Package", description: "2 nights at the Angler's Rest plus 2 days on the beat", price: 420, priceType: "person", bookingType: "enquiry" },
+      { id: "opt-wye-5", category: "extras", name: "Tackle Hire", description: "Salmon rod, reel, line and selection of flies", price: 30, priceType: "day", bookingType: "instant" }
+    ],
     featured: true,
     topRated: true,
     shortDescription: "One of the finest salmon beats on the Wye, offering 1.5 miles of double-bank fishing.",
@@ -99,6 +106,14 @@ export const fisheries = [
       "linear-gradient(135deg, #3a5f95 0%, #1d3a5a 100%)"
     ],
     bookingType: "instant",
+    bookingOptions: [
+      { id: "opt-chew-1", category: "day-tickets", name: "Day Ticket (Bank)", description: "Full day bank fishing", price: 45, priceType: "day", bookingType: "instant" },
+      { id: "opt-chew-2", category: "day-tickets", name: "Day Ticket (Boat)", description: "Full day boat fishing, boat included", price: 65, priceType: "day", bookingType: "instant" },
+      { id: "opt-chew-3", category: "day-tickets", name: "Evening Ticket", description: "4pm to dusk bank fishing", price: 28, priceType: "session", bookingType: "instant" },
+      { id: "opt-chew-4", category: "day-tickets", name: "Season Ticket", description: "Full season bank access", price: 380, priceType: "season", bookingType: "instant" },
+      { id: "opt-chew-5", category: "guided", name: "Beginner Lesson", description: "2-hour casting lesson with qualified instructor", price: 55, priceType: "person", bookingType: "instant" },
+      { id: "opt-chew-6", category: "extras", name: "Boat Hire (Motor)", description: "Powered boat for the day", price: 30, priceType: "day", bookingType: "instant" }
+    ],
     featured: true,
     topRated: true,
     shortDescription: "A prestigious 1,200-acre reservoir renowned for quality trout and exceptional fly hatches.",
@@ -148,6 +163,15 @@ export const fisheries = [
       "linear-gradient(135deg, #7a9a6a 0%, #5a7a4a 100%)"
     ],
     bookingType: "instant",
+    bookingOptions: [
+      { id: "opt-lin-1", category: "day-tickets", name: "Day Ticket", description: "Dawn to dusk on any lake", price: 25, priceType: "day", bookingType: "instant" },
+      { id: "opt-lin-2", category: "day-tickets", name: "24hr Ticket", description: "24 hours including night fishing", price: 40, priceType: "session", bookingType: "instant" },
+      { id: "opt-lin-3", category: "day-tickets", name: "48hr Ticket", description: "Full weekend session", price: 70, priceType: "session", bookingType: "instant" },
+      { id: "opt-lin-4", category: "accommodation", name: "Lakeside Lodge", description: "Private lodge overlooking St Johns, fishing included", price: 95, priceType: "night", bookingType: "enquiry" },
+      { id: "opt-lin-5", category: "guided", name: "Carp Masterclass", description: "Full day 1-to-1 tuition with pro angler, all tackle provided", price: 150, priceType: "person", bookingType: "instant" },
+      { id: "opt-lin-6", category: "extras", name: "Bait Package", description: "Boilies, pellets and particles for your session", price: 15, priceType: "session", bookingType: "instant" },
+      { id: "opt-lin-7", category: "extras", name: "Bivvy Hire", description: "2-man bivvy with bedchair and sleeping bag", price: 25, priceType: "night", bookingType: "instant" }
+    ],
     featured: false,
     topRated: true,
     shortDescription: "Well-established specimen lakes known for big carp to 40lb+ in beautiful countryside.",

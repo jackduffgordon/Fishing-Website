@@ -62,6 +62,53 @@
       ],
       "price": 150,
       "bookingType": "enquiry",
+      "bookingOptions": [
+        {
+          "id": "opt-rt-1",
+          "category": "day-tickets",
+          "name": "Day Rod",
+          "description": "Full day on a single beat, 2 rods permitted",
+          "price": 150,
+          "priceType": "day",
+          "bookingType": "enquiry"
+        },
+        {
+          "id": "opt-rt-2",
+          "category": "day-tickets",
+          "name": "Half Day Rod",
+          "description": "Morning or afternoon session on a single beat",
+          "price": 95,
+          "priceType": "half-day",
+          "bookingType": "enquiry"
+        },
+        {
+          "id": "opt-rt-3",
+          "category": "guided",
+          "name": "Guided Day with Ghillie",
+          "description": "Full day with an expert ghillie, all tackle included",
+          "price": 275,
+          "priceType": "day",
+          "bookingType": "enquiry"
+        },
+        {
+          "id": "opt-rt-4",
+          "category": "accommodation",
+          "name": "Rod & Lodge Package",
+          "description": "2 nights at the Fishing Lodge with 2 days on the river",
+          "price": 450,
+          "priceType": "person",
+          "bookingType": "enquiry"
+        },
+        {
+          "id": "opt-rt-5",
+          "category": "extras",
+          "name": "Tackle Hire",
+          "description": "Full tackle setup including rod, reel, line and flies",
+          "price": 25,
+          "priceType": "day",
+          "bookingType": "instant"
+        }
+      ],
       "rating": 4.9,
       "reviewCount": 127,
       "facilities": [
@@ -93,6 +140,53 @@
       ],
       "price": 45,
       "bookingType": "instant",
+      "bookingOptions": [
+        {
+          "id": "opt-ll-1",
+          "category": "day-tickets",
+          "name": "Day Ticket",
+          "description": "Full day bank fishing permit",
+          "price": 45,
+          "priceType": "day",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-ll-2",
+          "category": "day-tickets",
+          "name": "Evening Ticket",
+          "description": "4pm-dusk fishing permit",
+          "price": 25,
+          "priceType": "session",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-ll-3",
+          "category": "day-tickets",
+          "name": "Season Ticket",
+          "description": "Full season access - unlimited visits",
+          "price": 350,
+          "priceType": "season",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-ll-4",
+          "category": "guided",
+          "name": "Guided Boat Trip",
+          "description": "Half day on the loch with local guide and boat",
+          "price": 120,
+          "priceType": "person",
+          "bookingType": "enquiry"
+        },
+        {
+          "id": "opt-ll-5",
+          "category": "extras",
+          "name": "Boat Hire",
+          "description": "Self-drive rowing boat for the day",
+          "price": 35,
+          "priceType": "day",
+          "bookingType": "instant"
+        }
+      ],
       "rating": 4.7,
       "reviewCount": 89,
       "facilities": [
@@ -123,6 +217,62 @@
       ],
       "price": 35,
       "bookingType": "instant",
+      "bookingOptions": [
+        {
+          "id": "opt-lf-1",
+          "category": "day-tickets",
+          "name": "Day Ticket",
+          "description": "Full day access to all lakes",
+          "price": 35,
+          "priceType": "day",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-lf-2",
+          "category": "day-tickets",
+          "name": "24hr Ticket",
+          "description": "24 hours of fishing including night session",
+          "price": 55,
+          "priceType": "session",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-lf-3",
+          "category": "day-tickets",
+          "name": "48hr Ticket",
+          "description": "Full weekend session with 2 nights",
+          "price": 95,
+          "priceType": "session",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-lf-4",
+          "category": "accommodation",
+          "name": "Lakeside Cabin",
+          "description": "Private cabin overlooking the specimen lake, includes fishing",
+          "price": 120,
+          "priceType": "night",
+          "bookingType": "enquiry"
+        },
+        {
+          "id": "opt-lf-5",
+          "category": "guided",
+          "name": "Beginner Carp Lesson",
+          "description": "2-hour beginners session with qualified instructor, all tackle included",
+          "price": 60,
+          "priceType": "person",
+          "bookingType": "instant"
+        },
+        {
+          "id": "opt-lf-6",
+          "category": "extras",
+          "name": "Bait Package",
+          "description": "Boilies, pellets and particles for the session",
+          "price": 15,
+          "priceType": "session",
+          "bookingType": "instant"
+        }
+      ],
       "rating": 4.8,
       "reviewCount": 234,
       "facilities": [

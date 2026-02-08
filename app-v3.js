@@ -4116,8 +4116,8 @@ const HomePage = ({ onNavigate, onSignInRequired }) => {
                   <span>Search</span>
                 </button>
               </div>
-              {/* Radius selector — shows when a location is selected */}
-              {selectedLocation?.type === 'location' && (
+              {/* Radius selector — shows when a location or region is selected */}
+              {selectedLocation && (
                 <div className="flex items-center justify-center gap-3 mt-3 text-stone-600">
                   <span className="text-sm">Search within</span>
                   <select value={searchRadius} onChange={(e) => setSearchRadius(Number(e.target.value))} className="px-3 py-1.5 border border-stone-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-teal-500">
@@ -4128,7 +4128,7 @@ const HomePage = ({ onNavigate, onSignInRequired }) => {
                     <option value={50}>50 miles</option>
                     <option value={100}>100 miles</option>
                   </select>
-                  <button onClick={() => { setSelectedLocation(null); setSearchQuery(''); }} className="text-xs text-stone-400 hover:text-stone-600 underline">Clear</button>
+                  <button onClick={() => { setSelectedLocation(null); setSearchQuery(''); setSearchRadius(15); }} className="text-xs text-stone-400 hover:text-stone-600 underline">Clear</button>
                 </div>
               )}
             </div>
