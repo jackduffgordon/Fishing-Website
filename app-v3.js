@@ -541,6 +541,13 @@ const fisheries = [
     rules: ["Catch and release for salmon", "Barbless hooks only", "No night fishing", "Rod licence required"],
     facilities: ["parking", "toilets"],
     bookingType: "enquiry",
+    bookingOptions: [
+      { id: "opt-wye-1", category: "day-tickets", name: "Day Rod", description: "Full day on the beat, 1 rod", price: 85, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-wye-2", category: "day-tickets", name: "Half Day Rod", description: "Morning or afternoon session", price: 55, priceType: "half-day", bookingType: "enquiry" },
+      { id: "opt-wye-3", category: "guided", name: "Guided Day with Ghillie", description: "Expert ghillie, all advice and assistance", price: 150, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-wye-4", category: "accommodation", name: "2-Night Fishing Package", description: "2 nights B&B plus 2 days on the beat", price: 320, priceType: "person", bookingType: "enquiry" },
+      { id: "opt-wye-5", category: "extras", name: "Tackle Hire", description: "Salmon rod, reel, line and flies", price: 25, priceType: "day", bookingType: "instant" }
+    ],
     experienceLevel: "intermediate",
     typicalSessionHours: 8,
     bestTimeOfDay: "Early morning & evening",
@@ -586,6 +593,13 @@ const fisheries = [
     rules: ["Boat fishing only in designated areas", "Pike must be returned", "No live bait"],
     facilities: ["parking", "cafe", "toilets"],
     bookingType: "instant",
+    bookingOptions: [
+      { id: "opt-awe-1", category: "day-tickets", name: "Day Ticket (Bank)", description: "Full day bank fishing", price: 45, priceType: "day", bookingType: "instant" },
+      { id: "opt-awe-2", category: "day-tickets", name: "Day Ticket (Boat)", description: "Full day with boat hire included", price: 65, priceType: "day", bookingType: "instant" },
+      { id: "opt-awe-3", category: "day-tickets", name: "Evening Ticket", description: "4pm to dusk", price: 25, priceType: "session", bookingType: "instant" },
+      { id: "opt-awe-4", category: "guided", name: "Guided Boat Trip", description: "Half day with local guide and boat", price: 120, priceType: "person", bookingType: "enquiry" },
+      { id: "opt-awe-5", category: "extras", name: "Boat Hire", description: "Self-drive rowing boat", price: 30, priceType: "day", bookingType: "instant" }
+    ],
     experienceLevel: "beginner",
     typicalSessionHours: 6,
     bestTimeOfDay: "Mid-morning to afternoon",
@@ -625,6 +639,13 @@ const fisheries = [
     rules: ["Barbless hooks only", "No braided mainline", "Landing nets must be used", "Keep nets by arrangement"],
     facilities: ["parking", "cafe", "toilets", "disabled", "wifi"],
     bookingType: "instant",
+    bookingOptions: [
+      { id: "opt-pack-1", category: "day-tickets", name: "Day Ticket", description: "Dawn to dusk on any lake", price: 25, priceType: "day", bookingType: "instant" },
+      { id: "opt-pack-2", category: "day-tickets", name: "24hr Ticket", description: "24 hours including night fishing", price: 40, priceType: "session", bookingType: "instant" },
+      { id: "opt-pack-3", category: "day-tickets", name: "48hr Ticket", description: "Full weekend session", price: 70, priceType: "session", bookingType: "instant" },
+      { id: "opt-pack-4", category: "guided", name: "Beginner Lesson", description: "2hr session with qualified instructor, tackle included", price: 55, priceType: "person", bookingType: "instant" },
+      { id: "opt-pack-5", category: "extras", name: "Bait Package", description: "Boilies, pellets and particles", price: 12, priceType: "session", bookingType: "instant" }
+    ],
     experienceLevel: "beginner",
     typicalSessionHours: 8,
     bestTimeOfDay: "Dawn and dusk",
@@ -699,6 +720,13 @@ const fisheries = [
     rules: ["Dry fly and upstream nymph only", "Catch and release", "Wading by arrangement", "No dogs"],
     facilities: ["parking", "toilets"],
     bookingType: "enquiry",
+    bookingOptions: [
+      { id: "opt-test-1", category: "day-tickets", name: "Day Rod", description: "Full day on the beat, 2 rods", price: 250, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-test-2", category: "day-tickets", name: "Half Day Rod", description: "Morning or afternoon session", price: 160, priceType: "half-day", bookingType: "enquiry" },
+      { id: "opt-test-3", category: "guided", name: "Guided Day with Keeper", description: "Full day with expert river keeper, lunch included", price: 395, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-test-4", category: "accommodation", name: "Rod & Lodge Package", description: "2 nights at The Mill plus 2 days fishing", price: 650, priceType: "person", bookingType: "enquiry" },
+      { id: "opt-test-5", category: "extras", name: "Tackle Hire", description: "Complete chalk stream setup including waders", price: 35, priceType: "day", bookingType: "instant" }
+    ],
     experienceLevel: "expert",
     typicalSessionHours: 8,
     bestTimeOfDay: "Late morning to early evening",
@@ -737,6 +765,15 @@ const fisheries = [
     rules: ["Minimum 42\" landing net", "Unhooking mat required", "No fixed leads", "Booking essential"],
     facilities: ["parking", "cafe", "toilets", "night", "wifi"],
     bookingType: "instant",
+    bookingOptions: [
+      { id: "opt-lin-1", category: "day-tickets", name: "Day Ticket", description: "Dawn to dusk", price: 35, priceType: "day", bookingType: "instant" },
+      { id: "opt-lin-2", category: "day-tickets", name: "24hr Ticket", description: "24 hours including night fishing", price: 55, priceType: "session", bookingType: "instant" },
+      { id: "opt-lin-3", category: "day-tickets", name: "48hr Ticket", description: "Full weekend session with 2 nights", price: 95, priceType: "session", bookingType: "instant" },
+      { id: "opt-lin-4", category: "accommodation", name: "Lakeside Lodge", description: "Private lodge overlooking specimen lake, fishing included", price: 120, priceType: "night", bookingType: "enquiry" },
+      { id: "opt-lin-5", category: "guided", name: "Carp Masterclass", description: "Full day 1-to-1 with pro angler, all tackle provided", price: 150, priceType: "person", bookingType: "instant" },
+      { id: "opt-lin-6", category: "extras", name: "Bait Package", description: "Boilies, pellets and particles", price: 15, priceType: "session", bookingType: "instant" },
+      { id: "opt-lin-7", category: "extras", name: "Bivvy Hire", description: "2-man bivvy with bedchair and sleeping bag", price: 30, priceType: "night", bookingType: "instant" }
+    ],
     experienceLevel: "intermediate",
     typicalSessionHours: 24,
     bestTimeOfDay: "Night and early morning",
@@ -776,6 +813,12 @@ const fisheries = [
     rules: ["Catch and release encouraged", "Fly fishing only Sep-Nov", "Spinning permitted early season"],
     facilities: ["parking", "toilets"],
     bookingType: "enquiry",
+    bookingOptions: [
+      { id: "opt-tweed-1", category: "day-tickets", name: "Day Rod", description: "Full day on the Junction Beat", price: 150, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-tweed-2", category: "guided", name: "Guided Day with Ghillie", description: "Full day with experienced Tweed ghillie", price: 280, priceType: "day", bookingType: "enquiry" },
+      { id: "opt-tweed-3", category: "accommodation", name: "3-Night Salmon Package", description: "3 nights at Kelso Bridge Hotel plus 3 days fishing", price: 750, priceType: "person", bookingType: "enquiry" },
+      { id: "opt-tweed-4", category: "extras", name: "Tackle Hire", description: "15ft Spey rod, reel and flies", price: 30, priceType: "day", bookingType: "instant" }
+    ],
     experienceLevel: "intermediate",
     typicalSessionHours: 8,
     bestTimeOfDay: "All day during runs",
@@ -2431,10 +2474,8 @@ const ListWaterModal = ({ isOpen, onClose }) => {
     facilities: [],
     rules: '',
     highlights: '',
-    // Step 4: Pricing & Availability
-    dayTicketPrice: '',
-    seasonTicketPrice: '',
-    seasonTicketAvailable: false,
+    // Step 4: Booking Options
+    bookingOptions: [],
     bookingType: 'instant',
     openingHours: '',
     seasonDates: '',
@@ -2471,8 +2512,9 @@ const ListWaterModal = ({ isOpen, onClose }) => {
           region: formData.region,
           description: formData.description,
           species: formData.species,
-          price: parseInt(formData.dayTicketPrice) || 0,
-          bookingType: formData.bookingType,
+          bookingOptions: formData.bookingOptions || [],
+          price: formData.bookingOptions?.length > 0 ? Math.min(...formData.bookingOptions.map(o => parseInt(o.price) || 0)) : 0,
+          bookingType: formData.bookingOptions?.some(o => o.bookingType === 'instant') ? 'instant' : 'enquiry',
           facilities: formData.facilities,
           rules: formData.rules ? formData.rules.split('\n').filter(r => r.trim()) : []
         })
@@ -2496,7 +2538,7 @@ const ListWaterModal = ({ isOpen, onClose }) => {
       name: '', waterBodyType: '', fishingType: '', region: '',
       address: '', townCity: '', county: '', postcode: '',
       description: '', species: [], facilities: [], rules: '', highlights: '',
-      dayTicketPrice: '', seasonTicketPrice: '', seasonTicketAvailable: false, bookingType: 'instant', openingHours: '', seasonDates: '',
+      bookingOptions: [], bookingType: 'instant', openingHours: '', seasonDates: '',
       contactName: '', email: '', phone: '', website: '', facebook: '', instagram: '', photos: []
     });
     setSubmitted(false);
@@ -2509,7 +2551,7 @@ const ListWaterModal = ({ isOpen, onClose }) => {
       case 1: return formData.name && formData.waterBodyType && formData.fishingType && formData.region;
       case 2: return formData.townCity && formData.postcode;
       case 3: return formData.species.length > 0;
-      case 4: return formData.dayTicketPrice || formData.bookingType === 'free';
+      case 4: return formData.bookingOptions && formData.bookingOptions.length > 0 && formData.bookingOptions.every(o => o.name && o.price);
       case 5: return formData.contactName && formData.email;
       default: return true;
     }
@@ -2763,79 +2805,126 @@ const ListWaterModal = ({ isOpen, onClose }) => {
                 </div>
               )}
 
-              {/* Step 4: Pricing & Availability */}
+              {/* Step 4: What Can Anglers Book? */}
               {step === 4 && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-3">Booking Type</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: 'instant', label: 'Day Tickets', desc: 'Online booking' },
-                        { id: 'enquiry', label: 'Enquiry Only', desc: 'Contact to book' },
-                        { id: 'free', label: 'Free Access', desc: 'No booking needed' }
-                      ].map(option => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => updateForm('bookingType', option.id)}
-                          className={`p-3 rounded-lg border-2 text-left transition-colors ${
-                            formData.bookingType === option.id
-                              ? 'border-teal-600 bg-teal-50'
-                              : 'border-stone-200 hover:border-stone-300'
-                          }`}
-                        >
-                          <div className="font-medium text-stone-800">{option.label}</div>
-                          <div className="text-xs text-stone-500">{option.desc}</div>
-                        </button>
-                      ))}
-                    </div>
+                    <h4 className="font-semibold text-stone-800 mb-1">What Can Anglers Book?</h4>
+                    <p className="text-sm text-stone-500">Add the different things anglers can book or enquire about. You need at least one option.</p>
                   </div>
 
-                  {formData.bookingType !== 'free' && (
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Day Ticket Price (£) *</label>
-                        <input
-                          type="number"
-                          value={formData.dayTicketPrice}
-                          onChange={(e) => updateForm('dayTicketPrice', e.target.value)}
-                          className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          placeholder="e.g., 25"
-                        />
+                  {/* Existing options */}
+                  {(formData.bookingOptions || []).map((opt, idx) => (
+                    <div key={idx} className="border border-stone-200 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-stone-800 text-sm">{opt.name || `Option ${idx + 1}`}</span>
+                        <button type="button" onClick={() => {
+                          const updated = formData.bookingOptions.filter((_, i) => i !== idx);
+                          updateForm('bookingOptions', updated);
+                        }} className="text-red-500 text-xs hover:text-red-700">Remove</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-stone-600 mb-1">Category</label>
+                          <select value={opt.category} onChange={(e) => {
+                            const updated = [...formData.bookingOptions];
+                            updated[idx] = { ...opt, category: e.target.value };
+                            updateForm('bookingOptions', updated);
+                          }} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm">
+                            <option value="day-tickets">Day Tickets & Passes</option>
+                            <option value="guided">Guided Experiences</option>
+                            <option value="accommodation">Accommodation</option>
+                            <option value="extras">Extras & Add-ons</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-stone-600 mb-1">Booking Type</label>
+                          <select value={opt.bookingType} onChange={(e) => {
+                            const updated = [...formData.bookingOptions];
+                            updated[idx] = { ...opt, bookingType: e.target.value };
+                            updateForm('bookingOptions', updated);
+                          }} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm">
+                            <option value="instant">Instant Book</option>
+                            <option value="enquiry">Enquiry Only</option>
+                          </select>
+                        </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Season Ticket Price (£)</label>
-                        <input
-                          type="number"
-                          value={formData.seasonTicketPrice}
-                          onChange={(e) => updateForm('seasonTicketPrice', e.target.value)}
-                          className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                          placeholder="Leave blank if not available"
-                        />
+                        <label className="block text-xs text-stone-600 mb-1">Name *</label>
+                        <input type="text" value={opt.name} onChange={(e) => {
+                          const updated = [...formData.bookingOptions];
+                          updated[idx] = { ...opt, name: e.target.value };
+                          updateForm('bookingOptions', updated);
+                        }} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" placeholder="e.g., Day Ticket, Guided Session" />
                       </div>
+                      <div>
+                        <label className="block text-xs text-stone-600 mb-1">Description</label>
+                        <input type="text" value={opt.description || ''} onChange={(e) => {
+                          const updated = [...formData.bookingOptions];
+                          updated[idx] = { ...opt, description: e.target.value };
+                          updateForm('bookingOptions', updated);
+                        }} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" placeholder="What's included?" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-stone-600 mb-1">Price (£) *</label>
+                          <input type="number" value={opt.price} onChange={(e) => {
+                            const updated = [...formData.bookingOptions];
+                            updated[idx] = { ...opt, price: e.target.value };
+                            updateForm('bookingOptions', updated);
+                          }} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" placeholder="45" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-stone-600 mb-1">Price Per</label>
+                          <select value={opt.priceType} onChange={(e) => {
+                            const updated = [...formData.bookingOptions];
+                            updated[idx] = { ...opt, priceType: e.target.value };
+                            updateForm('bookingOptions', updated);
+                          }} className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm">
+                            <option value="day">Per Day</option>
+                            <option value="half-day">Per Half Day</option>
+                            <option value="session">Per Session</option>
+                            <option value="night">Per Night</option>
+                            <option value="person">Per Person</option>
+                            <option value="season">Per Season</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Quick-add templates */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { cat: 'day-tickets', label: '+ Day Ticket', defaults: { name: 'Day Ticket', description: 'Full day fishing access', priceType: 'day', bookingType: 'instant' } },
+                      { cat: 'guided', label: '+ Guided Session', defaults: { name: 'Guided Session', description: 'Half day with expert guide', priceType: 'day', bookingType: 'enquiry' } },
+                      { cat: 'accommodation', label: '+ Accommodation', defaults: { name: 'Lodge & Fishing', description: 'Overnight stay with fishing included', priceType: 'night', bookingType: 'enquiry' } },
+                      { cat: 'extras', label: '+ Extra / Add-on', defaults: { name: '', description: '', priceType: 'day', bookingType: 'instant' } }
+                    ].map(tmpl => (
+                      <button key={tmpl.cat} type="button" onClick={() => {
+                        const newOpt = { category: tmpl.cat, ...tmpl.defaults, price: '' };
+                        updateForm('bookingOptions', [...(formData.bookingOptions || []), newOpt]);
+                      }} className="p-2 rounded-lg border border-dashed border-stone-300 text-stone-600 text-sm hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50 transition">
+                        {tmpl.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(!formData.bookingOptions || formData.bookingOptions.length === 0) && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
+                      Add at least one booking option using the buttons above.
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Opening Hours</label>
-                    <input
-                      type="text"
-                      value={formData.openingHours}
-                      onChange={(e) => updateForm('openingHours', e.target.value)}
-                      className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g., Dawn to dusk, or 6am - 10pm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Season Dates</label>
-                    <input
-                      type="text"
-                      value={formData.seasonDates}
-                      onChange={(e) => updateForm('seasonDates', e.target.value)}
-                      className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="e.g., March - October, or Year-round"
-                    />
+                  <div className="grid md:grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Opening Hours</label>
+                      <input type="text" value={formData.openingHours} onChange={(e) => updateForm('openingHours', e.target.value)} className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="e.g., Dawn to dusk" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Season Dates</label>
+                      <input type="text" value={formData.seasonDates} onChange={(e) => updateForm('seasonDates', e.target.value)} className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="e.g., March - October" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -3856,6 +3945,21 @@ const Nav = ({ currentPage, onNavigate, onSignIn, onListWater, onBecomeInstructo
 const FisheryCard = ({ fishery, onClick, onSignInRequired }) => {
   const auth = useAuth();
   const isFavourited = auth.isWaterFavourited(fishery.id);
+  const hasOptions = fishery.bookingOptions && fishery.bookingOptions.length > 0;
+  const optionCount = hasOptions ? fishery.bookingOptions.length : 0;
+
+  const getLowestPrice = () => {
+    if (!hasOptions) return fishery.price;
+    const prices = fishery.bookingOptions.map(o => parseInt(o.price)).filter(p => !isNaN(p) && p > 0);
+    return prices.length > 0 ? Math.min(...prices) : fishery.price;
+  };
+
+  const getPriceType = () => {
+    if (!hasOptions) return 'day';
+    const lowest = getLowestPrice();
+    const cheapest = fishery.bookingOptions.find(o => parseInt(o.price) === lowest);
+    return cheapest?.priceType || 'day';
+  };
 
   const handleFavourite = async () => {
     if (!auth.user) { onSignInRequired?.(); return; }
@@ -3866,10 +3970,16 @@ const FisheryCard = ({ fishery, onClick, onSignInRequired }) => {
     <div onClick={onClick} className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative group">
       <div className={`h-48 bg-gradient-to-br ${fishery.gallery?.[0]?.gradient || 'from-teal-600 to-emerald-700'} flex items-center justify-center relative`}>
         <span className="text-white/50 text-sm">Photo</span>
-        {/* Favourite button - always visible */}
-        <div className="absolute top-3 right-3">
+        {/* Favourite button */}
+        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
           <FavouriteButton isFavourited={isFavourited} onToggle={handleFavourite} size="small" />
         </div>
+        {/* Options count badge */}
+        {optionCount > 1 && (
+          <div className="absolute top-3 left-3">
+            <span className="bg-white/90 text-stone-700 text-xs px-2 py-1 rounded-full font-medium">{optionCount} options</span>
+          </div>
+        )}
       </div>
       <div className="p-5">
         <div className="flex items-start justify-between mb-2">
@@ -3883,19 +3993,28 @@ const FisheryCard = ({ fishery, onClick, onSignInRequired }) => {
           <Icons.MapPin />
           <span>{regions.find(r => r.id === fishery.region)?.name}</span>
         </div>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-3">
           {fishery.species.slice(0, 3).map(species => (
             <span key={species} className="bg-teal-50 text-teal-700 text-xs px-2 py-1 rounded-full">
               {species}
             </span>
           ))}
         </div>
+        {/* Booking options preview */}
+        {optionCount > 1 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {fishery.bookingOptions.slice(0, 3).map((opt, i) => (
+              <span key={i} className="bg-stone-100 text-stone-600 text-xs px-2 py-0.5 rounded-full">{opt.name}</span>
+            ))}
+            {optionCount > 3 && <span className="bg-stone-100 text-stone-500 text-xs px-2 py-0.5 rounded-full">+{optionCount - 3} more</span>}
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div>
-            {fishery.price === 0 ? (
+            {fishery.price === 0 && !hasOptions ? (
               <span className="text-green-600 font-semibold">Free Fishing</span>
             ) : (
-              <span className="text-stone-800 font-semibold">From £{fishery.price}/day</span>
+              <span className="text-stone-800 font-semibold">{hasOptions ? 'From ' : ''}£{getLowestPrice()}/{getPriceType()}</span>
             )}
           </div>
           <span className={`text-xs px-2 py-1 rounded-full ${
@@ -4406,6 +4525,153 @@ const SearchResultsPage = ({ onNavigate, params, onSignInRequired }) => {
 // VENUE DETAIL PAGE
 // ============================================================================
 
+// ============================================================================
+// BOOKING CARD COMPONENT - Multi-option booking sidebar
+// ============================================================================
+const categoryLabels = { 'day-tickets': 'Day Tickets & Passes', 'guided': 'Guided Experiences', 'accommodation': 'Accommodation', 'extras': 'Extras & Add-ons' };
+const categoryColors = {
+  'day-tickets': { active: 'bg-teal-100 border-teal-500', text: 'text-teal-700' },
+  'guided': { active: 'bg-amber-100 border-amber-500', text: 'text-amber-700' },
+  'accommodation': { active: 'bg-purple-100 border-purple-500', text: 'text-purple-700' },
+  'extras': { active: 'bg-blue-100 border-blue-500', text: 'text-blue-700' }
+};
+
+const BookingCard = ({ venue, selectedDate, onDateSelect, selectedEndDate, onEndDateSelect, getNumberOfDays, onBook }) => {
+  const hasOptions = venue.bookingOptions && venue.bookingOptions.length > 0;
+  const [selectedOptionId, setSelectedOptionId] = useState(null);
+
+  const activeOption = hasOptions
+    ? venue.bookingOptions.find(o => o.id === selectedOptionId) || venue.bookingOptions[0]
+    : null;
+
+  const groupedOptions = hasOptions
+    ? venue.bookingOptions.reduce((acc, opt) => {
+        const cat = opt.category || 'day-tickets';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(opt);
+        return acc;
+      }, {})
+    : {};
+
+  const getLowestPrice = () => {
+    if (!hasOptions) return venue.price;
+    const prices = venue.bookingOptions.map(o => parseInt(o.price)).filter(p => !isNaN(p) && p > 0);
+    return prices.length > 0 ? Math.min(...prices) : venue.price;
+  };
+
+  if (venue.bookingType === 'free' && !hasOptions) {
+    return (
+      <div className="sticky top-24 bg-white rounded-xl border border-stone-200 p-6">
+        <div className="text-center py-8">
+          <div className="text-4xl mb-2">🎣</div>
+          <h4 className="text-lg font-semibold text-green-600 mb-2">Free Access</h4>
+          <p className="text-stone-500 text-sm">No booking required!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasOptions) {
+    // Legacy single booking type
+    return (
+      <div className="sticky top-24 bg-white rounded-xl border border-stone-200 p-6">
+        <h3 className="text-xl font-semibold text-stone-800 mb-4">Book Your Session</h3>
+        <p className="text-xs text-stone-500 mb-2">Click a start date, then an end date for multi-day bookings</p>
+        <SimpleDatePicker selectedDate={selectedDate} onDateSelect={onDateSelect} selectedEndDate={selectedEndDate} onEndDateSelect={onEndDateSelect} availability={venue.availability || {}} multiDay={true} />
+        {selectedDate && (
+          <div className="mt-4 p-4 bg-teal-50 rounded-xl space-y-2">
+            <div className="flex justify-between"><span className="text-stone-600">From:</span><span className="font-semibold">{new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
+            {selectedEndDate && <div className="flex justify-between"><span className="text-stone-600">To:</span><span className="font-semibold">{new Date(selectedEndDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>}
+            <div className="flex justify-between"><span className="text-stone-600">Days:</span><span className="font-semibold">{getNumberOfDays()}</span></div>
+            {venue.price > 0 && <div className="flex justify-between border-t border-teal-200 pt-2 mt-2"><span className="text-stone-700 font-medium">Total:</span><span className="font-bold text-teal-700">£{venue.price * getNumberOfDays()}</span></div>}
+          </div>
+        )}
+        <button onClick={onBook} disabled={!selectedDate && venue.bookingType === 'instant'} className={`w-full mt-4 py-3 rounded-xl font-semibold ${venue.bookingType === 'instant' ? 'bg-teal-600 text-white hover:bg-teal-700 disabled:bg-stone-300' : 'bg-amber-500 text-white hover:bg-amber-600'}`}>
+          {venue.bookingType === 'instant' ? 'Book Now' : 'Send Enquiry'}
+        </button>
+      </div>
+    );
+  }
+
+  // Multi-option booking card
+  return (
+    <div className="sticky top-24 bg-white rounded-xl border border-stone-200 p-6 space-y-4">
+      {/* Header price */}
+      <div className="text-center">
+        <span className="text-sm text-stone-500">From</span>
+        <span className="text-3xl font-bold text-stone-800 ml-2">£{getLowestPrice()}</span>
+        <span className="text-stone-500 ml-1">/{venue.bookingOptions.find(o => parseInt(o.price) === getLowestPrice())?.priceType || 'day'}</span>
+      </div>
+
+      {/* Option tiles by category */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-stone-700">Choose an option:</p>
+        {Object.entries(groupedOptions).map(([catId, options]) => {
+          const colors = categoryColors[catId] || categoryColors['day-tickets'];
+          return (
+            <div key={catId}>
+              <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${colors.text}`}>{categoryLabels[catId] || catId}</p>
+              <div className="space-y-2">
+                {options.map(opt => {
+                  const isSelected = selectedOptionId === opt.id || (!selectedOptionId && venue.bookingOptions[0]?.id === opt.id);
+                  return (
+                    <button key={opt.id} onClick={() => setSelectedOptionId(opt.id)} className={`w-full text-left p-3 rounded-xl border-2 transition-all ${isSelected ? `${colors.active} shadow-sm` : 'bg-white border-stone-200 hover:border-stone-300'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-stone-800 text-sm">{opt.name}</span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${opt.bookingType === 'instant' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                              {opt.bookingType === 'instant' ? 'Book' : 'Enquire'}
+                            </span>
+                          </div>
+                          {opt.description && <p className="text-xs text-stone-500 mt-0.5 truncate">{opt.description}</p>}
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-3">
+                          <span className="font-bold text-stone-800">£{opt.price}</span>
+                          <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType}</span>
+                        </div>
+                      </div>
+                      {isSelected && <div className="mt-1 flex items-center gap-1"><Icons.Check /><span className="text-xs text-teal-600 font-medium">Selected</span></div>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Booking action based on selected option */}
+      {activeOption && activeOption.bookingType === 'instant' && (
+        <div className="space-y-3 pt-2">
+          <p className="text-xs text-stone-500">Select a date for {activeOption.name}</p>
+          <SimpleDatePicker selectedDate={selectedDate} onDateSelect={onDateSelect} selectedEndDate={selectedEndDate} onEndDateSelect={onEndDateSelect} availability={venue.availability || {}} multiDay={true} />
+          {selectedDate && (
+            <div className="p-3 bg-teal-50 rounded-xl space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-stone-600">Date:</span><span className="font-semibold">{new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
+              {getNumberOfDays() > 1 && <div className="flex justify-between"><span className="text-stone-600">Days:</span><span className="font-semibold">{getNumberOfDays()}</span></div>}
+              <div className="flex justify-between border-t border-teal-200 pt-1 mt-1"><span className="text-stone-700 font-medium">Total:</span><span className="font-bold text-teal-700">£{activeOption.price * getNumberOfDays()}</span></div>
+            </div>
+          )}
+          <button onClick={onBook} disabled={!selectedDate} className="w-full py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700 disabled:bg-stone-300">
+            Book {activeOption.name}
+          </button>
+        </div>
+      )}
+
+      {activeOption && activeOption.bookingType === 'enquiry' && (
+        <div className="space-y-3 pt-2">
+          <p className="text-sm text-stone-600 text-center">Send an enquiry to check availability for {activeOption.name}.</p>
+          <SimpleDatePicker selectedDate={selectedDate} onDateSelect={onDateSelect} selectedEndDate={selectedEndDate} onEndDateSelect={onEndDateSelect} availability={venue.availability || {}} multiDay={true} />
+          <button onClick={onBook} className="w-full py-3 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600">
+            Enquire About {activeOption.name}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
   const auth = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -4592,40 +4858,7 @@ const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
           <WeatherConditionsWidget venue={venue} />
 
           {/* Booking Card */}
-          <div className="sticky top-24 bg-white rounded-xl border border-stone-200 p-6">
-            <h3 className="text-xl font-semibold text-stone-800 mb-4">Book Your Session</h3>
-            {venue.bookingType === 'free' ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-2">🎣</div>
-                <h4 className="text-lg font-semibold text-green-600 mb-2">Free Access</h4>
-                <p className="text-stone-500 text-sm">No booking required!</p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-xs text-stone-500 mb-2">Click a start date, then an end date for multi-day bookings</p>
-                <SimpleDatePicker selectedDate={selectedDate} onDateSelect={setSelectedDate} selectedEndDate={selectedEndDate} onEndDateSelect={setSelectedEndDate} availability={venue.availability || {}} multiDay={true} />
-                {selectedDate && (
-                  <div className="mt-4 p-4 bg-teal-50 rounded-xl space-y-2">
-                    <div className="flex justify-between"><span className="text-stone-600">From:</span><span className="font-semibold">{new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
-                    {selectedEndDate && (
-                      <div className="flex justify-between"><span className="text-stone-600">To:</span><span className="font-semibold">{new Date(selectedEndDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
-                    )}
-                    <div className="flex justify-between"><span className="text-stone-600">Days:</span><span className="font-semibold">{getNumberOfDays()}</span></div>
-                    {venue.price > 0 && (
-                      <div className="flex justify-between border-t border-teal-200 pt-2 mt-2"><span className="text-stone-700 font-medium">Total:</span><span className="font-bold text-teal-700">£{venue.price * getNumberOfDays()}</span></div>
-                    )}
-                  </div>
-                )}
-                <button
-                  onClick={() => handleBooking(venue)}
-                  disabled={!selectedDate && venue.bookingType === 'instant'}
-                  className={`w-full mt-4 py-3 rounded-xl font-semibold ${venue.bookingType === 'instant' ? 'bg-teal-600 text-white hover:bg-teal-700 disabled:bg-stone-300' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
-                >
-                  {venue.bookingType === 'instant' ? 'Book Now' : 'Send Enquiry'}
-                </button>
-              </div>
-            )}
-          </div>
+          <BookingCard venue={venue} selectedDate={selectedDate} onDateSelect={setSelectedDate} selectedEndDate={selectedEndDate} onEndDateSelect={setSelectedEndDate} getNumberOfDays={getNumberOfDays} onBook={() => handleBooking(venue)} />
         </div>
       </div>
 
