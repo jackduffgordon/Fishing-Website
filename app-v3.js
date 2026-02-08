@@ -213,6 +213,7 @@ const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user,
+      setUser,
       loading,
       login,
       register,
@@ -5039,34 +5040,113 @@ const FavouritesPage = ({ onNavigate, onSignInRequired }) => {
 
 const ProfilePage = ({ onNavigate, onSignInRequired }) => {
   const auth = useAuth();
+  const [activeSection, setActiveSection] = useState('overview'); // overview, edit, notifications, privacy
   const [catches, setCatches] = useState([]);
   const [loadingCatches, setLoadingCatches] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
-  // Get favourite counts
+  // Profile form state
+  const [profileForm, setProfileForm] = useState({
+    name: '', phone: '', location: '', bio: '', favouriteSpecies: '', experienceLevel: 'beginner'
+  });
+
+  // Notification prefs
+  const [notifications, setNotifications] = useState({
+    bookings: true, catches: true, newsletters: false, promotions: false
+  });
+
+  // Privacy settings
+  const [privacy, setPrivacy] = useState({
+    profilePublic: false, showCatches: true, showFavourites: false
+  });
+
+  // Password change
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordMsg, setPasswordMsg] = useState('');
+
   const favouriteWatersCount = auth.favouriteWaters.length;
   const favouriteInstructorsCount = auth.favouriteInstructors.length;
 
-  // Load user's catches
+  // Load user data
   useEffect(() => {
     if (auth.user) {
+      setProfileForm({
+        name: auth.user.name || '', phone: auth.user.phone || '', location: auth.user.location || '',
+        bio: auth.user.bio || '', favouriteSpecies: auth.user.favouriteSpecies || '',
+        experienceLevel: auth.user.experienceLevel || 'beginner'
+      });
+      setNotifications(auth.user.notifications || { bookings: true, catches: true, newsletters: false, promotions: false });
+      setPrivacy(auth.user.privacy || { profilePublic: false, showCatches: true, showFavourites: false });
+
+      // Load catches
       setLoadingCatches(true);
-      // In production, this would fetch user's catches from API
-      // For now, we'll show a placeholder
-      setLoadingCatches(false);
+      api.request('/catches/user').then(data => {
+        setCatches(data.catches || []);
+      }).catch(() => {}).finally(() => setLoadingCatches(false));
     }
   }, [auth.user]);
+
+  const saveProfile = async () => {
+    setSaving(true); setSaveMsg('');
+    try {
+      await api.request('/auth/profile', { method: 'PUT', body: JSON.stringify(profileForm) });
+      setSaveMsg('Profile saved!');
+      // Refresh user data
+      const meData = await api.request('/auth/me');
+      if (meData.user) auth.setUser(meData.user);
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (err) { setSaveMsg('Error: ' + (err.message || 'Failed to save')); }
+    finally { setSaving(false); }
+  };
+
+  const saveNotifications = async () => {
+    setSaving(true); setSaveMsg('');
+    try {
+      await api.request('/auth/notifications', { method: 'PUT', body: JSON.stringify(notifications) });
+      setSaveMsg('Preferences saved!');
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (err) { setSaveMsg('Error: ' + (err.message || 'Failed to save')); }
+    finally { setSaving(false); }
+  };
+
+  const savePrivacy = async () => {
+    setSaving(true); setSaveMsg('');
+    try {
+      await api.request('/auth/privacy', { method: 'PUT', body: JSON.stringify(privacy) });
+      setSaveMsg('Privacy settings saved!');
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (err) { setSaveMsg('Error: ' + (err.message || 'Failed to save')); }
+    finally { setSaving(false); }
+  };
+
+  const changePassword = async () => {
+    setPasswordMsg('');
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) { setPasswordMsg('Passwords do not match'); return; }
+    if (passwordForm.newPassword.length < 6) { setPasswordMsg('Password must be at least 6 characters'); return; }
+    try {
+      await api.request('/auth/password', { method: 'PUT', body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword }) });
+      setPasswordMsg('Password changed!');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setPasswordMsg(''), 3000);
+    } catch (err) { setPasswordMsg(err.message || 'Failed to change password'); }
+  };
+
+  const deleteAccount = async () => {
+    if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
+    try {
+      await api.request('/auth/account', { method: 'DELETE' });
+      auth.logout();
+    } catch (err) { alert('Failed to delete account: ' + err.message); }
+  };
 
   if (!auth.user) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4 text-teal-600">
-          <Icons.User />
-        </div>
+        <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4 text-teal-600"><Icons.User /></div>
         <h2 className="text-2xl font-bold text-stone-800 mb-2">Sign in to view your profile</h2>
         <p className="text-stone-500 mb-6">Access your account, favourites, and catch history</p>
-        <button onClick={onSignInRequired} className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-medium">
-          Sign In
-        </button>
+        <button onClick={onSignInRequired} className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 font-medium">Sign In</button>
       </div>
     );
   }
@@ -5076,127 +5156,293 @@ const ProfilePage = ({ onNavigate, onSignInRequired }) => {
       {/* Profile Header */}
       <div className="bg-white rounded-2xl border border-stone-200 p-6 mb-6">
         <div className="flex items-center gap-6">
-          <div className="w-20 h-20 bg-teal-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-            {auth.user.name.charAt(0).toUpperCase()}
-          </div>
+          <div className="w-20 h-20 bg-teal-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">{auth.user.name.charAt(0).toUpperCase()}</div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-stone-800">{auth.user.name}</h1>
             <p className="text-stone-500">{auth.user.email}</p>
-            <p className="text-sm text-stone-400 mt-1">Member since 2024</p>
+            <p className="text-sm text-stone-400 mt-1">Member since {new Date(auth.user.createdAt).getFullYear()}</p>
           </div>
-          <button
-            onClick={auth.logout}
-            className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 font-medium"
-          >
-            Sign Out
+          <button onClick={auth.logout} className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 font-medium">Sign Out</button>
+        </div>
+      </div>
+
+      {/* Nav Tabs */}
+      <div className="flex gap-2 overflow-x-auto mb-6 pb-1">
+        {[
+          { id: 'overview', label: 'Overview' },
+          { id: 'edit', label: 'Edit Profile' },
+          { id: 'catches', label: 'My Catches' },
+          { id: 'notifications', label: 'Notifications' },
+          { id: 'privacy', label: 'Privacy & Security' }
+        ].map(tab => (
+          <button key={tab.id} onClick={() => { setActiveSection(tab.id); setSaveMsg(''); }}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${activeSection === tab.id ? 'bg-teal-600 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+            {tab.label}
           </button>
-        </div>
+        ))}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
-        <button
-          onClick={() => onNavigate('favourites')}
-          className="bg-white rounded-xl border border-stone-200 p-6 text-left hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-500">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <span className="text-2xl font-bold text-stone-800">{favouriteWatersCount}</span>
-          </div>
-          <span className="text-stone-600">Favourite Waters</span>
-        </button>
+      {/* Save message */}
+      {saveMsg && <div className={`mb-4 p-3 rounded-lg text-sm ${saveMsg.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>{saveMsg}</div>}
 
-        <button
-          onClick={() => onNavigate('favourites')}
-          className="bg-white rounded-xl border border-stone-200 p-6 text-left hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-              <Icons.Users />
-            </div>
-            <span className="text-2xl font-bold text-stone-800">{favouriteInstructorsCount}</span>
+      {/* === OVERVIEW === */}
+      {activeSection === 'overview' && (
+        <div>
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <button onClick={() => onNavigate('favourites')} className="bg-white rounded-xl border border-stone-200 p-6 text-left hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-500">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                </div>
+                <span className="text-2xl font-bold text-stone-800">{favouriteWatersCount}</span>
+              </div>
+              <span className="text-stone-600">Favourite Waters</span>
+            </button>
+            <button onClick={() => onNavigate('favourites')} className="bg-white rounded-xl border border-stone-200 p-6 text-left hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600"><Icons.Users /></div>
+                <span className="text-2xl font-bold text-stone-800">{favouriteInstructorsCount}</span>
+              </div>
+              <span className="text-stone-600">Favourite Instructors</span>
+            </button>
+            <button onClick={() => setActiveSection('catches')} className="bg-white rounded-xl border border-stone-200 p-6 text-left hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600"><Icons.Fish /></div>
+                <span className="text-2xl font-bold text-stone-800">{catches.length}</span>
+              </div>
+              <span className="text-stone-600">Catches Reported</span>
+            </button>
           </div>
-          <span className="text-stone-600">Favourite Instructors</span>
-        </button>
 
-        <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
-              <Icons.Fish />
+          <div className="bg-white rounded-2xl border border-stone-200 p-6 mb-6">
+            <h2 className="text-lg font-semibold text-stone-800 mb-4">Quick Actions</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <button onClick={() => onNavigate('search')} className="flex items-center gap-3 p-4 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors">
+                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600"><Icons.Search /></div>
+                <div className="text-left"><div className="font-medium text-stone-800">Find Waters</div><div className="text-sm text-stone-500">Discover new fishing spots</div></div>
+              </button>
+              <button onClick={() => onNavigate('instructors')} className="flex items-center gap-3 p-4 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600"><Icons.Users /></div>
+                <div className="text-left"><div className="font-medium text-stone-800">Find Instructors</div><div className="text-sm text-stone-500">Book a guided session</div></div>
+              </button>
             </div>
-            <span className="text-2xl font-bold text-stone-800">0</span>
           </div>
-          <span className="text-stone-600">Catches Reported</span>
-        </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl border border-stone-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-stone-800 mb-4">Quick Actions</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <button
-            onClick={() => onNavigate('search')}
-            className="flex items-center gap-3 p-4 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
-              <Icons.Search />
+          <div className="bg-white rounded-2xl border border-stone-200 p-6">
+            <h2 className="text-lg font-semibold text-stone-800 mb-4">Account Settings</h2>
+            <div className="space-y-1">
+              {[
+                { id: 'edit', icon: 'User', label: 'Edit Profile' },
+                { id: 'notifications', icon: 'Bell', label: 'Notification Preferences' },
+                { id: 'privacy', icon: 'Shield', label: 'Privacy & Security' }
+              ].map(item => (
+                <button key={item.id} onClick={() => setActiveSection(item.id)} className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-stone-50">
+                  <div className="flex items-center gap-3">
+                    {Icons[item.icon] ? React.createElement(Icons[item.icon]) : <Icons.Settings />}
+                    <span className="text-stone-700">{item.label}</span>
+                  </div>
+                  <Icons.ChevronRight />
+                </button>
+              ))}
             </div>
-            <div className="text-left">
-              <div className="font-medium text-stone-800">Find Waters</div>
-              <div className="text-sm text-stone-500">Discover new fishing spots</div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => onNavigate('instructors')}
-            className="flex items-center gap-3 p-4 rounded-xl border border-stone-200 hover:bg-stone-50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-              <Icons.Users />
-            </div>
-            <div className="text-left">
-              <div className="font-medium text-stone-800">Find Instructors</div>
-              <div className="text-sm text-stone-500">Book a guided session</div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Account Settings */}
-      <div className="bg-white rounded-2xl border border-stone-200 p-6">
-        <h2 className="text-lg font-semibold text-stone-800 mb-4">Account Settings</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-stone-50">
-            <div className="flex items-center gap-3">
-              <Icons.User />
-              <span className="text-stone-700">Edit Profile</span>
-            </div>
-            <Icons.ChevronRight />
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-stone-50">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="text-stone-700">Notification Preferences</span>
-            </div>
-            <Icons.ChevronRight />
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-stone-50">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span className="text-stone-700">Privacy & Security</span>
-            </div>
-            <Icons.ChevronRight />
           </div>
         </div>
-      </div>
+      )}
+
+      {/* === EDIT PROFILE === */}
+      {activeSection === 'edit' && (
+        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+          <h2 className="text-xl font-semibold text-stone-800 mb-6">Edit Profile</h2>
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Full Name</label>
+              <input type="text" value={profileForm.name} onChange={e => setProfileForm(p => ({...p, name: e.target.value}))}
+                className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
+                <input type="tel" value={profileForm.phone} onChange={e => setProfileForm(p => ({...p, phone: e.target.value}))}
+                  placeholder="07xxx xxxxxx" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Location</label>
+                <input type="text" value={profileForm.location} onChange={e => setProfileForm(p => ({...p, location: e.target.value}))}
+                  placeholder="e.g. Hampshire, UK" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Bio</label>
+              <textarea rows="3" value={profileForm.bio} onChange={e => setProfileForm(p => ({...p, bio: e.target.value}))}
+                placeholder="Tell other anglers about yourself..." className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Favourite Species</label>
+                <input type="text" value={profileForm.favouriteSpecies} onChange={e => setProfileForm(p => ({...p, favouriteSpecies: e.target.value}))}
+                  placeholder="e.g. Carp, Pike, Trout" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Experience Level</label>
+                <select value={profileForm.experienceLevel} onChange={e => setProfileForm(p => ({...p, experienceLevel: e.target.value}))}
+                  className="w-full px-4 py-2.5 border border-stone-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500">
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button onClick={() => setActiveSection('overview')} className="px-6 py-2.5 border border-stone-200 rounded-xl hover:bg-stone-50">Cancel</button>
+              <button onClick={saveProfile} disabled={saving} className="px-6 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 disabled:bg-stone-300 font-medium">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === MY CATCHES === */}
+      {activeSection === 'catches' && (
+        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+          <h2 className="text-xl font-semibold text-stone-800 mb-6">My Catches</h2>
+          {loadingCatches ? (
+            <div className="text-center py-8 text-stone-500">Loading catches...</div>
+          ) : catches.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4 text-teal-600"><Icons.Fish /></div>
+              <h3 className="text-lg font-semibold text-stone-800 mb-2">No catches yet</h3>
+              <p className="text-stone-500 mb-4">Report your first catch from any venue page!</p>
+              <button onClick={() => onNavigate('search')} className="bg-teal-600 text-white px-6 py-2.5 rounded-xl hover:bg-teal-700 font-medium">Browse Waters</button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {catches.map(c => {
+                const venue = fisheries.find(f => f.id === c.waterId);
+                return (
+                  <div key={c.id} className="flex items-start gap-4 p-4 rounded-xl border border-stone-100 hover:bg-stone-50">
+                    <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 flex-shrink-0"><Icons.Fish /></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-semibold text-stone-800">{c.species}</h4>
+                          <p className="text-sm text-stone-500">{venue?.name || 'Unknown venue'}</p>
+                        </div>
+                        {c.weight && <span className="bg-teal-100 text-teal-700 text-sm px-3 py-1 rounded-full font-medium whitespace-nowrap">{c.weight}</span>}
+                      </div>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
+                        {c.method && <span>Method: {c.method}</span>}
+                        <span>{new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      {c.comment && <p className="text-sm text-stone-600 mt-2">{c.comment}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* === NOTIFICATIONS === */}
+      {activeSection === 'notifications' && (
+        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+          <h2 className="text-xl font-semibold text-stone-800 mb-6">Notification Preferences</h2>
+          <div className="space-y-4">
+            {[
+              { key: 'bookings', label: 'Booking Confirmations', desc: 'Get notified when your bookings are confirmed or updated' },
+              { key: 'catches', label: 'Catch Reports', desc: 'See when others report catches at your favourite waters' },
+              { key: 'newsletters', label: 'Weekly Newsletter', desc: 'Fishing tips, featured waters, and seasonal advice' },
+              { key: 'promotions', label: 'Offers & Promotions', desc: 'Special deals and discounts from waters and guides' }
+            ].map(item => (
+              <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-stone-100">
+                <div>
+                  <div className="font-medium text-stone-800">{item.label}</div>
+                  <div className="text-sm text-stone-500">{item.desc}</div>
+                </div>
+                <button
+                  onClick={() => setNotifications(n => ({...n, [item.key]: !n[item.key]}))}
+                  className={`w-12 h-7 rounded-full transition-colors relative ${notifications[item.key] ? 'bg-teal-600' : 'bg-stone-300'}`}>
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform ${notifications[item.key] ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button onClick={() => setActiveSection('overview')} className="px-6 py-2.5 border border-stone-200 rounded-xl hover:bg-stone-50">Cancel</button>
+            <button onClick={saveNotifications} disabled={saving} className="px-6 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 disabled:bg-stone-300 font-medium">
+              {saving ? 'Saving...' : 'Save Preferences'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* === PRIVACY & SECURITY === */}
+      {activeSection === 'privacy' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-stone-200 p-6">
+            <h2 className="text-xl font-semibold text-stone-800 mb-6">Privacy Settings</h2>
+            <div className="space-y-4">
+              {[
+                { key: 'profilePublic', label: 'Public Profile', desc: 'Allow other anglers to see your profile' },
+                { key: 'showCatches', label: 'Show My Catches', desc: 'Display your catch reports on venue pages' },
+                { key: 'showFavourites', label: 'Show Favourites', desc: 'Let others see your favourite waters and guides' }
+              ].map(item => (
+                <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-stone-100">
+                  <div>
+                    <div className="font-medium text-stone-800">{item.label}</div>
+                    <div className="text-sm text-stone-500">{item.desc}</div>
+                  </div>
+                  <button
+                    onClick={() => setPrivacy(p => ({...p, [item.key]: !p[item.key]}))}
+                    className={`w-12 h-7 rounded-full transition-colors relative ${privacy[item.key] ? 'bg-teal-600' : 'bg-stone-300'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform ${privacy[item.key] ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-6">
+              <button onClick={savePrivacy} disabled={saving} className="px-6 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 disabled:bg-stone-300 font-medium">
+                {saving ? 'Saving...' : 'Save Privacy Settings'}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-stone-200 p-6">
+            <h2 className="text-xl font-semibold text-stone-800 mb-6">Change Password</h2>
+            {passwordMsg && <div className={`mb-4 p-3 rounded-lg text-sm ${passwordMsg.includes('changed') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{passwordMsg}</div>}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Current Password</label>
+                <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(p => ({...p, currentPassword: e.target.value}))}
+                  className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">New Password</label>
+                  <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(p => ({...p, newPassword: e.target.value}))}
+                    className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Confirm New Password</label>
+                  <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(p => ({...p, confirmPassword: e.target.value}))}
+                    className="w-full px-4 py-2.5 border border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500" />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button onClick={changePassword} className="px-6 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 font-medium">Change Password</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-red-200 p-6">
+            <h2 className="text-xl font-semibold text-red-700 mb-2">Danger Zone</h2>
+            <p className="text-stone-500 text-sm mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
+            <button onClick={deleteAccount} className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium">Delete My Account</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

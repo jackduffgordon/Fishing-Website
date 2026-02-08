@@ -397,7 +397,76 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, (req, res) => {
   const user = db.users.find(u => u.id === req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt } });
+  res.json({ user: {
+    id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt,
+    phone: user.phone || '', location: user.location || '', bio: user.bio || '',
+    favouriteSpecies: user.favouriteSpecies || '', experienceLevel: user.experienceLevel || 'beginner',
+    notifications: user.notifications || { bookings: true, catches: true, newsletters: false, promotions: false },
+    privacy: user.privacy || { profilePublic: false, showCatches: true, showFavourites: false }
+  }});
+});
+
+// Update user profile
+app.put('/api/auth/profile', authenticateToken, (req, res) => {
+  const user = db.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const { name, phone, location, bio, favouriteSpecies, experienceLevel } = req.body;
+  if (name) user.name = name;
+  if (phone !== undefined) user.phone = phone;
+  if (location !== undefined) user.location = location;
+  if (bio !== undefined) user.bio = bio;
+  if (favouriteSpecies !== undefined) user.favouriteSpecies = favouriteSpecies;
+  if (experienceLevel !== undefined) user.experienceLevel = experienceLevel;
+  saveDB();
+
+  res.json({ message: 'Profile updated', user: { id: user.id, email: user.email, name: user.name, phone: user.phone, location: user.location, bio: user.bio, favouriteSpecies: user.favouriteSpecies, experienceLevel: user.experienceLevel } });
+});
+
+// Update notification preferences
+app.put('/api/auth/notifications', authenticateToken, (req, res) => {
+  const user = db.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.notifications = { ...user.notifications, ...req.body };
+  saveDB();
+  res.json({ message: 'Notification preferences updated', notifications: user.notifications });
+});
+
+// Update privacy settings
+app.put('/api/auth/privacy', authenticateToken, (req, res) => {
+  const user = db.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.privacy = { ...user.privacy, ...req.body };
+  saveDB();
+  res.json({ message: 'Privacy settings updated', privacy: user.privacy });
+});
+
+// Change password
+app.put('/api/auth/password', authenticateToken, async (req, res) => {
+  const user = db.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+  const valid = await bcrypt.compare(currentPassword, user.password);
+  if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+  user.password = await bcrypt.hash(newPassword, 10);
+  saveDB();
+  res.json({ message: 'Password changed successfully' });
+});
+
+// Get user's catches
+app.get('/api/catches/user', authenticateToken, (req, res) => {
+  const catches = db.catches.filter(c => c.userId === req.user.id);
+  res.json({ catches });
+});
+
+// Delete account
+app.delete('/api/auth/account', authenticateToken, (req, res) => {
+  db.users = db.users.filter(u => u.id !== req.user.id);
+  db.catches = db.catches.filter(c => c.userId !== req.user.id);
+  saveDB();
+  res.json({ message: 'Account deleted' });
 });
 
 // Password Reset - generates a new temporary password
