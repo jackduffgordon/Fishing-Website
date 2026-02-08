@@ -5232,13 +5232,13 @@ const ProfilePage = ({ onNavigate, onSignInRequired }) => {
             <h2 className="text-lg font-semibold text-stone-800 mb-4">Account Settings</h2>
             <div className="space-y-1">
               {[
-                { id: 'edit', icon: 'User', label: 'Edit Profile' },
-                { id: 'notifications', icon: 'Bell', label: 'Notification Preferences' },
-                { id: 'privacy', icon: 'Shield', label: 'Privacy & Security' }
+                { id: 'edit', label: 'Edit Profile', IconComp: Icons.User },
+                { id: 'notifications', label: 'Notification Preferences', IconComp: Icons.Mail },
+                { id: 'privacy', label: 'Privacy & Security', IconComp: Icons.Lock }
               ].map(item => (
                 <button key={item.id} onClick={() => setActiveSection(item.id)} className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-stone-50">
                   <div className="flex items-center gap-3">
-                    {Icons[item.icon] ? React.createElement(Icons[item.icon]) : <Icons.Settings />}
+                    <item.IconComp />
                     <span className="text-stone-700">{item.label}</span>
                   </div>
                   <Icons.ChevronRight />
