@@ -420,33 +420,37 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     console.log(`\n=== PASSWORD RESET ===`);
     console.log(`Email: ${email}`);
     console.log(`New Password: ${newPassword}`);
+    console.log(`SMTP_USER configured: ${!!process.env.SMTP_USER}`);
+    console.log(`SMTP_PASS configured: ${!!process.env.SMTP_PASS}`);
+    console.log(`Transporter exists: ${!!emailTransporter}`);
     console.log(`=====================\n`);
 
-    // Send response immediately so the modal doesn't hang
-    res.json({ message: 'If that email is registered, a new password has been sent to your inbox.' });
-
-    // Send emails in background (don't await — user already got their response)
-    sendEmail(email, 'TightLines - Your Password Has Been Reset', `
-      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #0d9488, #059669); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
-          <p style="color: #99f6e4; margin: 8px 0 0;">Password Reset</p>
-        </div>
-        <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
-          <p style="color: #44403c;">Hi ${user.name || 'there'},</p>
-          <p style="color: #44403c;">Your password has been reset. Here is your new temporary password:</p>
-          <div style="background: white; border: 2px solid #0d9488; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
-            <code style="font-size: 20px; font-weight: bold; color: #0d9488; letter-spacing: 2px;">${newPassword}</code>
+    // Send email BEFORE responding so we can see the result in logs
+    console.log('[EMAIL] Attempting to send password reset email...');
+    try {
+      const emailResult = await sendEmail(email, 'TightLines - Your Password Has Been Reset', `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #0d9488, #059669); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+            <p style="color: #99f6e4; margin: 8px 0 0;">Password Reset</p>
           </div>
-          <p style="color: #78716c; font-size: 14px;">We recommend changing this once you sign in.</p>
-          <p style="color: #44403c;">Tight lines!</p>
+          <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
+            <p style="color: #44403c;">Hi ${user.name || 'there'},</p>
+            <p style="color: #44403c;">Your password has been reset. Here is your new temporary password:</p>
+            <div style="background: white; border: 2px solid #0d9488; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+              <code style="font-size: 20px; font-weight: bold; color: #0d9488; letter-spacing: 2px;">${newPassword}</code>
+            </div>
+            <p style="color: #78716c; font-size: 14px;">We recommend changing this once you sign in.</p>
+            <p style="color: #44403c;">Tight lines!</p>
+          </div>
         </div>
-      </div>
-    `).catch(err => console.error('[EMAIL FAILED]', err.message));
+      `);
+      console.log('[EMAIL] Result:', emailResult);
+    } catch (emailErr) {
+      console.error('[EMAIL] FAILED:', emailErr);
+    }
 
-    // Also notify admin
-    sendEmail(ADMIN_EMAIL, `[TightLines] Password reset for ${email}`, `<p>User <strong>${email}</strong> requested a password reset.</p>`)
-      .catch(err => console.error('[ADMIN EMAIL FAILED]', err.message));
+    res.json({ message: 'If that email is registered, a new password has been sent to your inbox.' });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Password reset failed' });
