@@ -79,191 +79,233 @@ const seedData = async () => {
 
     console.log('Seeding database with initial data...');
 
-    // Create default waters
+    // ---- WATERS (matching the 7 fisheries in app-v3.js) ----
     const defaultWaters = [
       {
-        name: 'River Test',
-        owner_id: null,
-        type: 'game',
-        region: 'south-west',
-        description: 'One of England\'s finest chalk streams, world-renowned for its wild brown trout and grayling fishing.',
-        species: ['Brown Trout', 'Grayling', 'Rainbow Trout'],
-        price: 150,
-        booking_type: 'enquiry',
-        rating: 4.9,
-        review_count: 127,
-        facilities: ['Parking', 'Ghillie Service', 'Rod Hire'],
-        rules: ['Catch & Release', 'Barbless Hooks Only', 'No Wading'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
-      },
-      {
-        name: 'Loch Lomond',
-        owner_id: null,
-        type: 'game',
-        region: 'scotland',
-        description: 'Scotland\'s largest freshwater loch offering exceptional salmon, trout and pike fishing.',
-        species: ['Atlantic Salmon', 'Brown Trout', 'Pike', 'Perch'],
-        price: 45,
-        booking_type: 'instant',
-        rating: 4.7,
-        review_count: 89,
-        facilities: ['Boat Hire', 'Parking', 'Tackle Shop'],
-        rules: ['Permit Required', 'Catch Limits Apply'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
-      },
-      {
-        name: 'Linear Fisheries',
-        owner_id: null,
-        type: 'coarse',
-        region: 'south-east',
-        description: 'Premier carp fishing complex with multiple lakes holding fish to 50lb+.',
-        species: ['Carp', 'Tench', 'Bream', 'Roach'],
-        price: 35,
-        booking_type: 'instant',
-        rating: 4.8,
-        review_count: 234,
-        facilities: ['24hr Fishing', 'On-site Shop', 'Cafe', 'Showers'],
-        rules: ['Unhooking Mats Required', 'No Keepnets'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
-      },
-      {
-        name: 'Chesil Beach',
-        owner_id: null,
-        type: 'sea',
-        region: 'south-west',
-        description: 'Iconic 18-mile shingle beach famous for bass, cod and mackerel fishing.',
-        species: ['Bass', 'Cod', 'Mackerel', 'Plaice'],
-        price: 0,
-        booking_type: 'free',
-        rating: 4.5,
-        review_count: 156,
-        facilities: ['Free Parking', 'Tackle Shops Nearby'],
-        rules: ['Bass Size Limits', 'Check Local Bylaws'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
-      },
-      {
-        name: 'River Wye',
-        owner_id: null,
-        type: 'game',
-        region: 'wales',
-        description: 'Beautiful Welsh river famous for salmon and wild brown trout.',
+        name: 'River Wye - Letton Beat',
+        owner_id: null, type: 'game', region: 'wales', price: 85, booking_type: 'enquiry',
+        rating: 4.8, review_count: 124,
         species: ['Atlantic Salmon', 'Brown Trout', 'Grayling'],
-        price: 80,
-        booking_type: 'enquiry',
-        rating: 4.6,
-        review_count: 98,
-        facilities: ['Parking', 'Guides Available'],
-        rules: ['Catch & Release for Salmon', 'Fly Only Sections'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
+        description: 'One of the finest salmon beats on the River Wye, offering 1.5 miles of double-bank fishing through stunning Welsh countryside.',
+        highlights: ['Double-bank access', '1.5 miles of water', 'Historic salmon beat', 'Wading friendly'],
+        facilities: ['parking', 'toilets'],
+        rules: ['Catch and release for salmon', 'Barbless hooks only', 'No night fishing', 'Rod licence required'],
+        experience_level: 'intermediate',
+        season_info: 'Mar-Oct for salmon, year-round for trout',
+        coordinates: { lat: 52.1234, lng: -3.0567 },
+        gallery: [{ id: 1, gradient: 'from-emerald-600 to-teal-700', label: 'River View' }, { id: 2, gradient: 'from-blue-600 to-cyan-700', label: 'Salmon Pool' }, { id: 3, gradient: 'from-green-600 to-emerald-700', label: 'Autumn Colors' }],
+        reviews_list: [{ id: 1, author: 'James M.', rating: 5, date: '2025-10-15', title: 'Exceptional salmon fishing', text: 'Had an incredible day on the Letton Beat.', verified: true }],
+        nearby_stays: [{ id: 1, name: "The Angler's Rest B&B", type: 'B&B', distance: '2.3 miles', priceRange: '£85-£120', rating: 4.6, reviewCount: 89, amenities: ['Breakfast', 'Rod storage', 'Drying room'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
       },
       {
-        name: 'Bewl Water',
-        owner_id: null,
-        type: 'game',
-        region: 'south-east',
-        description: 'England\'s largest reservoir in the South East, stocked with quality rainbow and brown trout.',
-        species: ['Rainbow Trout', 'Brown Trout'],
-        price: 32,
-        booking_type: 'instant',
-        rating: 4.4,
-        review_count: 167,
-        facilities: ['Boat Hire', 'Lodge', 'Restaurant', 'Tackle Shop'],
-        rules: ['Catch Limits Apply', 'Barbless Hooks'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
+        name: 'Loch Awe - Kilchurn Bay',
+        owner_id: null, type: 'game', region: 'scotland', price: 45, booking_type: 'instant',
+        rating: 4.6, review_count: 89,
+        species: ['Brown Trout', 'Rainbow Trout', 'Pike', 'Perch'],
+        description: "Fish in the shadow of the iconic Kilchurn Castle on Scotland's longest freshwater loch.",
+        highlights: ['Historic castle backdrop', 'Wild brown trout', 'Boat hire available', 'Stunning scenery'],
+        facilities: ['parking', 'cafe', 'toilets'],
+        rules: ['Boat fishing only in designated areas', 'Pike must be returned', 'No live bait'],
+        experience_level: 'beginner',
+        season_info: 'Mar-Oct (best May-Sep)',
+        coordinates: { lat: 56.4023, lng: -5.0287 },
+        gallery: [{ id: 1, gradient: 'from-blue-700 to-indigo-800', label: 'Loch View' }, { id: 2, gradient: 'from-slate-600 to-blue-700', label: 'Kilchurn Castle' }],
+        reviews_list: [{ id: 1, author: 'Duncan S.', rating: 5, date: '2025-09-18', title: 'Magical location', text: 'The setting is absolutely stunning.', verified: true }],
+        nearby_stays: [{ id: 1, name: 'Kilchurn Lodge', type: 'Guest House', distance: '3.1 miles', priceRange: '£75-£110', rating: 4.5, reviewCount: 67, amenities: ['Breakfast', 'Packed lunches', 'Parking'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
+      },
+      {
+        name: 'Packington Somers Fishery',
+        owner_id: null, type: 'coarse', region: 'midlands', price: 25, booking_type: 'instant',
+        rating: 4.9, review_count: 312,
+        species: ['Carp', 'Tench', 'Bream', 'Roach', 'Perch'],
+        description: 'Award-winning coarse fishery set in the historic Packington Estate. Four pristine lakes stocked with specimen carp to 35lb+.',
+        highlights: ['Specimen carp to 35lb+', '4 lakes to choose from', 'Well-maintained swims', 'Match & pleasure fishing'],
+        facilities: ['parking', 'cafe', 'toilets', 'disabled', 'wifi'],
+        rules: ['Barbless hooks only', 'No braided mainline', 'Landing nets must be used', 'Keep nets by arrangement'],
+        experience_level: 'beginner',
+        season_info: 'Year-round',
+        coordinates: { lat: 52.5123, lng: -1.5678 },
+        gallery: [{ id: 1, gradient: 'from-green-600 to-emerald-700', label: 'Main Lake' }, { id: 2, gradient: 'from-emerald-600 to-teal-700', label: 'Specimen Lake' }],
+        reviews_list: [{ id: 1, author: 'Steve B.', rating: 5, date: '2025-11-02', title: 'Best fishery in the Midlands', text: 'Consistently brilliant fishing.', verified: true }],
+        nearby_stays: [{ id: 1, name: 'Packington Hall Hotel', type: 'Hotel', distance: '0.8 miles', priceRange: '£95-£150', rating: 4.4, reviewCount: 203, amenities: ['Restaurant', 'Bar', 'Pool'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
+      },
+      {
+        name: 'Chesil Beach - West Bexington',
+        owner_id: null, type: 'sea', region: 'south-west', price: 0, booking_type: 'free',
+        rating: 4.5, review_count: 178,
+        species: ['Bass', 'Cod', 'Mackerel', 'Pollock', 'Plaice'],
+        description: 'Iconic 18-mile shingle beach offering world-class bass fishing and excellent winter cod. Free access.',
+        highlights: ['Free fishing', 'World-famous bass venue', '18 miles of beach', 'Jurassic Coast UNESCO site'],
+        facilities: ['parking'],
+        rules: ['Bass size limits apply', 'No fishing in marked swimming areas', 'Respect other beach users'],
+        experience_level: 'intermediate',
+        season_info: 'Bass Apr-Nov, Cod Nov-Feb',
+        coordinates: { lat: 50.6789, lng: -2.6543 },
+        gallery: [{ id: 1, gradient: 'from-blue-500 to-cyan-600', label: 'Beach View' }, { id: 2, gradient: 'from-orange-500 to-amber-600', label: 'Sunset Fishing' }],
+        reviews_list: [{ id: 1, author: 'Tom H.', rating: 5, date: '2025-10-28', title: 'Bass fishing at its best', text: 'Nothing beats Chesil for bass.', verified: true }],
+        nearby_stays: [{ id: 1, name: 'The Seaside B&B', type: 'B&B', distance: '0.3 miles', priceRange: '£70-£95', rating: 4.3, reviewCount: 112, amenities: ['Sea views', 'Breakfast', 'Bait freezer'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
+      },
+      {
+        name: 'River Test - Broadlands Estate',
+        owner_id: null, type: 'game', region: 'south-england', price: 250, booking_type: 'enquiry',
+        rating: 4.9, review_count: 67,
+        species: ['Brown Trout', 'Rainbow Trout', 'Grayling'],
+        description: 'The legendary River Test at Broadlands - arguably the finest chalk stream fishing in the world.',
+        highlights: ['World-famous chalk stream', 'Wild brown trout', 'Pristine water quality', 'Historic estate'],
+        facilities: ['parking', 'toilets'],
+        rules: ['Dry fly and upstream nymph only', 'Catch and release', 'Wading by arrangement', 'No dogs'],
+        experience_level: 'expert',
+        season_info: 'May-Sep (best Jun-Jul)',
+        coordinates: { lat: 50.9876, lng: -1.5234 },
+        gallery: [{ id: 1, gradient: 'from-emerald-500 to-green-600', label: 'Chalk Stream' }, { id: 2, gradient: 'from-teal-500 to-emerald-600', label: 'Mayfly Hatch' }],
+        reviews_list: [{ id: 1, author: 'Richard E.', rating: 5, date: '2025-07-22', title: 'Bucket list experience', text: 'Finally fished the Test and it exceeded all expectations.', verified: true }],
+        nearby_stays: [{ id: 1, name: 'The Mill at Broadlands', type: 'Hotel', distance: '0.2 miles', priceRange: '£180-£280', rating: 4.9, reviewCount: 89, amenities: ['Restaurant', 'Bar', 'River views'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
+      },
+      {
+        name: 'Linear Fisheries - St Johns',
+        owner_id: null, type: 'coarse', region: 'south-england', price: 35, booking_type: 'instant',
+        rating: 4.7, review_count: 445,
+        species: ['Carp', 'Catfish', 'Tench', 'Bream'],
+        description: "One of the UK's premier carp venues with multiple lakes holding fish to over 50lb.",
+        highlights: ['Carp to 50lb+', 'Multiple lakes', '24hr fishing available', 'On-site tackle shop'],
+        facilities: ['parking', 'cafe', 'toilets', 'night', 'wifi'],
+        rules: ['Minimum 42" landing net', 'Unhooking mat required', 'No fixed leads', 'Booking essential'],
+        experience_level: 'intermediate',
+        season_info: 'Year-round (best Apr-Oct)',
+        coordinates: { lat: 51.8234, lng: -1.2345 },
+        gallery: [{ id: 1, gradient: 'from-green-700 to-emerald-800', label: 'St Johns Lake' }, { id: 2, gradient: 'from-amber-600 to-orange-700', label: 'Specimen Carp' }],
+        reviews_list: [{ id: 1, author: 'Mark C.', rating: 5, date: '2025-10-05', title: 'Incredible carp fishing', text: 'Did a 48hr session and landed 7 carp including a 38lb mirror.', verified: true }],
+        nearby_stays: [{ id: 1, name: 'On-site Bivvy Hire', type: 'Bivvy', distance: 'On-site', priceRange: '£30/night', rating: 4.2, reviewCount: 234, amenities: ['Bedchair', 'Sleeping bag', 'Cooking gear'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
+      },
+      {
+        name: 'River Tweed - Junction Pool',
+        owner_id: null, type: 'game', region: 'scotland', price: 150, booking_type: 'enquiry',
+        rating: 4.8, review_count: 98,
+        species: ['Atlantic Salmon', 'Sea Trout', 'Brown Trout'],
+        description: "The famous Junction Pool where the Teviot meets the Tweed. One of Scotland's most productive salmon beats.",
+        highlights: ['Famous junction pool', 'Prolific autumn runs', 'Historic fishing huts', 'Experienced ghillies'],
+        facilities: ['parking', 'toilets'],
+        rules: ['Catch and release encouraged', 'Fly fishing only Sep-Nov', 'Spinning permitted early season'],
+        experience_level: 'intermediate',
+        season_info: 'Feb-Nov (best Sep-Oct)',
+        coordinates: { lat: 55.5989, lng: -2.4367 },
+        gallery: [{ id: 1, gradient: 'from-indigo-600 to-purple-700', label: 'Junction Pool' }, { id: 2, gradient: 'from-emerald-600 to-teal-700', label: 'Autumn Run' }],
+        reviews_list: [{ id: 1, author: 'Angus M.', rating: 5, date: '2025-10-12', title: 'The ultimate salmon beat', text: 'Hooked into 3 fresh autumn salmon.', verified: true }],
+        nearby_stays: [{ id: 1, name: 'Kelso Bridge Hotel', type: 'Hotel', distance: '1.2 miles', priceRange: '£95-£160', rating: 4.6, reviewCount: 134, amenities: ['Restaurant', 'Bar', 'Drying room'] }],
+        images: [], status: 'approved', created_at: new Date().toISOString()
       }
     ];
 
-    const { error: waterError } = await supabase
+    const { data: insertedWaters, error: waterError } = await supabase
       .from('waters')
-      .insert(defaultWaters);
+      .insert(defaultWaters)
+      .select();
 
     if (waterError) {
       console.error('Error seeding waters:', waterError);
+      return;
+    }
+    console.log(`Seeded ${insertedWaters.length} waters`);
+
+    // ---- BOOKING OPTIONS for each water ----
+    // Map water names to their generated UUIDs
+    const waterIdMap = {};
+    insertedWaters.forEach(w => { waterIdMap[w.name] = w.id; });
+
+    const allBookingOptions = [
+      // River Wye
+      { water_id: waterIdMap['River Wye - Letton Beat'], category: 'day-tickets', name: 'Day Rod', description: 'Full day on the beat, 1 rod', price: 85, price_type: 'day', booking_type: 'enquiry', sort_order: 0 },
+      { water_id: waterIdMap['River Wye - Letton Beat'], category: 'day-tickets', name: 'Half Day Rod', description: 'Morning or afternoon session', price: 55, price_type: 'half-day', booking_type: 'enquiry', sort_order: 1 },
+      { water_id: waterIdMap['River Wye - Letton Beat'], category: 'guided', name: 'Guided Day with Ghillie', description: 'Expert ghillie, all advice and assistance', price: 150, price_type: 'day', booking_type: 'enquiry', sort_order: 2 },
+      { water_id: waterIdMap['River Wye - Letton Beat'], category: 'accommodation', name: '2-Night Fishing Package', description: '2 nights B&B plus 2 days on the beat', price: 320, price_type: 'person', booking_type: 'enquiry', sort_order: 3 },
+      { water_id: waterIdMap['River Wye - Letton Beat'], category: 'extras', name: 'Tackle Hire', description: 'Salmon rod, reel, line and flies', price: 25, price_type: 'day', booking_type: 'instant', sort_order: 4 },
+      // Loch Awe
+      { water_id: waterIdMap['Loch Awe - Kilchurn Bay'], category: 'day-tickets', name: 'Day Ticket (Bank)', description: 'Full day bank fishing', price: 45, price_type: 'day', booking_type: 'instant', sort_order: 0 },
+      { water_id: waterIdMap['Loch Awe - Kilchurn Bay'], category: 'day-tickets', name: 'Day Ticket (Boat)', description: 'Full day with boat hire included', price: 65, price_type: 'day', booking_type: 'instant', sort_order: 1 },
+      { water_id: waterIdMap['Loch Awe - Kilchurn Bay'], category: 'day-tickets', name: 'Evening Ticket', description: '4pm to dusk', price: 25, price_type: 'session', booking_type: 'instant', sort_order: 2 },
+      { water_id: waterIdMap['Loch Awe - Kilchurn Bay'], category: 'guided', name: 'Guided Boat Trip', description: 'Half day with local guide and boat', price: 120, price_type: 'person', booking_type: 'enquiry', sort_order: 3 },
+      { water_id: waterIdMap['Loch Awe - Kilchurn Bay'], category: 'extras', name: 'Boat Hire', description: 'Self-drive rowing boat', price: 30, price_type: 'day', booking_type: 'instant', sort_order: 4 },
+      // Packington
+      { water_id: waterIdMap['Packington Somers Fishery'], category: 'day-tickets', name: 'Day Ticket', description: 'Dawn to dusk on any lake', price: 25, price_type: 'day', booking_type: 'instant', sort_order: 0 },
+      { water_id: waterIdMap['Packington Somers Fishery'], category: 'day-tickets', name: '24hr Ticket', description: '24 hours including night fishing', price: 40, price_type: 'session', booking_type: 'instant', sort_order: 1 },
+      { water_id: waterIdMap['Packington Somers Fishery'], category: 'day-tickets', name: '48hr Ticket', description: 'Full weekend session', price: 70, price_type: 'session', booking_type: 'instant', sort_order: 2 },
+      { water_id: waterIdMap['Packington Somers Fishery'], category: 'guided', name: 'Beginner Lesson', description: '2hr session with qualified instructor, tackle included', price: 55, price_type: 'person', booking_type: 'instant', sort_order: 3 },
+      { water_id: waterIdMap['Packington Somers Fishery'], category: 'extras', name: 'Bait Package', description: 'Boilies, pellets and particles', price: 12, price_type: 'session', booking_type: 'instant', sort_order: 4 },
+      // Chesil Beach - no options (free venue)
+      // River Test
+      { water_id: waterIdMap['River Test - Broadlands Estate'], category: 'day-tickets', name: 'Day Rod', description: 'Full day on the beat, 2 rods', price: 250, price_type: 'day', booking_type: 'enquiry', sort_order: 0 },
+      { water_id: waterIdMap['River Test - Broadlands Estate'], category: 'day-tickets', name: 'Half Day Rod', description: 'Morning or afternoon session', price: 160, price_type: 'half-day', booking_type: 'enquiry', sort_order: 1 },
+      { water_id: waterIdMap['River Test - Broadlands Estate'], category: 'guided', name: 'Guided Day with Keeper', description: 'Full day with expert river keeper, lunch included', price: 395, price_type: 'day', booking_type: 'enquiry', sort_order: 2 },
+      { water_id: waterIdMap['River Test - Broadlands Estate'], category: 'accommodation', name: 'Rod & Lodge Package', description: '2 nights at The Mill plus 2 days fishing', price: 650, price_type: 'person', booking_type: 'enquiry', sort_order: 3 },
+      { water_id: waterIdMap['River Test - Broadlands Estate'], category: 'extras', name: 'Tackle Hire', description: 'Complete chalk stream setup including waders', price: 35, price_type: 'day', booking_type: 'instant', sort_order: 4 },
+      // Linear Fisheries
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'day-tickets', name: 'Day Ticket', description: 'Dawn to dusk', price: 35, price_type: 'day', booking_type: 'instant', sort_order: 0 },
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'day-tickets', name: '24hr Ticket', description: '24 hours including night fishing', price: 55, price_type: 'session', booking_type: 'instant', sort_order: 1 },
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'day-tickets', name: '48hr Ticket', description: 'Full weekend session with 2 nights', price: 95, price_type: 'session', booking_type: 'instant', sort_order: 2 },
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'accommodation', name: 'Lakeside Lodge', description: 'Private lodge overlooking specimen lake, fishing included', price: 120, price_type: 'night', booking_type: 'enquiry', sort_order: 3 },
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'guided', name: 'Carp Masterclass', description: 'Full day 1-to-1 with pro angler, all tackle provided', price: 150, price_type: 'person', booking_type: 'instant', sort_order: 4 },
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'extras', name: 'Bait Package', description: 'Boilies, pellets and particles', price: 15, price_type: 'session', booking_type: 'instant', sort_order: 5 },
+      { water_id: waterIdMap['Linear Fisheries - St Johns'], category: 'extras', name: 'Bivvy Hire', description: '2-man bivvy with bedchair and sleeping bag', price: 30, price_type: 'night', booking_type: 'instant', sort_order: 6 },
+      // River Tweed
+      { water_id: waterIdMap['River Tweed - Junction Pool'], category: 'day-tickets', name: 'Day Rod', description: 'Full day on the Junction Beat', price: 150, price_type: 'day', booking_type: 'enquiry', sort_order: 0 },
+      { water_id: waterIdMap['River Tweed - Junction Pool'], category: 'guided', name: 'Guided Day with Ghillie', description: 'Full day with experienced Tweed ghillie', price: 280, price_type: 'day', booking_type: 'enquiry', sort_order: 1 },
+      { water_id: waterIdMap['River Tweed - Junction Pool'], category: 'accommodation', name: '3-Night Salmon Package', description: '3 nights at Kelso Bridge Hotel plus 3 days fishing', price: 750, price_type: 'person', booking_type: 'enquiry', sort_order: 2 },
+      { water_id: waterIdMap['River Tweed - Junction Pool'], category: 'extras', name: 'Tackle Hire', description: '15ft Spey rod, reel and flies', price: 30, price_type: 'day', booking_type: 'instant', sort_order: 3 }
+    ];
+
+    const { error: optionsError } = await supabase
+      .from('booking_options')
+      .insert(allBookingOptions);
+
+    if (optionsError) {
+      console.error('Error seeding booking options:', optionsError);
     } else {
-      console.log('Waters seeded successfully');
+      console.log(`Seeded ${allBookingOptions.length} booking options`);
     }
 
-    // Create default instructors
+    // ---- INSTRUCTORS ----
     const defaultInstructors = [
       {
-        name: 'James Morrison',
-        user_id: null,
-        email: 'james@example.com',
-        specialties: ['Fly Fishing', 'Salmon', 'Trout'],
-        region: 'scotland',
+        name: 'James Morrison', user_id: null, email: 'james@example.com',
+        specialties: ['Fly Fishing', 'Salmon', 'Trout'], region: 'scotland',
         experience: '15 years',
         bio: 'AAPGAI qualified instructor specializing in salmon and trout fishing across the Scottish Highlands.',
-        price: 250,
-        rating: 4.9,
-        review_count: 67,
-        certifications: ['AAPGAI', 'SGAIC'],
-        availability: ['Weekdays', 'Weekends'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
+        price: 250, rating: 4.9, review_count: 67,
+        certifications: ['AAPGAI', 'SGAIC'], availability: ['Weekdays', 'Weekends'],
+        images: [], status: 'approved', created_at: new Date().toISOString()
       },
       {
-        name: 'Sarah Williams',
-        user_id: null,
-        email: 'sarah@example.com',
-        specialties: ['Carp Fishing', 'Coarse', 'Beginners'],
-        region: 'midlands',
+        name: 'Sarah Williams', user_id: null, email: 'sarah@example.com',
+        specialties: ['Carp Fishing', 'Coarse', 'Beginners'], region: 'midlands',
         experience: '10 years',
         bio: 'Passionate about introducing newcomers to fishing. Patient, friendly approach perfect for beginners.',
-        price: 150,
-        rating: 4.8,
-        review_count: 89,
-        certifications: ['Level 2 Angling Coach'],
-        availability: ['Weekends'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
+        price: 150, rating: 4.8, review_count: 89,
+        certifications: ['Level 2 Angling Coach'], availability: ['Weekends'],
+        images: [], status: 'approved', created_at: new Date().toISOString()
       },
       {
-        name: 'Mike Thompson',
-        user_id: null,
-        email: 'mike@example.com',
-        specialties: ['Sea Fishing', 'Bass', 'Shore Fishing'],
-        region: 'south-west',
+        name: 'Mike Thompson', user_id: null, email: 'mike@example.com',
+        specialties: ['Sea Fishing', 'Bass', 'Shore Fishing'], region: 'south-west',
         experience: '20 years',
         bio: 'Expert sea angler with decades of experience along the South West coast. Specializing in bass fishing.',
-        price: 180,
-        rating: 4.7,
-        review_count: 45,
-        certifications: ['RYA Powerboat', 'First Aid'],
-        availability: ['Weekdays', 'Weekends'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
+        price: 180, rating: 4.7, review_count: 45,
+        certifications: ['RYA Powerboat', 'First Aid'], availability: ['Weekdays', 'Weekends'],
+        images: [], status: 'approved', created_at: new Date().toISOString()
       },
       {
-        name: 'Emma Clarke',
-        user_id: null,
-        email: 'emma@example.com',
-        specialties: ['Fly Tying', 'Fly Fishing', 'Women\'s Courses'],
-        region: 'south-east',
+        name: 'Emma Clarke', user_id: null, email: 'emma@example.com',
+        specialties: ['Fly Tying', 'Fly Fishing', "Women's Courses"], region: 'south-east',
         experience: '8 years',
         bio: 'Dedicated to making fly fishing accessible to everyone. Runs popular women-only introduction courses.',
-        price: 175,
-        rating: 4.9,
-        review_count: 72,
-        certifications: ['GAIA', 'Level 2 Coach'],
-        availability: ['Weekdays'],
-        images: [],
-        status: 'approved',
-        created_at: new Date().toISOString()
+        price: 175, rating: 4.9, review_count: 72,
+        certifications: ['GAIA', 'Level 2 Coach'], availability: ['Weekdays'],
+        images: [], status: 'approved', created_at: new Date().toISOString()
       }
     ];
 
@@ -713,7 +755,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 app.post('/api/bookings', optionalAuth, async (req, res) => {
   try {
-    const { waterId, instructorId, date, startDate, endDate, numberOfDays, anglerName, anglerEmail, anglerPhone, message, type } = req.body;
+    const { waterId, instructorId, bookingOptionId, date, startDate, endDate, numberOfDays, anglerName, anglerEmail, anglerPhone, message, type } = req.body;
     if (!date && !startDate) return res.status(400).json({ error: 'Date required' });
     if (!anglerName || !anglerEmail) return res.status(400).json({ error: 'Name and email required' });
 
@@ -724,6 +766,7 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
       user_phone: anglerPhone || '',
       water_id: waterId || null,
       instructor_id: instructorId || null,
+      booking_option_id: bookingOptionId || null,
       date: date || startDate,
       start_date: startDate || date,
       end_date: endDate || startDate || date,
@@ -754,7 +797,7 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
 // Contact/inquiry endpoint (no auth required for public enquiries)
 app.post('/api/contact', async (req, res) => {
   try {
-    const { waterId, instructorId, name, email, phone, message, date, type } = req.body;
+    const { waterId, instructorId, bookingOptionId, name, email, phone, message, date, type } = req.body;
     if (!name || !email || !message) return res.status(400).json({ error: 'Name, email and message required' });
 
     const inquiry = {
@@ -764,6 +807,7 @@ app.post('/api/contact', async (req, res) => {
       user_phone: phone || '',
       water_id: waterId || null,
       instructor_id: instructorId || null,
+      booking_option_id: bookingOptionId || null,
       date: date || null,
       message,
       type: type || 'enquiry',
@@ -792,6 +836,64 @@ app.post('/api/contact', async (req, res) => {
 // HELPER: Fetch waters with booking options
 // ============================================================================
 
+// Convert a booking_options row from snake_case (DB) to camelCase (frontend)
+const formatBookingOption = (opt) => ({
+  id: opt.id,
+  waterId: opt.water_id,
+  category: opt.category,
+  name: opt.name,
+  description: opt.description,
+  price: opt.price,
+  priceType: opt.price_type,
+  bookingType: opt.booking_type,
+  sortOrder: opt.sort_order
+});
+
+// Convert a water row from snake_case (DB) to camelCase (frontend)
+const formatWater = (w) => ({
+  id: w.id,
+  name: w.name,
+  ownerId: w.owner_id,
+  ownerName: w.owner_name,
+  ownerEmail: w.owner_email,
+  ownerPhone: w.owner_phone,
+  type: w.type,
+  waterBodyType: w.water_body_type,
+  region: w.region,
+  location: w.location,
+  townCity: w.town_city,
+  county: w.county,
+  postcode: w.postcode,
+  description: w.description,
+  highlights: w.highlights,
+  species: w.species,
+  price: w.price,
+  priceType: w.price_type,
+  bookingType: w.booking_type,
+  rating: w.rating,
+  reviewCount: w.review_count,
+  facilities: w.facilities,
+  rules: w.rules,
+  images: w.images,
+  experienceLevel: w.experience_level,
+  typicalSessionHours: w.typical_session_hours,
+  bestTimeOfDay: w.best_time_of_day,
+  averageCatchRate: w.average_catch_rate,
+  blankRate: w.blank_rate,
+  recordFish: w.record_fish,
+  seasonInfo: w.season_info,
+  openingHours: w.opening_hours,
+  seasonDates: w.season_dates,
+  coordinates: w.coordinates,
+  gallery: w.gallery,
+  nearbyStays: w.nearby_stays,
+  availability: w.availability,
+  reviewsList: w.reviews_list,
+  status: w.status,
+  createdAt: w.created_at,
+  bookingOptions: w.bookingOptions || []
+});
+
 const getWaterWithBookingOptions = async (waterId) => {
   const { data: water, error: waterError } = await supabase
     .from('waters')
@@ -804,28 +906,37 @@ const getWaterWithBookingOptions = async (waterId) => {
   const { data: bookingOptions } = await supabase
     .from('booking_options')
     .select('*')
-    .eq('water_id', waterId);
+    .eq('water_id', waterId)
+    .order('sort_order', { ascending: true });
 
-  return {
+  return formatWater({
     ...water,
-    bookingOptions: bookingOptions || []
-  };
+    bookingOptions: (bookingOptions || []).map(formatBookingOption)
+  });
 };
 
 const getWatersWithBookingOptions = async (waters) => {
-  const results = [];
-  for (const water of waters) {
-    const { data: bookingOptions } = await supabase
-      .from('booking_options')
-      .select('*')
-      .eq('water_id', water.id);
+  if (waters.length === 0) return [];
 
-    results.push({
-      ...water,
-      bookingOptions: bookingOptions || []
-    });
-  }
-  return results;
+  // Batch fetch all booking options for all water IDs
+  const waterIds = waters.map(w => w.id);
+  const { data: allOptions } = await supabase
+    .from('booking_options')
+    .select('*')
+    .in('water_id', waterIds)
+    .order('sort_order', { ascending: true });
+
+  // Group options by water_id
+  const optionsByWater = {};
+  (allOptions || []).forEach(opt => {
+    if (!optionsByWater[opt.water_id]) optionsByWater[opt.water_id] = [];
+    optionsByWater[opt.water_id].push(formatBookingOption(opt));
+  });
+
+  return waters.map(water => formatWater({
+    ...water,
+    bookingOptions: optionsByWater[water.id] || []
+  }));
 };
 
 // ============================================================================

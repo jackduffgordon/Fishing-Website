@@ -4536,9 +4536,17 @@ const categoryColors = {
   'extras': { active: 'bg-blue-100 border-blue-500', text: 'text-blue-700' }
 };
 
-const BookingCard = ({ venue, selectedDate, onDateSelect, selectedEndDate, onEndDateSelect, getNumberOfDays, onBook }) => {
+const BookingCard = ({ venue, selectedDate, onDateSelect, selectedEndDate, onEndDateSelect, getNumberOfDays, onBook, onSelectedOptionChange }) => {
   const hasOptions = venue.bookingOptions && venue.bookingOptions.length > 0;
   const [selectedOptionId, setSelectedOptionId] = useState(null);
+
+  // Notify parent when selected option changes
+  useEffect(() => {
+    if (onSelectedOptionChange && hasOptions) {
+      const opt = venue.bookingOptions.find(o => o.id === selectedOptionId) || venue.bookingOptions[0];
+      onSelectedOptionChange(opt);
+    }
+  }, [selectedOptionId, hasOptions]);
 
   const activeOption = hasOptions
     ? venue.bookingOptions.find(o => o.id === selectedOptionId) || venue.bookingOptions[0]
@@ -4683,6 +4691,7 @@ const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
   const [bookingError, setBookingError] = useState('');
   const [bookingForm, setBookingForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [selectedBookingOption, setSelectedBookingOption] = useState(null);
 
   const getNumberOfDays = () => {
     if (!selectedDate) return 0;
@@ -4710,12 +4719,16 @@ const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
     setBookingLoading(true);
     setBookingError('');
     try {
-      const endpoint = venue.bookingType === 'instant' ? '/bookings' : '/contact';
+      const opt = selectedBookingOption;
+      const isInstant = opt ? opt.bookingType === 'instant' : venue.bookingType === 'instant';
+      const endpoint = isInstant ? '/bookings' : '/contact';
       const numDays = getNumberOfDays();
+      const optionLabel = opt ? ` — ${opt.name} (£${opt.price}/${opt.priceType})` : '';
       await api.request(endpoint, {
         method: 'POST',
         body: JSON.stringify({
           waterId: venue.id,
+          bookingOptionId: opt?.id || null,
           date: selectedDate,
           startDate: selectedDate,
           endDate: selectedEndDate || selectedDate,
@@ -4726,8 +4739,8 @@ const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
           name: bookingForm.name,
           email: bookingForm.email,
           phone: bookingForm.phone,
-          message: bookingForm.message || `Booking request for ${venue.name} — ${numDays} day${numDays > 1 ? 's' : ''} from ${selectedDate}${selectedEndDate ? ' to ' + selectedEndDate : ''}`,
-          type: venue.bookingType === 'instant' ? 'booking' : 'enquiry'
+          message: bookingForm.message || `Booking request for ${venue.name}${optionLabel} — ${numDays} day${numDays > 1 ? 's' : ''} from ${selectedDate}${selectedEndDate ? ' to ' + selectedEndDate : ''}`,
+          type: isInstant ? 'booking' : 'enquiry'
         })
       });
       setBookingSuccess(true);
@@ -4858,7 +4871,7 @@ const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
           <WeatherConditionsWidget venue={venue} />
 
           {/* Booking Card */}
-          <BookingCard venue={venue} selectedDate={selectedDate} onDateSelect={setSelectedDate} selectedEndDate={selectedEndDate} onEndDateSelect={setSelectedEndDate} getNumberOfDays={getNumberOfDays} onBook={() => handleBooking(venue)} />
+          <BookingCard venue={venue} selectedDate={selectedDate} onDateSelect={setSelectedDate} selectedEndDate={selectedEndDate} onEndDateSelect={setSelectedEndDate} getNumberOfDays={getNumberOfDays} onBook={() => handleBooking(venue)} onSelectedOptionChange={setSelectedBookingOption} />
         </div>
       </div>
 
