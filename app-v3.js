@@ -111,10 +111,8 @@ const AuthProvider = ({ children }) => {
         try {
           const data = await api.getMe();
           setUser(data.user);
-          // Sync favourites from backend
-          const favData = await api.getFavourites();
-          setFavouriteWaters(favData.waters || []);
-          setFavouriteInstructors(favData.instructors || []);
+          // Favourites stay in localStorage since frontend uses hardcoded IDs
+          // Backend favourites will sync once frontend loads from API
         } catch (error) {
           api.clearToken();
         }
@@ -128,10 +126,7 @@ const AuthProvider = ({ children }) => {
     const data = await api.login(email, password);
     api.setToken(data.token);
     setUser(data.user);
-    // Sync favourites from backend
-    const favData = await api.getFavourites();
-    setFavouriteWaters(favData.waters || []);
-    setFavouriteInstructors(favData.instructors || []);
+    // Keep localStorage favourites — backend uses UUIDs but frontend uses hardcoded integer IDs
     return data;
   };
 
@@ -151,58 +146,24 @@ const AuthProvider = ({ children }) => {
     setFavouriteInstructors([]);
   };
 
-  const toggleFavouriteWater = async (waterId) => {
+  const toggleFavouriteWater = (waterId) => {
     const isCurrentlyFav = favouriteWaters.includes(waterId);
-    // Update UI immediately
+    // Update UI immediately (local state only)
     if (isCurrentlyFav) {
       setFavouriteWaters(prev => prev.filter(id => id !== waterId));
     } else {
       setFavouriteWaters(prev => [...prev, waterId]);
     }
-    // Sync to backend if logged in
-    if (user) {
-      try {
-        if (isCurrentlyFav) {
-          await api.removeFavouriteWater(waterId);
-        } else {
-          await api.addFavouriteWater(waterId);
-        }
-      } catch (error) {
-        // Revert on failure
-        if (isCurrentlyFav) {
-          setFavouriteWaters(prev => [...prev, waterId]);
-        } else {
-          setFavouriteWaters(prev => prev.filter(id => id !== waterId));
-        }
-      }
-    }
     return true;
   };
 
-  const toggleFavouriteInstructor = async (instructorId) => {
+  const toggleFavouriteInstructor = (instructorId) => {
     const isCurrentlyFav = favouriteInstructors.includes(instructorId);
-    // Update UI immediately
+    // Update UI immediately (local state only)
     if (isCurrentlyFav) {
       setFavouriteInstructors(prev => prev.filter(id => id !== instructorId));
     } else {
       setFavouriteInstructors(prev => [...prev, instructorId]);
-    }
-    // Sync to backend if logged in
-    if (user) {
-      try {
-        if (isCurrentlyFav) {
-          await api.removeFavouriteInstructor(instructorId);
-        } else {
-          await api.addFavouriteInstructor(instructorId);
-        }
-      } catch (error) {
-        // Revert on failure
-        if (isCurrentlyFav) {
-          setFavouriteInstructors(prev => [...prev, instructorId]);
-        } else {
-          setFavouriteInstructors(prev => prev.filter(id => id !== instructorId));
-        }
-      }
     }
     return true;
   };
@@ -1333,7 +1294,7 @@ const PriceRangeSlider = ({ min, max, value, onChange }) => {
 
       {/* Min Slider */}
       <div>
-        <label className="text-xs text-stone-500 mb-2 block">Click or drag to set minimum: £{localMin}</label>
+        <label className="text-xs text-stone-500 mb-2 block">Click to set minimum: £{localMin}</label>
         <input
           type="range"
           min={min}
@@ -1350,7 +1311,7 @@ const PriceRangeSlider = ({ min, max, value, onChange }) => {
 
       {/* Max Slider */}
       <div>
-        <label className="text-xs text-stone-500 mb-2 block">Click or drag to set maximum: £{localMax}</label>
+        <label className="text-xs text-stone-500 mb-2 block">Click to set maximum: £{localMax}</label>
         <input
           type="range"
           min={min}
@@ -2551,8 +2512,8 @@ const ListWaterModal = ({ isOpen, onClose }) => {
       case 1: return formData.name && formData.waterBodyType && formData.fishingType && formData.region;
       case 2: return formData.townCity && formData.postcode;
       case 3: return formData.species.length > 0;
-      case 4: return formData.bookingOptions && formData.bookingOptions.length > 0 && formData.bookingOptions.every(o => o.name && o.price);
-      case 5: return formData.contactName && formData.email;
+      case 4: return formData.bookingOptions && formData.bookingOptions.length > 0 && formData.bookingOptions.every(o => o.name && (o.price !== '' && o.price !== undefined && o.price !== null));
+      case 5: return formData.contactName && formData.email && formData.phone;
       default: return true;
     }
   };
@@ -2949,7 +2910,7 @@ const ListWaterModal = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number *</label>
                       <input
                         type="tel"
                         value={formData.phone}
@@ -2957,18 +2918,20 @@ const ListWaterModal = ({ isOpen, onClose }) => {
                         className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                         placeholder="07XXX XXXXXX"
                       />
+                      <p className="text-xs text-stone-500 mt-1">Required for booking enquiries</p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Email Address *</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Business Email Address *</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => updateForm('email', e.target.value)}
                       className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      placeholder="you@example.com"
+                      placeholder="business@yourfishery.co.uk"
                     />
+                    <p className="text-xs text-amber-600 mt-1">Please use your business email — this is how anglers will contact you about bookings.</p>
                   </div>
 
                   <div>
@@ -3038,7 +3001,9 @@ const ListWaterModal = ({ isOpen, onClose }) => {
                       <div className="flex justify-between">
                         <span className="text-stone-500">Price:</span>
                         <span className="font-medium text-stone-800">
-                          {formData.bookingType === 'free' ? 'Free Access' : formData.dayTicketPrice ? `£${formData.dayTicketPrice}/day` : '—'}
+                          {formData.bookingOptions && formData.bookingOptions.length > 0
+                            ? `From £${Math.min(...formData.bookingOptions.map(o => parseInt(o.price) || 0))}`
+                            : '—'}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -3117,10 +3082,7 @@ const InstructorRegisterModal = ({ isOpen, onClose }) => {
     yearsExperience: '',
     specialties: [],
     // Step 3: Services
-    lessonTypes: [],
-    hourlyRate: '',
-    halfDayRate: '',
-    fullDayRate: '',
+    serviceOptions: [],
     coverageArea: '',
     travelWilling: false,
     // Step 4: Bio & Photos
@@ -3153,9 +3115,16 @@ const InstructorRegisterModal = ({ isOpen, onClose }) => {
           region: formData.location,
           experience: formData.yearsExperience ? `${formData.yearsExperience} years` : '',
           bio: formData.bio,
-          price: parseInt(formData.fullDayRate || formData.halfDayRate || formData.hourlyRate) || 0,
-          certifications: formData.certifications,
-          availability: formData.lessonTypes
+          price: (formData.serviceOptions || []).length > 0 ? Math.min(...(formData.serviceOptions || []).map(o => parseInt(o.price) || 0).filter(p => p > 0)) : 0,
+          bookingOptions: (formData.serviceOptions || []).map(opt => ({
+            category: opt.category || 'lessons',
+            name: opt.name,
+            description: opt.description || '',
+            price: parseInt(opt.price) || 0,
+            priceType: opt.priceType || 'hour',
+            bookingType: opt.bookingType || 'enquiry'
+          })),
+          certifications: formData.certifications
         })
       });
       setSubmitted(true);
@@ -3176,7 +3145,7 @@ const InstructorRegisterModal = ({ isOpen, onClose }) => {
     setFormData({
       firstName: '', lastName: '', email: '', phone: '', location: '',
       certifications: [], yearsExperience: '', specialties: [],
-      lessonTypes: [], hourlyRate: '', halfDayRate: '', fullDayRate: '', coverageArea: '', travelWilling: false,
+      serviceOptions: [], coverageArea: '', travelWilling: false,
       bio: '', website: '', instagram: '', facebook: '', photos: []
     });
     setSubmitted(false);
@@ -3186,9 +3155,9 @@ const InstructorRegisterModal = ({ isOpen, onClose }) => {
 
   const canProceed = () => {
     switch (step) {
-      case 1: return formData.firstName && formData.lastName && formData.email && formData.location;
+      case 1: return formData.firstName && formData.lastName && formData.email && formData.phone && formData.location;
       case 2: return formData.specialties.length > 0;
-      case 3: return formData.hourlyRate || formData.halfDayRate || formData.fullDayRate;
+      case 3: return (formData.serviceOptions || []).length > 0 && (formData.serviceOptions || []).every(o => o.name && (o.price !== '' && o.price !== undefined && o.price !== null));
       case 4: return formData.bio.length >= 50;
       default: return true;
     }
@@ -3294,18 +3263,19 @@ const InstructorRegisterModal = ({ isOpen, onClose }) => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Email Address *</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Professional Email Address *</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => updateForm('email', e.target.value)}
                       className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="john@example.com"
+                      placeholder="name@yourbusiness.co.uk"
                     />
+                    <p className="text-xs text-amber-600 mt-1">Please use your professional/business email — anglers will contact you through this.</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Phone Number *</label>
                     <input
                       type="tel"
                       value={formData.phone}
@@ -3389,60 +3359,145 @@ const InstructorRegisterModal = ({ isOpen, onClose }) => {
               {/* Step 3: Services */}
               {step === 3 && (
                 <div className="space-y-6">
+                  <div className="bg-amber-50 rounded-xl p-4 mb-2">
+                    <h4 className="font-semibold text-amber-800 mb-1">What do you offer?</h4>
+                    <p className="text-amber-700 text-sm">Add each service you offer with its own price. You can add as many as you like.</p>
+                  </div>
+
+                  {/* Quick-add templates */}
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-3">Lesson Types Offered</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {lessonTypeOptions.map(type => (
-                        <CheckboxFilter
-                          key={type.id}
-                          label={type.name}
-                          checked={formData.lessonTypes.includes(type.id)}
-                          onChange={() => {
-                            const newTypes = formData.lessonTypes.includes(type.id)
-                              ? formData.lessonTypes.filter(t => t !== type.id)
-                              : [...formData.lessonTypes, type.id];
-                            updateForm('lessonTypes', newTypes);
+                    <p className="text-sm font-medium text-stone-700 mb-2">Quick add a service:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { category: 'lessons', name: '1-to-1 Lesson', description: 'Private fishing lesson', price: '', priceType: 'hour', bookingType: 'instant' },
+                        { category: 'lessons', name: 'Group Lesson', description: 'Small group session (2-4 people)', price: '', priceType: 'person', bookingType: 'instant' },
+                        { category: 'guided', name: 'Guided Day', description: 'Full day guided fishing trip', price: '', priceType: 'day', bookingType: 'enquiry' },
+                        { category: 'guided', name: 'Half Day Trip', description: 'Morning or afternoon guided session', price: '', priceType: 'half-day', bookingType: 'enquiry' },
+                        { category: 'courses', name: 'Beginner Course', description: 'Complete beginner introduction', price: '', priceType: 'person', bookingType: 'instant' },
+                        { category: 'courses', name: 'Casting Clinic', description: 'Improve your casting technique', price: '', priceType: 'person', bookingType: 'instant' },
+                        { category: 'extras', name: 'Tackle Hire', description: 'Full tackle setup for the session', price: '', priceType: 'day', bookingType: 'instant' },
+                        { category: 'extras', name: 'Custom Service', description: '', price: '', priceType: 'session', bookingType: 'enquiry' }
+                      ].map((template, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            const newOption = { ...template, id: `opt-${Date.now()}-${idx}` };
+                            updateForm('serviceOptions', [...(formData.serviceOptions || []), newOption]);
                           }}
-                        />
+                          className="text-xs px-3 py-1.5 rounded-full border border-amber-300 text-amber-700 hover:bg-amber-50 transition-colors"
+                        >
+                          + {template.name}
+                        </button>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-3">Pricing (at least one required) *</label>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs text-stone-500 mb-1">Hourly Rate (£)</label>
-                        <input
-                          type="number"
-                          value={formData.hourlyRate}
-                          onChange={(e) => updateForm('hourlyRate', e.target.value)}
-                          className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                          placeholder="e.g., 50"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-stone-500 mb-1">Half Day Rate (£)</label>
-                        <input
-                          type="number"
-                          value={formData.halfDayRate}
-                          onChange={(e) => updateForm('halfDayRate', e.target.value)}
-                          className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                          placeholder="e.g., 150"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-stone-500 mb-1">Full Day Rate (£)</label>
-                        <input
-                          type="number"
-                          value={formData.fullDayRate}
-                          onChange={(e) => updateForm('fullDayRate', e.target.value)}
-                          className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                          placeholder="e.g., 250"
-                        />
-                      </div>
+                  {/* Current options list */}
+                  {(formData.serviceOptions || []).length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-stone-700">Your services ({(formData.serviceOptions || []).length}):</p>
+                      {(formData.serviceOptions || []).map((opt, idx) => (
+                        <div key={opt.id || idx} className="bg-white border border-stone-200 rounded-xl p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-stone-500 mb-1">Service Name *</label>
+                                <input
+                                  type="text"
+                                  value={opt.name}
+                                  onChange={(e) => {
+                                    const updated = [...(formData.serviceOptions || [])];
+                                    updated[idx] = { ...updated[idx], name: e.target.value };
+                                    updateForm('serviceOptions', updated);
+                                  }}
+                                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                  placeholder="e.g., 1-to-1 Fly Lesson"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-stone-500 mb-1">Price (£) *</label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="number"
+                                    value={opt.price}
+                                    onChange={(e) => {
+                                      const updated = [...(formData.serviceOptions || [])];
+                                      updated[idx] = { ...updated[idx], price: e.target.value };
+                                      updateForm('serviceOptions', updated);
+                                    }}
+                                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="0"
+                                  />
+                                  <select
+                                    value={opt.priceType}
+                                    onChange={(e) => {
+                                      const updated = [...(formData.serviceOptions || [])];
+                                      updated[idx] = { ...updated[idx], priceType: e.target.value };
+                                      updateForm('serviceOptions', updated);
+                                    }}
+                                    className="px-2 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                  >
+                                    <option value="hour">/hour</option>
+                                    <option value="half-day">/half-day</option>
+                                    <option value="day">/day</option>
+                                    <option value="session">/session</option>
+                                    <option value="person">/person</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                const updated = (formData.serviceOptions || []).filter((_, i) => i !== idx);
+                                updateForm('serviceOptions', updated);
+                              }}
+                              className="ml-3 p-1 text-stone-400 hover:text-red-500 transition-colors"
+                            >
+                              <Icons.X />
+                            </button>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-stone-500 mb-1">Description</label>
+                            <input
+                              type="text"
+                              value={opt.description || ''}
+                              onChange={(e) => {
+                                const updated = [...(formData.serviceOptions || [])];
+                                updated[idx] = { ...updated[idx], description: e.target.value };
+                                updateForm('serviceOptions', updated);
+                              }}
+                              className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                              placeholder="What's included?"
+                            />
+                          </div>
+                          <div className="mt-2 flex gap-4">
+                            <label className="flex items-center gap-2 text-sm">
+                              <input type="radio" name={`booking-type-${idx}`} checked={opt.bookingType === 'instant'} onChange={() => {
+                                const updated = [...(formData.serviceOptions || [])];
+                                updated[idx] = { ...updated[idx], bookingType: 'instant' };
+                                updateForm('serviceOptions', updated);
+                              }} className="text-amber-500" />
+                              <span className="text-stone-600">Instant Book</span>
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <input type="radio" name={`booking-type-${idx}`} checked={opt.bookingType === 'enquiry'} onChange={() => {
+                                const updated = [...(formData.serviceOptions || [])];
+                                updated[idx] = { ...updated[idx], bookingType: 'enquiry' };
+                                updateForm('serviceOptions', updated);
+                              }} className="text-amber-500" />
+                              <span className="text-stone-600">Enquiry Only</span>
+                            </label>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  )}
+
+                  {(formData.serviceOptions || []).length === 0 && (
+                    <div className="text-center py-8 text-stone-400">
+                      <p className="text-sm">No services added yet. Click a template above or add a custom one.</p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1">Coverage Area</label>
@@ -3793,6 +3848,12 @@ const Nav = ({ currentPage, onNavigate, onSignIn, onListWater, onBecomeInstructo
             <button onClick={() => onNavigate('instructors')} className="text-stone-600 hover:text-teal-600 font-medium">
               Guides & Instructors
             </button>
+            <button onClick={() => onNavigate('about')} className="text-stone-600 hover:text-teal-600 font-medium">
+              About
+            </button>
+            <button onClick={() => onNavigate('contact')} className="text-stone-600 hover:text-teal-600 font-medium">
+              Contact
+            </button>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -3912,6 +3973,8 @@ const Nav = ({ currentPage, onNavigate, onSignIn, onListWater, onBecomeInstructo
               <button onClick={() => { onNavigate('search', { type: 'coarse' }); setMobileMenuOpen(false); }} className="text-left text-stone-600">Coarse Fishing</button>
               <button onClick={() => { onNavigate('search', { type: 'sea' }); setMobileMenuOpen(false); }} className="text-left text-stone-600">Sea Fishing</button>
               <button onClick={() => { onNavigate('instructors'); setMobileMenuOpen(false); }} className="text-left text-stone-600">Guides & Instructors</button>
+              <button onClick={() => { onNavigate('about'); setMobileMenuOpen(false); }} className="text-left text-stone-600">About</button>
+              <button onClick={() => { onNavigate('contact'); setMobileMenuOpen(false); }} className="text-left text-stone-600">Contact</button>
               <hr className="border-stone-200" />
               {auth.user ? (
                 <>
@@ -4430,8 +4493,54 @@ const SearchResultsPage = ({ onNavigate, params, onSignInRequired }) => {
     radius: 15
   });
 
+  const [apiWaters, setApiWaters] = useState([]);
+
+  useEffect(() => {
+    const loadApiWaters = async () => {
+      try {
+        const res = await api.request('/waters');
+        const apiList = (res.waters || []).map((w, idx) => ({
+          id: `api-${w.id}`,
+          dbId: w.id,
+          name: w.name,
+          region: w.region,
+          type: w.type,
+          price: w.price || 0,
+          rating: parseFloat(w.rating) || 0,
+          reviewCount: w.reviewCount || w.review_count || 0,
+          species: w.species || [],
+          description: w.description || '',
+          highlights: w.highlights || [],
+          rules: Array.isArray(w.rules) ? w.rules : [],
+          facilities: w.facilities || [],
+          bookingType: w.bookingType || w.booking_type || 'enquiry',
+          bookingOptions: w.bookingOptions || [],
+          experienceLevel: w.experienceLevel || w.experience_level || 'beginner',
+          seasonInfo: w.seasonInfo || w.season_info || '',
+          coordinates: w.coordinates || {},
+          gallery: w.gallery || [],
+          reviewsList: w.reviewsList || w.reviews_list || [],
+          nearbyStays: w.nearbyStays || w.nearby_stays || [],
+          availability: w.availability || {},
+          fromApi: true
+        }));
+        setApiWaters(apiList);
+      } catch (e) {
+        console.log('Could not load API waters:', e);
+      }
+    };
+    loadApiWaters();
+  }, []);
+
+  const allWaters = useMemo(() => {
+    // Merge hardcoded + API waters, dedup by name
+    const names = new Set(fisheries.map(f => f.name));
+    const apiOnly = apiWaters.filter(w => !names.has(w.name));
+    return [...fisheries, ...apiOnly];
+  }, [apiWaters]);
+
   const filteredFisheries = useMemo(() => {
-    return fisheries.filter(f => {
+    return allWaters.filter(f => {
       if (params?.type && f.type !== params.type) return false;
       if (params?.region && f.region !== params.region) return false;
       if (f.price < filters.priceRange[0] || f.price > filters.priceRange[1]) return false;
@@ -4440,7 +4549,7 @@ const SearchResultsPage = ({ onNavigate, params, onSignInRequired }) => {
       if (filters.facilities.length > 0 && !filters.facilities.every(fac => f.facilities.includes(fac))) return false;
       return true;
     });
-  }, [params, filters]);
+  }, [params, filters, allWaters]);
 
   const getTitle = () => {
     if (params?.species) return params.species + ' Fishing';
@@ -4539,14 +4648,15 @@ const categoryColors = {
 const BookingCard = ({ venue, selectedDate, onDateSelect, selectedEndDate, onEndDateSelect, getNumberOfDays, onBook, onSelectedOptionChange }) => {
   const hasOptions = venue.bookingOptions && venue.bookingOptions.length > 0;
   const [selectedOptionId, setSelectedOptionId] = useState(null);
+  const [selectedExtras, setSelectedExtras] = useState([]);
 
   // Notify parent when selected option changes
   useEffect(() => {
     if (onSelectedOptionChange && hasOptions) {
       const opt = venue.bookingOptions.find(o => o.id === selectedOptionId) || venue.bookingOptions[0];
-      onSelectedOptionChange(opt);
+      onSelectedOptionChange({ ...opt, extras: selectedExtras.map(id => venue.bookingOptions.find(o => o.id === id)).filter(Boolean) });
     }
-  }, [selectedOptionId, hasOptions]);
+  }, [selectedOptionId, hasOptions, selectedExtras]);
 
   const activeOption = hasOptions
     ? venue.bookingOptions.find(o => o.id === selectedOptionId) || venue.bookingOptions[0]
@@ -4621,9 +4731,18 @@ const BookingCard = ({ venue, selectedDate, onDateSelect, selectedEndDate, onEnd
               <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${colors.text}`}>{categoryLabels[catId] || catId}</p>
               <div className="space-y-2">
                 {options.map(opt => {
-                  const isSelected = selectedOptionId === opt.id || (!selectedOptionId && venue.bookingOptions[0]?.id === opt.id);
+                  const isExtra = catId === 'extras';
+                  const isSelected = isExtra
+                    ? selectedExtras.includes(opt.id)
+                    : (selectedOptionId === opt.id || (!selectedOptionId && venue.bookingOptions[0]?.id === opt.id));
                   return (
-                    <button key={opt.id} onClick={() => setSelectedOptionId(opt.id)} className={`w-full text-left p-3 rounded-xl border-2 transition-all ${isSelected ? `${colors.active} shadow-sm` : 'bg-white border-stone-200 hover:border-stone-300'}`}>
+                    <button key={opt.id} onClick={() => {
+                      if (isExtra) {
+                        setSelectedExtras(prev => prev.includes(opt.id) ? prev.filter(id => id !== opt.id) : [...prev, opt.id]);
+                      } else {
+                        setSelectedOptionId(opt.id);
+                      }
+                    }} className={`w-full text-left p-3 rounded-xl border-2 transition-all ${isSelected ? `${colors.active} shadow-sm` : 'bg-white border-stone-200 hover:border-stone-300'}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -4658,7 +4777,10 @@ const BookingCard = ({ venue, selectedDate, onDateSelect, selectedEndDate, onEnd
             <div className="p-3 bg-teal-50 rounded-xl space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-stone-600">Date:</span><span className="font-semibold">{new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
               {getNumberOfDays() > 1 && <div className="flex justify-between"><span className="text-stone-600">Days:</span><span className="font-semibold">{getNumberOfDays()}</span></div>}
-              <div className="flex justify-between border-t border-teal-200 pt-1 mt-1"><span className="text-stone-700 font-medium">Total:</span><span className="font-bold text-teal-700">£{activeOption.price * getNumberOfDays()}</span></div>
+              {selectedExtras.length > 0 && (
+                <div className="flex justify-between"><span className="text-stone-600">Extras:</span><span className="font-semibold">£{selectedExtras.reduce((sum, id) => sum + (venue.bookingOptions.find(o => o.id === id)?.price || 0), 0)}</span></div>
+              )}
+              <div className="flex justify-between border-t border-teal-200 pt-1 mt-1"><span className="text-stone-700 font-medium">Total:</span><span className="font-bold text-teal-700">£{(activeOption.price * getNumberOfDays()) + selectedExtras.reduce((sum, id) => sum + (venue.bookingOptions.find(o => o.id === id)?.price || 0), 0)}</span></div>
             </div>
           )}
           <button onClick={onBook} disabled={!selectedDate} className="w-full py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700 disabled:bg-stone-300">
@@ -4794,12 +4916,20 @@ const VenueDetailPage = ({ onNavigate, params, onSignInRequired }) => {
               <div className="flex items-center gap-1"><StarRating rating={venue.rating} /><span>({venue.reviewCount})</span></div>
             </div>
           </div>
-          <div className="text-right">
-            {venue.price === 0 ? (
-              <div className="text-2xl font-bold text-green-600">Free Fishing</div>
-            ) : (
-              <div><div className="text-2xl font-bold text-stone-800">£{venue.price}</div><div className="text-stone-500">per day</div></div>
-            )}
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              {venue.price === 0 ? (
+                <div className="text-2xl font-bold text-green-600">Free Fishing</div>
+              ) : (
+                <div><div className="text-2xl font-bold text-stone-800">£{venue.price}</div><div className="text-stone-500">per day</div></div>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <FavouriteButton isFavourited={auth.isWaterFavourited(venue.id)} onToggle={() => {
+                if (!auth.user) { onSignInRequired?.(); return; }
+                auth.toggleFavouriteWater(venue.id);
+              }} />
+            </div>
           </div>
         </div>
       </div>
@@ -5137,14 +5267,56 @@ const InstructorsPage = ({ onNavigate, onSignInRequired }) => {
     radius: 15
   });
 
+  const [apiInstructors, setApiInstructors] = useState([]);
+
+  useEffect(() => {
+    const loadApiInstructors = async () => {
+      try {
+        const res = await api.request('/instructors');
+        const apiList = (res.instructors || []).map((inst) => ({
+          id: `api-${inst.id}`,
+          dbId: inst.id,
+          name: inst.name,
+          location: inst.location || inst.region || '',
+          region: inst.region || '',
+          specialties: inst.specialties || [],
+          rating: parseFloat(inst.rating) || 0,
+          reviewCount: inst.reviewCount || inst.review_count || 0,
+          price: inst.price || 0,
+          experience: inst.experience || '',
+          bio: inst.bio || '',
+          certifications: inst.certifications || [],
+          languages: inst.languages || ['English'],
+          maxGroupSize: inst.maxGroupSize || inst.max_group_size || 4,
+          hasCalendar: inst.hasCalendar || inst.has_calendar || false,
+          availability: inst.availability || [],
+          gallery: inst.gallery || [],
+          reviewsList: inst.reviewsList || inst.reviews_list || [],
+          images: inst.images || [],
+          fromApi: true
+        }));
+        setApiInstructors(apiList);
+      } catch (e) {
+        console.log('Could not load API instructors:', e);
+      }
+    };
+    loadApiInstructors();
+  }, []);
+
+  const allInstructors = useMemo(() => {
+    const names = new Set(instructors.map(i => i.name));
+    const apiOnly = apiInstructors.filter(i => !names.has(i.name));
+    return [...instructors, ...apiOnly];
+  }, [apiInstructors]);
+
   const filteredInstructors = useMemo(() => {
-    return instructors.filter(i => {
+    return allInstructors.filter(i => {
       if (i.price < filters.priceRange[0] || i.price > filters.priceRange[1]) return false;
       if (filters.specialties.length > 0 && !filters.specialties.some(s => i.specialties.includes(s))) return false;
       if (filters.hasCalendar && !i.hasCalendar) return false;
       return true;
     });
-  }, [filters]);
+  }, [filters, allInstructors]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -5708,6 +5880,7 @@ const AdminDashboard = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [expandedItem, setExpandedItem] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -5881,31 +6054,81 @@ const AdminDashboard = ({ onNavigate }) => {
             ) : (
               <div className="space-y-4">
                 {pendingWaters.map(water => (
-                  <div key={water.id} className="border border-stone-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-stone-800">{water.name}</h4>
-                        <p className="text-sm text-stone-500">{water.type} • {water.region}</p>
-                        <p className="text-sm text-stone-600 mt-2">{water.description?.substring(0, 100)}...</p>
-                        <p className="text-sm text-stone-400 mt-2">Submitted by: {water.ownerName} ({water.ownerEmail})</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleApproveWater(water.id)}
-                          disabled={actionLoading === `water-${water.id}`}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                        >
-                          {actionLoading === `water-${water.id}` ? '...' : 'Approve'}
-                        </button>
-                        <button
-                          onClick={() => handleRejectWater(water.id)}
-                          disabled={actionLoading === `water-${water.id}`}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
+                  <div key={water.id} className="border border-stone-200 rounded-lg overflow-hidden">
+                    <div className="p-4 cursor-pointer hover:bg-stone-50" onClick={() => setExpandedItem(expandedItem === `water-${water.id}` ? null : `water-${water.id}`)}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-stone-800">{water.name}</h4>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Pending</span>
+                          </div>
+                          <p className="text-sm text-stone-500 mt-1">{water.type} • {water.region} • £{water.price}/{water.booking_type || water.bookingType || 'enquiry'}</p>
+                          <p className="text-xs text-stone-400 mt-1">From: {water.owner_name || water.ownerName} ({water.owner_email || water.ownerEmail})</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-stone-400">{expandedItem === `water-${water.id}` ? '▲ Less' : '▼ More'}</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleApproveWater(water.id); }}
+                            disabled={actionLoading === `water-${water.id}`}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+                          >
+                            {actionLoading === `water-${water.id}` ? '...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRejectWater(water.id); }}
+                            disabled={actionLoading === `water-${water.id}`}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </div>
                     </div>
+                    {expandedItem === `water-${water.id}` && (
+                      <div className="border-t border-stone-200 bg-stone-50 p-4 space-y-3">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Description</p>
+                            <p className="text-sm text-stone-700">{water.description || 'No description provided'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Contact Details</p>
+                            <p className="text-sm text-stone-700">Name: {water.owner_name || water.ownerName || '—'}</p>
+                            <p className="text-sm text-stone-700">Email: {water.owner_email || water.ownerEmail || '—'}</p>
+                            <p className="text-sm text-stone-700">Phone: {water.owner_phone || water.ownerPhone || '—'}</p>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Species</p>
+                            <div className="flex flex-wrap gap-1">{(water.species || []).map((s, i) => <span key={i} className="bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full">{s}</span>)}</div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Facilities</p>
+                            <div className="flex flex-wrap gap-1">{(water.facilities || []).map((f, i) => <span key={i} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">{f}</span>)}</div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Rules</p>
+                            <div className="flex flex-wrap gap-1">{(water.rules || []).map((r, i) => <span key={i} className="bg-stone-100 text-stone-600 text-xs px-2 py-0.5 rounded-full">{r}</span>)}</div>
+                          </div>
+                        </div>
+                        {water.bookingOptions && water.bookingOptions.length > 0 && (
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Booking Options</p>
+                            <div className="grid md:grid-cols-2 gap-2">
+                              {water.bookingOptions.map((opt, i) => (
+                                <div key={i} className="bg-white border border-stone-200 rounded-lg p-2 text-sm">
+                                  <span className="font-medium text-stone-800">{opt.name}</span>
+                                  <span className="text-stone-500 ml-2">£{opt.price}/{opt.price_type || opt.priceType || 'day'}</span>
+                                  <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${(opt.booking_type || opt.bookingType) === 'instant' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{opt.booking_type || opt.bookingType}</span>
+                                  {opt.description && <p className="text-xs text-stone-500 mt-0.5">{opt.description}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -5920,31 +6143,66 @@ const AdminDashboard = ({ onNavigate }) => {
             ) : (
               <div className="space-y-4">
                 {pendingInstructors.map(instructor => (
-                  <div key={instructor.id} className="border border-stone-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-stone-800">{instructor.name}</h4>
-                        <p className="text-sm text-stone-500">{instructor.specialties?.join(', ')} • {instructor.region}</p>
-                        <p className="text-sm text-stone-600 mt-2">{instructor.bio?.substring(0, 100)}...</p>
-                        <p className="text-sm text-stone-400 mt-2">Email: {instructor.email}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleApproveInstructor(instructor.id)}
-                          disabled={actionLoading === `instructor-${instructor.id}`}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                        >
-                          {actionLoading === `instructor-${instructor.id}` ? '...' : 'Approve'}
-                        </button>
-                        <button
-                          onClick={() => handleRejectInstructor(instructor.id)}
-                          disabled={actionLoading === `instructor-${instructor.id}`}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
+                  <div key={instructor.id} className="border border-stone-200 rounded-lg overflow-hidden">
+                    <div className="p-4 cursor-pointer hover:bg-stone-50" onClick={() => setExpandedItem(expandedItem === `inst-${instructor.id}` ? null : `inst-${instructor.id}`)}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-stone-800">{instructor.name}</h4>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Pending</span>
+                          </div>
+                          <p className="text-sm text-stone-500 mt-1">{(instructor.specialties || []).join(', ')} • {instructor.region}</p>
+                          <p className="text-xs text-stone-400 mt-1">Email: {instructor.email} {instructor.phone ? `• Phone: ${instructor.phone}` : ''}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-stone-400">{expandedItem === `inst-${instructor.id}` ? '▲ Less' : '▼ More'}</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleApproveInstructor(instructor.id); }}
+                            disabled={actionLoading === `instructor-${instructor.id}`}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+                          >
+                            {actionLoading === `instructor-${instructor.id}` ? '...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRejectInstructor(instructor.id); }}
+                            disabled={actionLoading === `instructor-${instructor.id}`}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </div>
                     </div>
+                    {expandedItem === `inst-${instructor.id}` && (
+                      <div className="border-t border-stone-200 bg-stone-50 p-4 space-y-3">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Bio</p>
+                            <p className="text-sm text-stone-700">{instructor.bio || 'No bio provided'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Details</p>
+                            <p className="text-sm text-stone-700">Experience: {instructor.experience || '—'}</p>
+                            <p className="text-sm text-stone-700">Price: £{instructor.price || 0}</p>
+                            <p className="text-sm text-stone-700">Rating: {instructor.rating || 'New'}</p>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Specialties</p>
+                            <div className="flex flex-wrap gap-1">{(instructor.specialties || []).map((s, i) => <span key={i} className="bg-amber-50 text-amber-700 text-xs px-2 py-0.5 rounded-full">{s}</span>)}</div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Certifications</p>
+                            <div className="flex flex-wrap gap-1">{(instructor.certifications || []).map((c, i) => <span key={i} className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">{c}</span>)}</div>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-stone-500 uppercase mb-1">Availability</p>
+                          <div className="flex flex-wrap gap-1">{(instructor.availability || []).map((a, i) => <span key={i} className="bg-green-50 text-green-700 text-xs px-2 py-0.5 rounded-full">{a}</span>)}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -6421,6 +6679,259 @@ const InstructorDashboard = ({ onNavigate }) => {
 };
 
 // ============================================================================
+// ABOUT US PAGE
+// ============================================================================
+
+const AboutUsPage = ({ onNavigate }) => {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-stone-800 mb-4">About TightLines</h1>
+        <p className="text-xl text-stone-500">Connecting anglers with the UK's finest fishing waters and instructors</p>
+      </div>
+
+      <div className="prose prose-stone max-w-none space-y-8">
+        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-stone-800 mb-4">Our Story</h2>
+          <p className="text-stone-600 leading-relaxed">
+            TightLines was born from a simple frustration: finding quality fishing in the UK shouldn't be this hard. Whether you're a complete beginner looking for your first guided lesson, or a seasoned angler searching for that dream salmon beat, we believe the perfect fishing experience should be just a few clicks away.
+          </p>
+          <p className="text-stone-600 leading-relaxed mt-4">
+            We're building the UK's most comprehensive fishing platform — connecting anglers with waters, guides, and experiences across England, Scotland, Wales, and beyond.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-xl border border-stone-200 p-6 text-center">
+            <div className="text-4xl mb-3">🎣</div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">For Anglers</h3>
+            <p className="text-stone-500 text-sm">Discover, compare, and book fishing across the UK. From free beach fishing to exclusive chalk streams — find your perfect water.</p>
+          </div>
+          <div className="bg-white rounded-xl border border-stone-200 p-6 text-center">
+            <div className="text-4xl mb-3">🏞️</div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">For Fisheries</h3>
+            <p className="text-stone-500 text-sm">List your water and reach thousands of anglers. Manage bookings, showcase your facilities, and grow your business.</p>
+          </div>
+          <div className="bg-white rounded-xl border border-stone-200 p-6 text-center">
+            <div className="text-4xl mb-3">🎓</div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">For Instructors</h3>
+            <p className="text-stone-500 text-sm">Join our network of qualified instructors. Connect with students, manage your schedule, and share your passion.</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-stone-200 p-8">
+          <h2 className="text-2xl font-bold text-stone-800 mb-4">What Makes Us Different</h2>
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icons.Check />
+              </div>
+              <div>
+                <h4 className="font-semibold text-stone-800">Verified Listings</h4>
+                <p className="text-stone-500 text-sm">Every water and instructor is manually reviewed and approved by our team.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icons.Check />
+              </div>
+              <div>
+                <h4 className="font-semibold text-stone-800">Flexible Booking</h4>
+                <p className="text-stone-500 text-sm">Book instantly or enquire — each venue offers multiple options to suit your needs and budget.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icons.Check />
+              </div>
+              <div>
+                <h4 className="font-semibold text-stone-800">Real Catch Reports</h4>
+                <p className="text-stone-500 text-sm">See what other anglers are catching before you book — real data from real sessions.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center py-8">
+          <h2 className="text-2xl font-bold text-stone-800 mb-4">Ready to get started?</h2>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <button onClick={() => onNavigate('search')} className="px-6 py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700">
+              Explore Waters
+            </button>
+            <button onClick={() => onNavigate('instructors')} className="px-6 py-3 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600">
+              Find an Instructor
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// CONTACT US PAGE
+// ============================================================================
+
+const ContactUsPage = ({ onNavigate }) => {
+  const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [contactError, setContactError] = useState('');
+
+  const handleContactSubmit = async () => {
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      setContactError('Please fill in all required fields.');
+      return;
+    }
+    setSending(true);
+    setContactError('');
+    try {
+      await api.request('/contact', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: contactForm.name,
+          email: contactForm.email,
+          message: `[${contactForm.subject || 'General Enquiry'}] ${contactForm.message}`,
+          type: 'general'
+        })
+      });
+      setSent(true);
+    } catch (e) {
+      setContactError(e.message || 'Failed to send. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-stone-800 mb-4">Contact Us</h1>
+        <p className="text-xl text-stone-500">Got a question? We'd love to hear from you.</p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Contact Info */}
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-8">
+            <h2 className="text-xl font-bold text-stone-800 mb-4">Get in Touch</h2>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icons.Mail />
+                </div>
+                <div>
+                  <p className="font-semibold text-stone-800">Email</p>
+                  <p className="text-stone-500 text-sm">hello@tightlines.co.uk</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icons.MapPin />
+                </div>
+                <div>
+                  <p className="font-semibold text-stone-800">Based in</p>
+                  <p className="text-stone-500 text-sm">United Kingdom</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-stone-200 p-6">
+            <h3 className="font-semibold text-stone-800 mb-3">Common Questions</h3>
+            <div className="space-y-3">
+              <details className="group">
+                <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-teal-600">How do I list my water?</summary>
+                <p className="text-sm text-stone-500 mt-2 pl-4">Click "List Your Water" in the navigation. Fill in the 5-step form and submit for review. We'll get back to you within 2-3 business days.</p>
+              </details>
+              <details className="group">
+                <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-teal-600">How do I become an instructor?</summary>
+                <p className="text-sm text-stone-500 mt-2 pl-4">Click "Become an Instructor" and complete the application. Include your qualifications and experience. We review applications within 3-5 business days.</p>
+              </details>
+              <details className="group">
+                <summary className="cursor-pointer text-sm font-medium text-stone-700 hover:text-teal-600">Is it free to list?</summary>
+                <p className="text-sm text-stone-500 mt-2 pl-4">Yes! Listing your water or instructor profile on TightLines is completely free.</p>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Form */}
+        <div className="bg-white rounded-xl border border-stone-200 p-6">
+          {sent ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icons.Check />
+              </div>
+              <h3 className="text-xl font-bold text-stone-800 mb-2">Message Sent!</h3>
+              <p className="text-stone-500">We'll get back to you as soon as possible.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-stone-800">Send us a message</h3>
+              {contactError && <p className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">{contactError}</p>}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Subject</label>
+                <select
+                  value={contactForm.subject}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">Select a topic...</option>
+                  <option value="General Enquiry">General Enquiry</option>
+                  <option value="Listing My Water">Listing My Water</option>
+                  <option value="Becoming an Instructor">Becoming an Instructor</option>
+                  <option value="Booking Help">Booking Help</option>
+                  <option value="Technical Issue">Technical Issue</option>
+                  <option value="Partnership">Partnership Enquiry</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Message *</label>
+                <textarea
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
+                  rows={5}
+                  className="w-full px-4 py-3 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder="How can we help?"
+                />
+              </div>
+              <button
+                onClick={handleContactSubmit}
+                disabled={sending}
+                className="w-full py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 disabled:bg-stone-300"
+              >
+                {sending ? 'Sending...' : 'Send Message'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
 // MAIN APP COMPONENT
 // ============================================================================
 
@@ -6451,6 +6962,8 @@ const App = () => {
       case 'admin': return <AdminDashboard onNavigate={navigate} />;
       case 'owner-dashboard': return <WaterOwnerDashboard onNavigate={navigate} />;
       case 'instructor-dashboard': return <InstructorDashboard onNavigate={navigate} />;
+      case 'about': return <AboutUsPage onNavigate={navigate} />;
+      case 'contact': return <ContactUsPage onNavigate={navigate} />;
       default: return <HomePage onNavigate={navigate} onSignInRequired={handleSignInRequired} />;
     }
   };
@@ -6488,8 +7001,8 @@ const App = () => {
             <div>
               <h4 className="font-semibold text-white mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-teal-400">About Us</a></li>
-                <li><a href="#" className="hover:text-teal-400">Contact</a></li>
+                <li><button onClick={() => navigate('about')} className="hover:text-teal-400">About Us</button></li>
+                <li><button onClick={() => navigate('contact')} className="hover:text-teal-400">Contact</button></li>
                 <li><button onClick={() => setShowListWater(true)} className="hover:text-teal-400">List Your Water</button></li>
                 <li><button onClick={() => setShowInstructorRegister(true)} className="hover:text-teal-400">Become an Instructor</button></li>
               </ul>
