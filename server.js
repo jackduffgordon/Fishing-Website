@@ -11,9 +11,12 @@ const { createClient } = require('@supabase/supabase-js');
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'calypsoheights@gmail.com';
 
-// Supabase setup
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://uyuteufbifgdjzqrhxgp.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_FVTphMEoVZluhAo1TKk5Iw_0ikHSVUx';
+// Supabase setup — set these in Render environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  console.error('ERROR: SUPABASE_URL and SUPABASE_SERVICE_KEY must be set as environment variables.');
+}
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // Helper to send emails via Resend (simple HTTP API — no SMTP needed)
