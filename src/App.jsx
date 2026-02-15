@@ -2,7 +2,7 @@
 // TIGHTLINES APP - Main Application Component
 // UK Fishing Booking Platform v2.0
 // ============================================
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Components
 import { Nav } from './components/Nav';
@@ -15,6 +15,8 @@ import { SearchResultsPage } from './pages/SearchResults';
 import { VenueDetailPage } from './pages/VenueDetail';
 import { InstructorsPage } from './pages/InstructorsPage';
 import { InstructorDetailPage } from './pages/InstructorDetail';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
 
 const App = () => {
   // Navigation state
@@ -58,6 +60,23 @@ const App = () => {
     setUser(userData);
   };
 
+  // Scroll to top on page change and sync tab highlighting
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    // Sync tab state with current page
+    if (currentPage === 'search' || currentPage === 'venue') {
+      setCurrentTab('waters');
+    } else if (currentPage === 'instructors' || currentPage === 'instructor-detail') {
+      setCurrentTab('instructors');
+    } else if (currentPage === 'about') {
+      setCurrentTab('about');
+    } else if (currentPage === 'contact') {
+      setCurrentTab('contact');
+    } else if (currentPage === 'home') {
+      setCurrentTab('');
+    }
+  }, [currentPage]);
+
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Navigation */}
@@ -78,6 +97,7 @@ const App = () => {
           onSelectFishery={handleSelectFishery}
           onSelectInstructor={handleSelectInstructor}
           onSelectRegion={handleSelectRegion}
+          onNavigate={(page) => setCurrentPage(page)}
         />
       )}
 
@@ -114,6 +134,17 @@ const App = () => {
           user={user}
           onSignIn={() => setShowSignIn(true)}
         />
+      )}
+
+      {currentPage === 'about' && (
+        <AboutPage
+          onSearch={() => setCurrentPage('search')}
+          onListWater={() => setShowListWater(true)}
+        />
+      )}
+
+      {currentPage === 'contact' && (
+        <ContactPage />
       )}
 
       {/* Modals */}

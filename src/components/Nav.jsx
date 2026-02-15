@@ -64,6 +64,35 @@ export const Nav = ({
             <div className="w-px h-6 bg-stone-200 mx-2" />
 
             <button
+              onClick={() => {
+                setCurrentPage('about');
+                setCurrentTab('');
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                currentTab === 'about'
+                  ? 'bg-brand-50 text-brand-700'
+                  : 'text-stone-600 hover:bg-stone-50'
+              }`}
+            >
+              About
+            </button>
+            <button
+              onClick={() => {
+                setCurrentPage('contact');
+                setCurrentTab('');
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                currentTab === 'contact'
+                  ? 'bg-brand-50 text-brand-700'
+                  : 'text-stone-600 hover:bg-stone-50'
+              }`}
+            >
+              Contact
+            </button>
+
+            <div className="w-px h-6 bg-stone-200 mx-2" />
+
+            <button
               onClick={onListWater}
               className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-brand-700 transition"
             >
@@ -125,6 +154,26 @@ export const Nav = ({
             className="block w-full text-left px-4 py-3 text-stone-700 hover:bg-stone-50"
           >
             Instructors
+          </button>
+          <button
+            onClick={() => {
+              setCurrentPage('about');
+              setCurrentTab('');
+              setMobileOpen(false);
+            }}
+            className="block w-full text-left px-4 py-3 text-stone-700 hover:bg-stone-50"
+          >
+            About
+          </button>
+          <button
+            onClick={() => {
+              setCurrentPage('contact');
+              setCurrentTab('');
+              setMobileOpen(false);
+            }}
+            className="block w-full text-left px-4 py-3 text-stone-700 hover:bg-stone-50"
+          >
+            Contact
           </button>
           <button
             onClick={() => {

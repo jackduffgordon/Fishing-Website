@@ -84,7 +84,7 @@ const SearchAutocomplete = ({ value, onChange, onSearch, suggestions, onSelect }
   );
 };
 
-export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSelectRegion }) => {
+export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSelectRegion, onNavigate }) => {
   const [searchLocation, setSearchLocation] = useState('');
   const [searchType, setSearchType] = useState('');
   const instructorCarouselRef = useRef(null);
@@ -342,25 +342,25 @@ export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSele
             <div>
               <h4 className="text-white font-medium mb-4">For Anglers</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">Search Waters</a></li>
-                <li><a href="#" className="hover:text-white transition">Find Instructors</a></li>
-                <li><a href="#" className="hover:text-white transition">Gift Vouchers</a></li>
+                <li><button onClick={onSearch} className="hover:text-white transition">Search Waters</button></li>
+                <li><button onClick={() => onSelectInstructor(null)} className="hover:text-white transition">Find Instructors</button></li>
+                <li><button className="hover:text-white transition">Gift Vouchers</button></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-medium mb-4">For Fisheries</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">List Your Water</a></li>
-                <li><a href="#" className="hover:text-white transition">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition">Success Stories</a></li>
+                <li><button onClick={() => onNavigate && onNavigate('about')} className="hover:text-white transition">List Your Water</button></li>
+                <li><button className="hover:text-white transition">Pricing</button></li>
+                <li><button className="hover:text-white transition">Success Stories</button></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white font-medium mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition">Privacy</a></li>
+                <li><button onClick={() => onNavigate && onNavigate('about')} className="hover:text-white transition">About Us</button></li>
+                <li><button onClick={() => onNavigate && onNavigate('contact')} className="hover:text-white transition">Contact</button></li>
+                <li><button className="hover:text-white transition">Privacy</button></li>
               </ul>
             </div>
           </div>
