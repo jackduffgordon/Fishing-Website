@@ -2009,6 +2009,65 @@ app.get('/api/instructor/inquiries', authenticateToken, requireRole('instructor'
 });
 
 // ============================================================================
+// IMAGE UPLOAD (Supabase Storage)
+// ============================================================================
+
+// Simple in-memory file handling (no multer dependency needed)
+app.post('/api/upload', authenticateToken, async (req, res) => {
+  try {
+    // For now, accept base64-encoded image data
+    const { imageData, fileName, type } = req.body;
+
+    if (!imageData || !fileName) {
+      return res.status(400).json({ error: 'imageData and fileName required' });
+    }
+
+    // Strip data URL prefix if present
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Determine content type
+    const ext = fileName.split('.').pop().toLowerCase();
+    const contentTypes = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      webp: 'image/webp',
+      gif: 'image/gif'
+    };
+    const contentType = contentTypes[ext] || 'image/jpeg';
+
+    // Upload to Supabase Storage
+    const storagePath = `${type || 'general'}/${Date.now()}-${fileName}`;
+    const { data, error } = await supabase.storage
+      .from('images')
+      .upload(storagePath, buffer, {
+        contentType,
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase storage error:', error);
+      return res.status(500).json({ error: 'Upload failed: ' + error.message });
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('images')
+      .getPublicUrl(storagePath);
+
+    res.json({
+      message: 'Upload successful',
+      url: urlData.publicUrl,
+      path: storagePath
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+// ============================================================================
 // START SERVER
 // ============================================================================
 

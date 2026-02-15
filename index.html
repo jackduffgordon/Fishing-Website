@@ -43,6 +43,10 @@
         body {
             font-family: 'Inter', system-ui, sans-serif;
         }
+        /* Hero gradient (used by About/Contact pages) */
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+        }
         /* IMPROVED: Much larger, easier to grab slider thumbs */
         input[type="range"] {
             -webkit-appearance: none;
@@ -112,17 +116,7 @@
         </div>
     </div>
 
-    <!-- React -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Leaflet JS for Maps -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- App -->
-    <script type="text/babel" src="app-v3.js"></script>
+    <!-- Vite Module Entry -->
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

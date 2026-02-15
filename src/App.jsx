@@ -3,6 +3,7 @@
 // UK Fishing Booking Platform v2.0
 // ============================================
 import { useState, useEffect } from 'react';
+import { authAPI, getToken, clearToken } from './utils/api';
 
 // Components
 import { Nav } from './components/Nav';
@@ -17,6 +18,7 @@ import { InstructorsPage } from './pages/InstructorsPage';
 import { InstructorDetailPage } from './pages/InstructorDetail';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { AdminPage } from './pages/AdminPage';
 
 const App = () => {
   // Navigation state
@@ -29,10 +31,29 @@ const App = () => {
 
   // User state
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Modal state
   const [showSignIn, setShowSignIn] = useState(false);
   const [showListWater, setShowListWater] = useState(false);
+
+  // Check for existing auth token on load
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const data = await authAPI.me();
+          setUser(data.user);
+        } catch {
+          // Token expired or invalid
+          clearToken();
+        }
+      }
+      setAuthLoading(false);
+    };
+    checkAuth();
+  }, []);
 
   // Navigation handlers
   const handleSelectFishery = (fishery) => {
@@ -52,7 +73,6 @@ const App = () => {
   };
 
   const handleSelectRegion = (region) => {
-    // Could pre-filter by region, for now just go to search
     setCurrentPage('search');
   };
 
@@ -60,10 +80,15 @@ const App = () => {
     setUser(userData);
   };
 
+  const handleSignOut = () => {
+    clearToken();
+    setUser(null);
+    setCurrentPage('home');
+  };
+
   // Scroll to top on page change and sync tab highlighting
   useEffect(() => {
     window.scrollTo(0, 0);
-    // Sync tab state with current page
     if (currentPage === 'search' || currentPage === 'venue') {
       setCurrentTab('waters');
     } else if (currentPage === 'instructors' || currentPage === 'instructor-detail') {
@@ -85,7 +110,7 @@ const App = () => {
         setCurrentTab={setCurrentTab}
         setCurrentPage={setCurrentPage}
         user={user}
-        setUser={setUser}
+        setUser={handleSignOut}
         onSignIn={() => setShowSignIn(true)}
         onListWater={() => setShowListWater(true)}
       />
@@ -145,6 +170,10 @@ const App = () => {
 
       {currentPage === 'contact' && (
         <ContactPage />
+      )}
+
+      {currentPage === 'admin' && user?.role === 'admin' && (
+        <AdminPage user={user} />
       )}
 
       {/* Modals */}

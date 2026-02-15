@@ -101,12 +101,20 @@ export const Nav = ({
 
             {user ? (
               <div className="flex items-center gap-2 ml-2">
+                {user.role === 'admin' && (
+                  <button
+                    onClick={() => setCurrentPage('admin')}
+                    className="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded-full hover:bg-amber-200 transition"
+                  >
+                    Admin
+                  </button>
+                )}
                 <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-medium">
-                  {user.name[0]}
+                  {(user.name || user.email || '?')[0].toUpperCase()}
                 </div>
-                <span className="text-sm font-medium">{user.name}</span>
+                <span className="text-sm font-medium">{user.name || user.email}</span>
                 <button
-                  onClick={() => setUser(null)}
+                  onClick={() => setUser()}
                   className="text-xs text-stone-400 hover:text-stone-600"
                 >
                   Sign out
@@ -188,13 +196,21 @@ export const Nav = ({
             <div className="px-4 py-3 border-t border-stone-200">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-medium">
-                  {user.name[0]}
+                  {(user.name || user.email || '?')[0].toUpperCase()}
                 </div>
-                <span className="text-sm font-medium">{user.name}</span>
+                <span className="text-sm font-medium">{user.name || user.email}</span>
               </div>
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => { setCurrentPage('admin'); setMobileOpen(false); }}
+                  className="mt-2 block text-sm text-amber-700 font-medium"
+                >
+                  Admin Dashboard
+                </button>
+              )}
               <button
                 onClick={() => {
-                  setUser(null);
+                  setUser();
                   setMobileOpen(false);
                 }}
                 className="mt-2 text-sm text-stone-500 hover:text-stone-700"

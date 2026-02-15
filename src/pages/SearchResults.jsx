@@ -1,13 +1,13 @@
 // ============================================
-// SEARCH RESULTS PAGE - Streamlined v3
-// Cleaner header, tighter layout, same powerful filters
+// SEARCH RESULTS PAGE - API-powered with hardcoded fallback
 // ============================================
-import { useState } from 'react';
-import { ChevronLeft, Filter, Fish, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, Filter, Fish, Search, Loader } from 'lucide-react';
 import { FisheryCard } from '../components/cards/FisheryCard';
 import { AdvancedFilters, MobileFilterDrawer } from '../components/filters/AdvancedFilters';
-import { fisheries } from '../data/fisheries';
+import { fisheries as hardcodedFisheries } from '../data/fisheries';
 import { ukRegions } from '../data/regions';
+import { watersAPI, normalizeWater } from '../utils/api';
 
 const defaultFilters = {
   priceRange: [10, 500],
@@ -20,19 +20,44 @@ const defaultFilters = {
 };
 
 export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
+  const [allWaters, setAllWaters] = useState(hardcodedFisheries);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(defaultFilters);
   const [sortBy, setSortBy] = useState('rating');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Fetch waters from API on mount
+  useEffect(() => {
+    const fetchWaters = async () => {
+      try {
+        const apiWaters = await watersAPI.getAll();
+        if (apiWaters && apiWaters.length > 0) {
+          // Merge: API waters + hardcoded (with dedup by name)
+          const apiNames = new Set(apiWaters.map(w => w.name.toLowerCase()));
+          const uniqueHardcoded = hardcodedFisheries.filter(
+            f => !apiNames.has(f.name.toLowerCase())
+          );
+          setAllWaters([...apiWaters, ...uniqueHardcoded]);
+        }
+        // If API returns empty, keep hardcoded data
+      } catch (err) {
+        console.log('API unavailable, using local data:', err.message);
+        // Keep hardcoded data as fallback
+      }
+      setLoading(false);
+    };
+    fetchWaters();
+  }, []);
+
   // Apply filters
-  const filteredFisheries = fisheries
+  const filteredFisheries = allWaters
     .filter((f) => {
       if (filters.fishingType && f.type !== filters.fishingType) return false;
       if (filters.region && f.region !== filters.region) return false;
       if (f.price < filters.priceRange[0] || f.price > filters.priceRange[1]) return false;
 
       if (filters.species.length > 0) {
-        const hasSpecies = filters.species.some((s) => f.species.includes(s));
+        const hasSpecies = filters.species.some((s) => f.species?.includes(s));
         if (!hasSpecies) return false;
       }
 
@@ -71,13 +96,13 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
     .sort((a, b) => {
       switch (sortBy) {
         case 'rating':
-          return b.rating - a.rating;
+          return (b.rating || 0) - (a.rating || 0);
         case 'price-low':
-          return a.price - b.price;
+          return (a.price || 0) - (b.price || 0);
         case 'price-high':
-          return b.price - a.price;
+          return (b.price || 0) - (a.price || 0);
         case 'reviews':
-          return b.reviews - a.reviews;
+          return (b.reviews || 0) - (a.reviews || 0);
         default:
           return 0;
       }
@@ -110,7 +135,7 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
             <div className="flex-1">
               <h1 className="text-xl font-bold text-stone-900">Find Your Perfect Water</h1>
               <p className="text-stone-500 text-sm">
-                {filteredFisheries.length} waters found
+                {loading ? 'Loading waters...' : `${filteredFisheries.length} waters found`}
               </p>
             </div>
           </div>
@@ -136,7 +161,6 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
             {/* Results toolbar */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                {/* Mobile filter button */}
                 <button
                   onClick={() => setMobileFiltersOpen(true)}
                   className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 text-sm"
@@ -160,7 +184,6 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
                 )}
               </div>
 
-              {/* Sort dropdown */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -173,8 +196,13 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
               </select>
             </div>
 
-            {/* Results grid */}
-            {filteredFisheries.length > 0 ? (
+            {/* Loading state */}
+            {loading ? (
+              <div className="text-center py-16 bg-white rounded-xl border border-stone-200">
+                <Loader className="w-8 h-8 text-brand-600 mx-auto mb-3 animate-spin" />
+                <p className="text-stone-500">Loading waters...</p>
+              </div>
+            ) : filteredFisheries.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-5">
                 {filteredFisheries.map((f) => (
                   <FisheryCard key={f.id} fishery={f} onClick={() => onSelectFishery(f)} />

@@ -29,7 +29,7 @@ import {
   SlidersHorizontal,
   Car,
   Coffee,
-  Toilet,
+  Bath,
   Accessibility,
   Moon,
   Sun,
@@ -81,7 +81,7 @@ export const Icons = {
   SlidersHorizontal,
   Car,
   Coffee,
-  Toilet,
+  Bath,
   Accessibility,
   Moon,
   Sun,
@@ -107,7 +107,7 @@ export const Icons = {
 // Facility icons mapping
 export const facilityIcons = {
   'parking': Car,
-  'toilets': Toilet,
+  'toilets': Bath,
   'cafe': Coffee,
   'tackle-shop': Fish,
   'boat-hire': Navigation,
