@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "express": "^4.22.1",
@@ -19,17 +21,15 @@
     "lucide-react": "^0.312.0",
     "nodemailer": "^8.0.1",
     "pg": "^8.18.0",
+    "postcss": "^8.4.33",
     "rc-slider": "^10.5.0",
     "react": "^18.2.0",
     "react-datepicker": "^6.9.0",
     "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.33",
+    "react-leaflet": "^4.2.1",
     "tailwindcss": "^3.4.1",
     "vite": "^7.3.1"
+  },
+  "devDependencies": {
   }
 }
