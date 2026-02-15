@@ -2068,6 +2068,14 @@ app.post('/api/upload', authenticateToken, async (req, res) => {
 });
 
 // ============================================================================
+// CATCH-ALL ROUTE - Must be LAST, after all API routes
+// ============================================================================
+// Serve React app for all other routes (enables client-side routing)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// ============================================================================
 // START SERVER
 // ============================================================================
 
