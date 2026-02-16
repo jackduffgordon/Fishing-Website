@@ -1179,6 +1179,8 @@ app.post('/api/favourites/waters', authenticateToken, async (req, res) => {
     const { waterId } = req.body;
     if (!waterId) return res.status(400).json({ error: 'waterId required' });
 
+    console.log(`[Favorites API] Adding water ${waterId} for user ${req.user.id}`);
+
     const { data: exists } = await supabase
       .from('favourite_waters')
       .select('*')
@@ -1187,18 +1189,27 @@ app.post('/api/favourites/waters', authenticateToken, async (req, res) => {
       .single();
 
     if (!exists) {
-      await supabase
+      const { data, error } = await supabase
         .from('favourite_waters')
         .insert([{
           user_id: req.user.id,
           water_id: waterId,
           created_at: new Date().toISOString()
         }]);
+
+      if (error) {
+        console.error('[Favorites API] Insert error:', error);
+        return res.status(500).json({ error: 'Failed to insert favorite', details: error.message });
+      }
+
+      console.log('[Favorites API] Successfully inserted water favorite');
+    } else {
+      console.log('[Favorites API] Water favorite already exists');
     }
 
-    res.json({ message: 'Added to favourites', waterId });
+    res.json({ success: true, message: 'Added to favourites', waterId });
   } catch (e) {
-    console.error(e);
+    console.error('[Favorites API] Exception:', e);
     res.status(500).json({ error: 'Failed to add favourite' });
   }
 });
@@ -1206,15 +1217,23 @@ app.post('/api/favourites/waters', authenticateToken, async (req, res) => {
 app.delete('/api/favourites/waters/:id', authenticateToken, async (req, res) => {
   try {
     const waterId = req.params.id;
-    await supabase
+    console.log(`[Favorites API] Removing water ${waterId} for user ${req.user.id}`);
+
+    const { error } = await supabase
       .from('favourite_waters')
       .delete()
       .eq('user_id', req.user.id)
       .eq('water_id', waterId);
 
-    res.json({ message: 'Removed', waterId });
+    if (error) {
+      console.error('[Favorites API] Delete error:', error);
+      return res.status(500).json({ error: 'Failed to delete favorite', details: error.message });
+    }
+
+    console.log('[Favorites API] Successfully deleted water favorite');
+    res.json({ success: true, message: 'Removed', waterId });
   } catch (e) {
-    console.error(e);
+    console.error('[Favorites API] Exception:', e);
     res.status(500).json({ error: 'Failed to remove favourite' });
   }
 });
@@ -1224,6 +1243,8 @@ app.post('/api/favourites/instructors', authenticateToken, async (req, res) => {
     const { instructorId } = req.body;
     if (!instructorId) return res.status(400).json({ error: 'instructorId required' });
 
+    console.log(`[Favorites API] Adding instructor ${instructorId} for user ${req.user.id}`);
+
     const { data: exists } = await supabase
       .from('favourite_instructors')
       .select('*')
@@ -1232,18 +1253,27 @@ app.post('/api/favourites/instructors', authenticateToken, async (req, res) => {
       .single();
 
     if (!exists) {
-      await supabase
+      const { error } = await supabase
         .from('favourite_instructors')
         .insert([{
           user_id: req.user.id,
           instructor_id: instructorId,
           created_at: new Date().toISOString()
         }]);
+
+      if (error) {
+        console.error('[Favorites API] Insert error:', error);
+        return res.status(500).json({ error: 'Failed to insert favorite', details: error.message });
+      }
+
+      console.log('[Favorites API] Successfully inserted instructor favorite');
+    } else {
+      console.log('[Favorites API] Instructor favorite already exists');
     }
 
-    res.json({ message: 'Added to favourites', instructorId });
+    res.json({ success: true, message: 'Added to favourites', instructorId });
   } catch (e) {
-    console.error(e);
+    console.error('[Favorites API] Exception:', e);
     res.status(500).json({ error: 'Failed to add favourite' });
   }
 });
@@ -1251,15 +1281,23 @@ app.post('/api/favourites/instructors', authenticateToken, async (req, res) => {
 app.delete('/api/favourites/instructors/:id', authenticateToken, async (req, res) => {
   try {
     const instructorId = req.params.id;
-    await supabase
+    console.log(`[Favorites API] Removing instructor ${instructorId} for user ${req.user.id}`);
+
+    const { error } = await supabase
       .from('favourite_instructors')
       .delete()
       .eq('user_id', req.user.id)
       .eq('instructor_id', instructorId);
 
-    res.json({ message: 'Removed', instructorId });
+    if (error) {
+      console.error('[Favorites API] Delete error:', error);
+      return res.status(500).json({ error: 'Failed to delete favorite', details: error.message });
+    }
+
+    console.log('[Favorites API] Successfully deleted instructor favorite');
+    res.json({ success: true, message: 'Removed', instructorId });
   } catch (e) {
-    console.error(e);
+    console.error('[Favorites API] Exception:', e);
     res.status(500).json({ error: 'Failed to remove favourite' });
   }
 });
