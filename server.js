@@ -669,6 +669,81 @@ app.get('/api/catches/user', authenticateToken, async (req, res) => {
   }
 });
 
+// Get user's reviews
+app.get('/api/reviews/user', authenticateToken, async (req, res) => {
+  try {
+    const { data: reviews, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+
+    // Convert snake_case to camelCase for response
+    const formattedReviews = reviews.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      waterId: r.water_id,
+      instructorId: r.instructor_id,
+      rating: r.rating,
+      title: r.title,
+      text: r.text,
+      verified: r.verified,
+      createdAt: r.created_at
+    }));
+
+    res.json({ reviews: formattedReviews });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+// Get user's inquiries/bookings
+app.get('/api/inquiries/user', authenticateToken, async (req, res) => {
+  try {
+    const { data: inquiries, error } = await supabase
+      .from('inquiries')
+      .select(`
+        *,
+        waters:water_id(name),
+        instructors:instructor_id(name)
+      `)
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch inquiries' });
+    }
+
+    // Convert snake_case to camelCase for response
+    const formattedInquiries = inquiries.map(i => ({
+      id: i.id,
+      userId: i.user_id,
+      waterId: i.water_id,
+      instructorId: i.instructor_id,
+      waterName: i.waters?.name || null,
+      instructorName: i.instructors?.name || null,
+      name: i.name,
+      email: i.email,
+      phone: i.phone,
+      numberOfPeople: i.number_of_people,
+      preferredDate: i.preferred_date,
+      message: i.message,
+      status: i.status,
+      createdAt: i.created_at
+    }));
+
+    res.json({ inquiries: formattedInquiries });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch inquiries' });
+  }
+});
+
 // Delete account
 app.delete('/api/auth/account', authenticateToken, async (req, res) => {
   try {

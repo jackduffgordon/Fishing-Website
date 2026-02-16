@@ -71,40 +71,92 @@ const App = () => {
   // Sync pre-login favorites to database after authentication
   const syncGuestFavourites = useCallback(async () => {
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      console.log('[Favorites] No token available, skipping sync');
+      return;
+    }
 
-    const guestWaters = favouriteWaters;
-    const guestInstructors = favouriteInstructors;
+    // Read guest favorites directly from localStorage (not from state)
+    // to ensure we get the latest values before they're cleared
+    let guestWaters = [];
+    let guestInstructors = [];
+
+    try {
+      const savedWaters = localStorage.getItem('tightlines_guest_fav_waters');
+      guestWaters = savedWaters ? JSON.parse(savedWaters) : [];
+    } catch (e) {
+      console.error('[Favorites] Failed to read guest waters from localStorage:', e);
+    }
+
+    try {
+      const savedInstructors = localStorage.getItem('tightlines_guest_fav_instructors');
+      guestInstructors = savedInstructors ? JSON.parse(savedInstructors) : [];
+    } catch (e) {
+      console.error('[Favorites] Failed to read guest instructors from localStorage:', e);
+    }
+
+    console.log('[Favorites] Syncing guest favorites:', {
+      waters: guestWaters.length,
+      instructors: guestInstructors.length
+    });
+
+    // Track successful syncs
+    let watersSynced = 0;
+    let instructorsSynced = 0;
 
     // Push each guest favorite to the database
     for (const waterId of guestWaters) {
       try {
-        await fetch('/api/favourites/waters', {
+        const res = await fetch('/api/favourites/waters', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ waterId })
         });
+        if (res.ok) {
+          watersSynced++;
+          console.log('[Favorites] Synced water:', waterId);
+        } else {
+          console.error('[Favorites] Failed to sync water:', waterId, await res.text());
+        }
       } catch (err) {
-        console.log('Failed to sync water favourite:', waterId);
+        console.error('[Favorites] Error syncing water:', waterId, err);
       }
     }
 
     for (const instructorId of guestInstructors) {
       try {
-        await fetch('/api/favourites/instructors', {
+        const res = await fetch('/api/favourites/instructors', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ instructorId })
         });
+        if (res.ok) {
+          instructorsSynced++;
+          console.log('[Favorites] Synced instructor:', instructorId);
+        } else {
+          console.error('[Favorites] Failed to sync instructor:', instructorId, await res.text());
+        }
       } catch (err) {
-        console.log('Failed to sync instructor favourite:', instructorId);
+        console.error('[Favorites] Error syncing instructor:', instructorId, err);
       }
     }
 
-    // Clear guest favorites from localStorage
-    localStorage.removeItem('tightlines_guest_fav_waters');
-    localStorage.removeItem('tightlines_guest_fav_instructors');
-  }, [favouriteWaters, favouriteInstructors]);
+    console.log('[Favorites] Sync complete:', {
+      watersSynced,
+      instructorsSynced,
+      totalWaters: guestWaters.length,
+      totalInstructors: guestInstructors.length
+    });
+
+    // Clear guest favorites from localStorage only after successful sync
+    if (watersSynced === guestWaters.length && instructorsSynced === guestInstructors.length) {
+      localStorage.removeItem('tightlines_guest_fav_waters');
+      localStorage.removeItem('tightlines_guest_fav_instructors');
+      console.log('[Favorites] Cleared guest favorites from localStorage');
+    } else {
+      console.warn('[Favorites] Not all favorites synced successfully, keeping localStorage data');
+    }
+  }, []);
 
   // Fetch favourites when user logs in
   const fetchFavourites = useCallback(async () => {
@@ -114,7 +166,12 @@ const App = () => {
     }
     try {
       const token = getToken();
-      if (!token) return;
+      if (!token) {
+        console.log('[Favorites] No token available when fetching favorites');
+        return;
+      }
+
+      console.log('[Favorites] Fetching favorites for user:', user.id);
 
       // First, sync any guest favorites to the database
       await syncGuestFavourites();
@@ -125,11 +182,17 @@ const App = () => {
       });
       if (res.ok) {
         const data = await res.json();
+        console.log('[Favorites] Loaded from database:', {
+          waters: data.waters?.length || 0,
+          instructors: data.instructors?.length || 0
+        });
         setFavouriteWaters(data.waters || []);
         setFavouriteInstructors(data.instructors || []);
+      } else {
+        console.error('[Favorites] Failed to fetch favorites:', await res.text());
       }
     } catch (err) {
-      console.log('Could not fetch favourites:', err.message);
+      console.error('[Favorites] Error fetching favorites:', err);
     }
   }, [user, syncGuestFavourites]);
 
