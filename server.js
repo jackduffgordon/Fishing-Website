@@ -10,7 +10,7 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'calypsoheights@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jackduffgordon@gmail.com';
 
 // Supabase setup — set these in Render environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -62,7 +62,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'tightlines-secret-key-change-in-pr
 // Middleware
 app.use(cors({ origin: '*', credentials: false, methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // ============================================================================
