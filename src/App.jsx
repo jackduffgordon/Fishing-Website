@@ -203,6 +203,7 @@ const App = () => {
   // Toggle favourite water
   const toggleFavouriteWater = async (waterId) => {
     const isFav = favouriteWaters.includes(waterId);
+    console.log(`[Favorites] Toggle water ${waterId}:`, isFav ? 'REMOVING' : 'ADDING', `(User: ${user ? 'logged in' : 'guest'})`);
 
     // Optimistic update for both guest and logged-in users
     if (isFav) {
@@ -213,27 +214,42 @@ const App = () => {
 
     // If not logged in, store in localStorage only
     if (!user) {
+      console.log('[Favorites] Guest mode - will sync after login');
       return;
     }
 
     // If logged in, sync to database
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      console.error('[Favorites] No token available!');
+      return;
+    }
 
     try {
       if (isFav) {
-        await fetch(`/api/favourites/waters/${waterId}`, {
+        const res = await fetch(`/api/favourites/waters/${waterId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        console.log('[Favorites] DELETE response:', res.status, res.ok);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('[Favorites] DELETE failed:', text);
+        }
       } else {
-        await fetch('/api/favourites/waters', {
+        const res = await fetch('/api/favourites/waters', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ waterId })
         });
+        console.log('[Favorites] POST response:', res.status, res.ok);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('[Favorites] POST failed:', text);
+        }
       }
     } catch (err) {
+      console.error('[Favorites] API error:', err);
       // Revert on failure
       if (isFav) {
         setFavouriteWaters(prev => [...prev, waterId]);
@@ -246,6 +262,7 @@ const App = () => {
   // Toggle favourite instructor
   const toggleFavouriteInstructor = async (instructorId) => {
     const isFav = favouriteInstructors.includes(instructorId);
+    console.log(`[Favorites] Toggle instructor ${instructorId}:`, isFav ? 'REMOVING' : 'ADDING', `(User: ${user ? 'logged in' : 'guest'})`);
 
     // Optimistic update for both guest and logged-in users
     if (isFav) {
@@ -256,27 +273,42 @@ const App = () => {
 
     // If not logged in, store in localStorage only
     if (!user) {
+      console.log('[Favorites] Guest mode - will sync after login');
       return;
     }
 
     // If logged in, sync to database
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      console.error('[Favorites] No token available!');
+      return;
+    }
 
     try {
       if (isFav) {
-        await fetch(`/api/favourites/instructors/${instructorId}`, {
+        const res = await fetch(`/api/favourites/instructors/${instructorId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        console.log('[Favorites] DELETE response:', res.status, res.ok);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('[Favorites] DELETE failed:', text);
+        }
       } else {
-        await fetch('/api/favourites/instructors', {
+        const res = await fetch('/api/favourites/instructors', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ instructorId })
         });
+        console.log('[Favorites] POST response:', res.status, res.ok);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('[Favorites] POST failed:', text);
+        }
       }
     } catch (err) {
+      console.error('[Favorites] API error:', err);
       // Revert on failure
       if (isFav) {
         setFavouriteInstructors(prev => [...prev, instructorId]);
@@ -454,6 +486,8 @@ const App = () => {
           onSignOut={handleSignOut}
           favouriteWaters={favouriteWaters}
           favouriteInstructors={favouriteInstructors}
+          onToggleFavouriteWater={toggleFavouriteWater}
+          onToggleFavouriteInstructor={toggleFavouriteInstructor}
           onNavigateToWater={() => setCurrentPage('search')}
           onNavigateToInstructor={() => { setCurrentPage('instructors'); setCurrentTab('instructors'); }}
         />

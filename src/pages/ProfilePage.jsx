@@ -34,6 +34,8 @@ const ProfilePage = ({
   onSignOut,
   favouriteWaters = [],
   favouriteInstructors = [],
+  onToggleFavouriteWater,
+  onToggleFavouriteInstructor,
   onNavigateToWater,
   onNavigateToInstructor,
 }) => {
@@ -216,42 +218,16 @@ const ProfilePage = ({
   };
 
   const handleRemoveFavouriteWater = async (waterId) => {
-    try {
-      const token = getToken();
-      const res = await fetch(`/api/favourites/waters/${waterId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        showMessage('Removed from favourites');
-        // Trigger a page refresh or update parent state
-        window.location.reload();
-      } else {
-        showMessage('Failed to remove favourite', 'error');
-      }
-    } catch (err) {
-      showMessage('Failed to remove favourite', 'error');
+    if (onToggleFavouriteWater) {
+      await onToggleFavouriteWater(waterId);
+      showMessage('Removed from favourites');
     }
   };
 
   const handleRemoveFavouriteInstructor = async (instructorId) => {
-    try {
-      const token = getToken();
-      const res = await fetch(`/api/favourites/instructors/${instructorId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        showMessage('Removed from favourites');
-        // Trigger a page refresh or update parent state
-        window.location.reload();
-      } else {
-        showMessage('Failed to remove favourite', 'error');
-      }
-    } catch (err) {
-      showMessage('Failed to remove favourite', 'error');
+    if (onToggleFavouriteInstructor) {
+      await onToggleFavouriteInstructor(instructorId);
+      showMessage('Removed from favourites');
     }
   };
 
