@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import {
   ChevronLeft, MapPin, Star, Check, Clock, Phone, Mail, ExternalLink,
-  Car, Coffee, Fish, Accessibility, Moon, Users, Home, Calendar, Tag
+  Car, Coffee, Fish, Accessibility, Moon, Users, Home, Calendar, Tag, Heart
 } from 'lucide-react';
 import { PhotoCarousel } from '../components/common/PhotoCarousel';
 import { DatePickerCalendar, DateRangePicker } from '../components/common/DatePickerCalendar';
@@ -55,13 +55,14 @@ const categoryLabels = {
   'extras': 'Extras & Add-ons'
 };
 
-export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
+export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, onToggleFavourite }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedDate, setSelectedDate] = useState(null);
   const [dateRange, setDateRange] = useState([null, null]);
   const [enquiryMessage, setEnquiryMessage] = useState('');
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedPrimary, setSelectedPrimary] = useState(null);
+  const [selectedExtras, setSelectedExtras] = useState([]);
 
   // Determine if this fishery uses the new multi-option system
   const hasBookingOptions = fishery.bookingOptions && fishery.bookingOptions.length > 0;
@@ -76,9 +77,9 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
       }, {})
     : {};
 
-  // Get the currently selected option's details
+  // Get the currently selected primary option's details
   const activeOption = hasBookingOptions
-    ? fishery.bookingOptions.find(o => o.id === selectedOption) || fishery.bookingOptions[0]
+    ? fishery.bookingOptions.find(o => o.id === selectedPrimary) || fishery.bookingOptions[0]
     : null;
 
   const handleBooking = () => {
@@ -150,6 +151,14 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
         >
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
+        {onToggleFavourite && (
+          <button
+            onClick={() => onToggleFavourite(fishery.id)}
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition shadow-sm"
+          >
+            <Heart className={`w-5 h-5 transition ${isFavourite ? 'fill-red-500 text-red-500' : 'text-stone-600'}`} />
+          </button>
+        )}
         <PhotoCarousel images={fishery.gallery || [fishery.image]} alt={fishery.name} />
       </div>
 
@@ -379,70 +388,159 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
                   </div>
 
                   {/* Option tiles grouped by category */}
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <p className="text-sm font-medium text-stone-700">Choose an option:</p>
 
-                    {Object.entries(groupedOptions).map(([catId, options]) => (
-                      <div key={catId}>
-                        <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${(categoryColors[catId] || categoryColors['day-tickets']).text}`}>
-                          {categoryLabels[catId] || catId}
-                        </p>
-                        <div className="space-y-2">
-                          {options.map((opt) => {
-                            const colors = categoryColors[opt.category] || categoryColors['day-tickets'];
-                            const isSelected = selectedOption === opt.id ||
-                              (!selectedOption && fishery.bookingOptions[0]?.id === opt.id);
+                    {Object.entries(groupedOptions).map(([catId, options]) => {
+                      const isExtrasCategory = catId === 'extras';
 
-                            return (
-                              <button
-                                key={opt.id}
-                                onClick={() => setSelectedOption(opt.id)}
-                                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
-                                  isSelected
-                                    ? `${colors.activeBg} ${colors.activeBorder} shadow-sm`
-                                    : `bg-white border-stone-200 hover:${colors.bg} hover:border-stone-300`
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-stone-900 text-sm">{opt.name}</span>
-                                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                                        opt.bookingType === 'instant'
-                                          ? 'bg-green-100 text-green-700'
-                                          : 'bg-amber-100 text-amber-700'
-                                      }`}>
-                                        {opt.bookingType === 'instant' ? 'Book' : 'Enquire'}
-                                      </span>
+                      return (
+                        <div key={catId}>
+                          <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${(categoryColors[catId] || categoryColors['day-tickets']).text}`}>
+                            {categoryLabels[catId] || catId}
+                          </p>
+                          <div className="space-y-2">
+                            {options.map((opt) => {
+                              const colors = categoryColors[opt.category] || categoryColors['day-tickets'];
+
+                              if (isExtrasCategory) {
+                                // Extras: multi-select checkbox style
+                                const isSelected = selectedExtras.includes(opt.id);
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    onClick={() => {
+                                      setSelectedExtras(
+                                        isSelected
+                                          ? selectedExtras.filter(id => id !== opt.id)
+                                          : [...selectedExtras, opt.id]
+                                      );
+                                    }}
+                                    className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                                      isSelected
+                                        ? `${colors.activeBg} ${colors.activeBorder} shadow-sm`
+                                        : `bg-white border-stone-200 hover:${colors.bg} hover:border-stone-300`
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-semibold text-stone-900 text-sm">{opt.name}</span>
+                                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                            opt.bookingType === 'instant'
+                                              ? 'bg-green-100 text-green-700'
+                                              : 'bg-amber-100 text-amber-700'
+                                          }`}>
+                                            {opt.bookingType === 'instant' ? 'Book' : 'Enquire'}
+                                          </span>
+                                        </div>
+                                        {opt.description && (
+                                          <p className="text-xs text-stone-500 mt-0.5 truncate">{opt.description}</p>
+                                        )}
+                                      </div>
+                                      <div className="text-right flex-shrink-0 ml-3">
+                                        <span className="font-bold text-stone-900">£{opt.price}</span>
+                                        <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType}</span>
+                                      </div>
                                     </div>
-                                    {opt.description && (
-                                      <p className="text-xs text-stone-500 mt-0.5 truncate">{opt.description}</p>
+                                    {isSelected && (
+                                      <div className="mt-1 flex items-center gap-1">
+                                        <Check className="w-3.5 h-3.5 text-brand-600" />
+                                        <span className="text-xs text-brand-600 font-medium">Added</span>
+                                      </div>
                                     )}
-                                  </div>
-                                  <div className="text-right flex-shrink-0 ml-3">
-                                    <span className="font-bold text-stone-900">£{opt.price}</span>
-                                    <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType}</span>
-                                  </div>
-                                </div>
-                                {isSelected && (
-                                  <div className="mt-1 flex items-center gap-1">
-                                    <Check className="w-3.5 h-3.5 text-brand-600" />
-                                    <span className="text-xs text-brand-600 font-medium">Selected</span>
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
+                                  </button>
+                                );
+                              } else {
+                                // Primary categories (day-tickets, guided, accommodation): radio style
+                                const isSelected = selectedPrimary === opt.id ||
+                                  (!selectedPrimary && fishery.bookingOptions[0]?.id === opt.id);
+
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    onClick={() => setSelectedPrimary(opt.id)}
+                                    className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                                      isSelected
+                                        ? `${colors.activeBg} ${colors.activeBorder} shadow-sm`
+                                        : `bg-white border-stone-200 hover:${colors.bg} hover:border-stone-300`
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-semibold text-stone-900 text-sm">{opt.name}</span>
+                                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                            opt.bookingType === 'instant'
+                                              ? 'bg-green-100 text-green-700'
+                                              : 'bg-amber-100 text-amber-700'
+                                          }`}>
+                                            {opt.bookingType === 'instant' ? 'Book' : 'Enquire'}
+                                          </span>
+                                        </div>
+                                        {opt.description && (
+                                          <p className="text-xs text-stone-500 mt-0.5 truncate">{opt.description}</p>
+                                        )}
+                                      </div>
+                                      <div className="text-right flex-shrink-0 ml-3">
+                                        <span className="font-bold text-stone-900">£{opt.price}</span>
+                                        <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType}</span>
+                                      </div>
+                                    </div>
+                                    {isSelected && (
+                                      <div className="mt-1 flex items-center gap-1">
+                                        <Check className="w-3.5 h-3.5 text-brand-600" />
+                                        <span className="text-xs text-brand-600 font-medium">Selected</span>
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              }
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Price summary with extras total */}
+                  {(selectedPrimary || activeOption) && selectedExtras.length > 0 && (
+                    <div className="pt-3 border-t border-stone-200">
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between text-stone-600">
+                          <span>Primary option:</span>
+                          <span className="font-medium">£{activeOption?.price || 0}</span>
+                        </div>
+                        {selectedExtras.map(extraId => {
+                          const extra = fishery.bookingOptions.find(o => o.id === extraId);
+                          return (
+                            <div key={extraId} className="flex justify-between text-stone-600">
+                              <span className="ml-2">{extra?.name}:</span>
+                              <span className="font-medium">£{extra?.price || 0}</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex justify-between font-semibold text-stone-900 pt-2 border-t border-stone-200">
+                          <span>Total:</span>
+                          <span>
+                            £{
+                              (activeOption?.price || 0) +
+                              selectedExtras.reduce((sum, id) => {
+                                const extra = fishery.bookingOptions.find(o => o.id === id);
+                                return sum + (parseInt(extra?.price) || 0);
+                              }, 0)
+                            }
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Booking action based on selected option's type */}
                   {activeOption && activeOption.bookingType === 'instant' && (
                     <div className="space-y-3 pt-2">
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">
+                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
+                        <label className="block text-sm font-medium text-stone-700 mb-3">
                           Select Date
                         </label>
                         <DatePickerCalendar
@@ -451,6 +549,20 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
                           availability={fishery.availability || {}}
                           placeholder="Choose your fishing date"
                         />
+                        <div className="mt-3 pt-3 border-t border-stone-300 space-y-1.5 text-xs text-stone-600">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                            <span>Available</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                            <span>Booked</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                            <span>Closed</span>
+                          </div>
+                        </div>
                       </div>
                       <button
                         onClick={handleBooking}
@@ -471,28 +583,30 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn }) => {
                       <p className="text-sm text-stone-600 text-center">
                         Send an enquiry to check availability for {activeOption.name}.
                       </p>
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Preferred Date(s)
-                        </label>
-                        <DateRangePicker
-                          startDate={dateRange[0]}
-                          endDate={dateRange[1]}
-                          onChange={(dates) => setDateRange(dates)}
-                          placeholder="Select preferred dates"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">
-                          Message
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={enquiryMessage}
-                          onChange={(e) => setEnquiryMessage(e.target.value)}
-                          className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                          placeholder="Tell them about your experience, number in party, etc."
-                        />
+                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-stone-700 mb-2">
+                            Preferred Date(s)
+                          </label>
+                          <DateRangePicker
+                            startDate={dateRange[0]}
+                            endDate={dateRange[1]}
+                            onChange={(dates) => setDateRange(dates)}
+                            placeholder="Select preferred dates"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-stone-700 mb-1">
+                            Message
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={enquiryMessage}
+                            onChange={(e) => setEnquiryMessage(e.target.value)}
+                            className="w-full px-4 py-2.5 border border-stone-300 rounded-xl bg-white"
+                            placeholder="Tell them about your experience, number in party, etc."
+                          />
+                        </div>
                       </div>
                       <button
                         onClick={handleBooking}

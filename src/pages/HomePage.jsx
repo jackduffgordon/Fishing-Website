@@ -5,7 +5,7 @@
 // ============================================
 import { useState, useRef } from 'react';
 import {
-  Search, MapPin, Star, ChevronLeft, ChevronRight, Fish, Calendar, Shield, Check, Quote, ArrowRight, TrendingUp
+  Search, MapPin, Star, ChevronLeft, ChevronRight, Fish, Calendar, Shield, Check, Quote, ArrowRight, TrendingUp, Heart
 } from 'lucide-react';
 import { FisheryCard } from '../components/cards/FisheryCard';
 import { InstructorCardCompact } from '../components/cards/InstructorCard';
@@ -14,7 +14,7 @@ import { instructors } from '../data/instructors';
 import { ukRegions, ukSpecies, testimonials } from '../data/regions';
 
 // Search autocomplete component
-const SearchAutocomplete = ({ value, onChange, onSearch, suggestions, onSelect }) => {
+const SearchAutocomplete = ({ value, onChange, suggestions, onSelectSuggestion }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef(null);
 
@@ -56,7 +56,7 @@ const SearchAutocomplete = ({ value, onChange, onSearch, suggestions, onSelect }
             <button
               key={index}
               onClick={() => {
-                onSelect(suggestion);
+                onSelectSuggestion(suggestion);
                 setShowSuggestions(false);
               }}
               className="w-full px-4 py-3 text-left hover:bg-stone-50 flex items-center gap-3 border-b border-stone-100 last:border-0"
@@ -84,9 +84,14 @@ const SearchAutocomplete = ({ value, onChange, onSearch, suggestions, onSelect }
   );
 };
 
-export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSelectRegion, onNavigate }) => {
+export const HomePage = ({
+  onSearch, onSelectFishery, onSelectInstructor, onSelectRegion, onNavigate,
+  favouriteWaters = [], onToggleFavouriteWater,
+  favouriteInstructors = [], onToggleFavouriteInstructor
+}) => {
   const [searchLocation, setSearchLocation] = useState('');
   const [searchType, setSearchType] = useState('');
+  const [searchRadius, setSearchRadius] = useState(25);
   const instructorCarouselRef = useRef(null);
 
   const featured = fisheries.filter((f) => f.featured);
@@ -100,15 +105,18 @@ export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSele
   ];
 
   const handleSuggestionSelect = (suggestion) => {
+    // Just populate the search input, don't navigate
     if (suggestion.type === 'water') {
-      const fishery = fisheries.find((f) => f.id === suggestion.id);
-      if (fishery) onSelectFishery(fishery);
+      setSearchLocation(suggestion.name);
     } else if (suggestion.type === 'region') {
-      onSelectRegion(suggestion);
+      setSearchLocation(suggestion.name);
     } else {
       setSearchLocation(suggestion.name);
-      onSearch();
     }
+  };
+
+  const handleSearchClick = () => {
+    onSearch();
   };
 
   const scrollInstructors = (direction) => {
@@ -141,16 +149,26 @@ export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSele
           </div>
 
           {/* Search Box - Streamlined */}
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl p-3 shadow-2xl">
               <div className="flex flex-col md:flex-row gap-3">
                 <SearchAutocomplete
                   value={searchLocation}
                   onChange={setSearchLocation}
-                  onSearch={onSearch}
                   suggestions={searchSuggestions}
-                  onSelect={handleSuggestionSelect}
+                  onSelectSuggestion={handleSuggestionSelect}
                 />
+                <select
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(Number(e.target.value))}
+                  className="px-4 py-3.5 border border-stone-200 rounded-xl text-stone-600 bg-white focus:ring-2 focus:ring-brand-500 md:w-40"
+                >
+                  <option value={5}>Within 5 miles</option>
+                  <option value={10}>Within 10 miles</option>
+                  <option value={25}>Within 25 miles</option>
+                  <option value={50}>Within 50 miles</option>
+                  <option value={100}>Within 100 miles</option>
+                </select>
                 <select
                   value={searchType}
                   onChange={(e) => setSearchType(e.target.value)}
@@ -162,7 +180,7 @@ export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSele
                   <option value="sea">Sea</option>
                 </select>
                 <button
-                  onClick={onSearch}
+                  onClick={handleSearchClick}
                   className="px-8 py-3.5 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 transition flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                   <Search className="w-5 h-5" />
@@ -203,7 +221,13 @@ export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSele
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(featured.length > 0 ? featured : allFisheries).map((f) => (
-              <FisheryCard key={f.id} fishery={f} onClick={() => onSelectFishery(f)} />
+              <FisheryCard
+                key={f.id}
+                fishery={f}
+                onClick={() => onSelectFishery(f)}
+                isFavourite={favouriteWaters.includes(f.id)}
+                onToggleFavourite={onToggleFavouriteWater}
+              />
             ))}
           </div>
           <div className="text-center mt-8 md:hidden">
@@ -287,7 +311,12 @@ export const HomePage = ({ onSearch, onSelectFishery, onSelectInstructor, onSele
           >
             {instructors.map((i) => (
               <div key={i.id} style={{ scrollSnapAlign: 'start' }}>
-                <InstructorCardCompact instructor={i} onClick={() => onSelectInstructor(i)} />
+                <InstructorCardCompact
+                  instructor={i}
+                  onClick={() => onSelectInstructor(i)}
+                  isFavourite={favouriteInstructors.includes(i.id)}
+                  onToggleFavourite={onToggleFavouriteInstructor}
+                />
               </div>
             ))}
           </div>

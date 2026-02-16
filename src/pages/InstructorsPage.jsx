@@ -2,7 +2,7 @@
 // INSTRUCTORS PAGE - Advanced filters matching waters style
 // ============================================
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronDown, ChevronUp, Filter, Loader, Users, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronUp, Filter, Loader, Users, SlidersHorizontal, X, MapPin, Search } from 'lucide-react';
 import { InstructorCard } from '../components/cards/InstructorCard';
 import { instructors as hardcodedInstructors } from '../data/instructors';
 import { instructorsAPI } from '../utils/api';
@@ -219,6 +219,8 @@ export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructo
   const [filters, setFilters] = useState(defaultFilters);
   const [sortBy, setSortBy] = useState('rating');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchRadius, setSearchRadius] = useState(25);
 
   useEffect(() => {
     const fetchInstructors = async () => {
@@ -242,6 +244,15 @@ export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructo
   // Apply filters
   const filteredInstructors = allInstructors
     .filter(i => {
+      // Text search filter
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchName = (i.name || '').toLowerCase().includes(q);
+        const matchLocation = (i.location || i.region || '').toLowerCase().includes(q);
+        const matchSpecialties = (i.specialties || []).some(s => s.toLowerCase().includes(q));
+        const matchTitle = (i.title || '').toLowerCase().includes(q);
+        if (!matchName && !matchLocation && !matchSpecialties && !matchTitle) return false;
+      }
       if (filters.specialties.length > 0) {
         const hasMatch = filters.specialties.some(s => (i.specialties || []).includes(s));
         if (!hasMatch) return false;
@@ -280,10 +291,10 @@ export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructo
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header */}
+      {/* Header with search bar */}
       <div className="bg-white border-b border-stone-200 py-4">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3">
             <button onClick={onBack} className="flex items-center text-stone-500 hover:text-stone-700 transition">
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -293,6 +304,30 @@ export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructo
                 {loading ? 'Loading instructors...' : `${filteredInstructors.length} instructors found`}
               </p>
             </div>
+          </div>
+          {/* Search bar with radius */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, location, or specialty..."
+                className="w-full pl-9 pr-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+              />
+            </div>
+            <select
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(Number(e.target.value))}
+              className="px-3 py-2.5 border border-stone-200 rounded-xl text-sm bg-white sm:w-40"
+            >
+              <option value={5}>Within 5 miles</option>
+              <option value={10}>Within 10 miles</option>
+              <option value={25}>Within 25 miles</option>
+              <option value={50}>Within 50 miles</option>
+              <option value={100}>Within 100 miles</option>
+            </select>
           </div>
         </div>
       </div>

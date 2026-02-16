@@ -248,6 +248,10 @@ const App = () => {
           onSelectInstructor={handleSelectInstructor}
           onSelectRegion={handleSelectRegion}
           onNavigate={(page) => setCurrentPage(page)}
+          favouriteWaters={favouriteWaters}
+          onToggleFavouriteWater={toggleFavouriteWater}
+          favouriteInstructors={favouriteInstructors}
+          onToggleFavouriteInstructor={toggleFavouriteInstructor}
         />
       )}
 
@@ -266,6 +270,8 @@ const App = () => {
           onBack={() => setCurrentPage('search')}
           user={user}
           onSignIn={() => setShowSignIn(true)}
+          isFavourite={favouriteWaters.includes(selectedFishery.id)}
+          onToggleFavourite={toggleFavouriteWater}
         />
       )}
 
@@ -311,6 +317,10 @@ const App = () => {
           setUser={setUser}
           onBack={() => setCurrentPage('home')}
           onSignOut={handleSignOut}
+          favouriteWaters={favouriteWaters}
+          favouriteInstructors={favouriteInstructors}
+          onNavigateToWater={() => setCurrentPage('search')}
+          onNavigateToInstructor={() => { setCurrentPage('instructors'); setCurrentTab('instructors'); }}
         />
       )}
 

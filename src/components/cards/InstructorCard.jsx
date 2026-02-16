@@ -88,6 +88,14 @@ export const InstructorCardCompact = ({ instructor, onClick, isFavourite, onTogg
         style={{ background: instructor.image }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        {onToggleFavourite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavourite(instructor.id); }}
+            className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition shadow-sm"
+          >
+            <Heart className={`w-4 h-4 transition ${isFavourite ? 'fill-red-500 text-red-500' : 'text-stone-600'}`} />
+          </button>
+        )}
         <div className="absolute bottom-3 left-3 right-3">
           <h3 className="font-semibold text-white">{instructor.name}</h3>
           <p className="text-white/80 text-sm">{instructor.title}</p>

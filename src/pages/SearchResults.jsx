@@ -2,7 +2,7 @@
 // SEARCH RESULTS PAGE - API-powered with hardcoded fallback
 // ============================================
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Filter, Fish, Search, Loader } from 'lucide-react';
+import { ChevronLeft, Filter, Fish, Search, Loader, MapPin } from 'lucide-react';
 import { FisheryCard } from '../components/cards/FisheryCard';
 import { AdvancedFilters, MobileFilterDrawer } from '../components/filters/AdvancedFilters';
 import { fisheries as hardcodedFisheries } from '../data/fisheries';
@@ -25,6 +25,8 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
   const [filters, setFilters] = useState(defaultFilters);
   const [sortBy, setSortBy] = useState('rating');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchRadius, setSearchRadius] = useState(25);
 
   // Fetch waters from API on mount
   useEffect(() => {
@@ -52,6 +54,15 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
   // Apply filters
   const filteredFisheries = allWaters
     .filter((f) => {
+      // Text search filter
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchName = (f.name || '').toLowerCase().includes(q);
+        const matchRegion = (f.region || '').toLowerCase().includes(q);
+        const matchLocation = (f.location || '').toLowerCase().includes(q);
+        const matchSpecies = (f.species || []).some(s => s.toLowerCase().includes(q));
+        if (!matchName && !matchRegion && !matchLocation && !matchSpecies) return false;
+      }
       if (filters.fishingType && f.type !== filters.fishingType) return false;
       if (filters.region && f.region !== filters.region) return false;
       if (f.price < filters.priceRange[0] || f.price > filters.priceRange[1]) return false;
@@ -122,10 +133,10 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Compact search header */}
+      {/* Search header with location bar */}
       <div className="bg-white border-b border-stone-200 py-4">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3">
             <button
               onClick={onBack}
               className="flex items-center text-stone-500 hover:text-stone-700 transition"
@@ -138,6 +149,30 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
                 {loading ? 'Loading waters...' : `${filteredFisheries.length} waters found`}
               </p>
             </div>
+          </div>
+          {/* Search bar with radius */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, location, region, or species..."
+                className="w-full pl-9 pr-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+              />
+            </div>
+            <select
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(Number(e.target.value))}
+              className="px-3 py-2.5 border border-stone-200 rounded-xl text-sm bg-white sm:w-40"
+            >
+              <option value={5}>Within 5 miles</option>
+              <option value={10}>Within 10 miles</option>
+              <option value={25}>Within 25 miles</option>
+              <option value={50}>Within 50 miles</option>
+              <option value={100}>Within 100 miles</option>
+            </select>
           </div>
         </div>
       </div>
