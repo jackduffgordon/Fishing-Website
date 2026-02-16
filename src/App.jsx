@@ -39,24 +39,37 @@ const App = () => {
 
   // Check for existing auth token on load
   useEffect(() => {
+    console.log('[TightLines] Starting auth check...');
     const checkAuth = async () => {
       const token = getToken();
+      console.log('[TightLines] Token exists:', !!token);
+
       if (token) {
         try {
+          console.log('[TightLines] Calling /api/auth/me...');
           const data = await authAPI.me();
+          console.log('[TightLines] Auth successful');
           setUser(data.user);
         } catch (error) {
-          // Token expired, invalid, or API unreachable
-          console.error('[Auth Check Failed]', error.message);
+          console.error('[TightLines] Auth failed:', error.message);
           clearToken();
         } finally {
+          console.log('[TightLines] Setting authLoading to false');
           setAuthLoading(false);
         }
       } else {
+        console.log('[TightLines] No token, skipping auth check');
         setAuthLoading(false);
       }
     };
-    checkAuth();
+
+    // Add timeout wrapper as extra safety
+    const timeoutId = setTimeout(() => {
+      console.error('[TightLines] Auth check timeout - forcing app to load');
+      setAuthLoading(false);
+    }, 5000);
+
+    checkAuth().finally(() => clearTimeout(timeoutId));
   }, []);
 
   // Navigation handlers
