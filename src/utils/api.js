@@ -26,6 +26,15 @@ export const setToken = (token) => {
 export const clearToken = () => setToken(null);
 
 // --- Generic Fetch Helpers ---
+// Timeout wrapper for fetch requests
+const fetchWithTimeout = (url, options = {}, timeout = 10000) => {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), timeout)
+    )
+  ]);
+};
 const headers = (auth = false) => {
   const h = { 'Content-Type': 'application/json' };
   if (auth) {
@@ -36,9 +45,14 @@ const headers = (auth = false) => {
 };
 
 const handleResponse = async (res) => {
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
+  try {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  } catch (error) {
+    console.error('[API Error]', error);
+    throw error;
+  }
 };
 
 // --- Data Normalization ---
@@ -231,7 +245,7 @@ export const authAPI = {
   },
 
   me: async () => {
-    const res = await fetch(`${API_BASE}/auth/me`, { headers: headers(true) });
+    const res = await fetchWithTimeout(`${API_BASE}/auth/me`, { headers: headers(true) }, 10000);
     return handleResponse(res);
   },
 

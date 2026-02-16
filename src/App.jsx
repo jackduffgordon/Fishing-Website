@@ -45,12 +45,16 @@ const App = () => {
         try {
           const data = await authAPI.me();
           setUser(data.user);
-        } catch {
-          // Token expired or invalid
+        } catch (error) {
+          // Token expired, invalid, or API unreachable
+          console.error('[Auth Check Failed]', error.message);
           clearToken();
+        } finally {
+          setAuthLoading(false);
         }
+      } else {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     };
     checkAuth();
   }, []);
