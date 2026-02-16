@@ -75,6 +75,27 @@ const ProfilePage = ({
   const [bookings, setBookings] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
 
+  const handleDeleteCatch = async (e, catchId) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this catch report?')) return;
+    try {
+      const token = localStorage.getItem('tightlines_token');
+      const res = await fetch(`/api/catches/${catchId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setCatches(prev => prev.filter(c => c.id !== catchId));
+        showMessage('Catch report deleted');
+      } else {
+        showMessage('Failed to delete catch');
+      }
+    } catch (err) {
+      console.error('Error deleting catch:', err);
+      showMessage('Failed to delete catch');
+    }
+  };
+
   // Fetch user activity data
   useEffect(() => {
     const fetchUserActivity = async () => {
@@ -460,9 +481,13 @@ const ProfilePage = ({
                                     </p>
                                   </div>
                                 )}
-                                <p className="text-xs text-stone-400 italic">
-                                  Click to collapse
-                                </p>
+                                <button
+                                  onClick={(e) => handleDeleteCatch(e, catchReport.id)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition mt-1"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete Catch
+                                </button>
                               </div>
                             )}
 

@@ -1342,6 +1342,42 @@ app.post('/api/catches', authenticateToken, async (req, res) => {
   }
 });
 
+app.delete('/api/catches/:id', authenticateToken, async (req, res) => {
+  try {
+    const catchId = req.params.id;
+
+    // Verify the catch belongs to the user
+    const { data: existing, error: fetchError } = await supabase
+      .from('catches')
+      .select('user_id')
+      .eq('id', catchId)
+      .single();
+
+    if (fetchError || !existing) {
+      return res.status(404).json({ error: 'Catch not found' });
+    }
+
+    if (existing.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not authorized to delete this catch' });
+    }
+
+    const { error } = await supabase
+      .from('catches')
+      .delete()
+      .eq('id', catchId);
+
+    if (error) {
+      console.error('Failed to delete catch:', error);
+      return res.status(500).json({ error: 'Failed to delete catch' });
+    }
+
+    res.json({ success: true, message: 'Catch deleted' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to delete catch' });
+  }
+});
+
 app.get('/api/catches/water/:id', async (req, res) => {
   try {
     const { data: catches, error } = await supabase
