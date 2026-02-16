@@ -2,20 +2,29 @@
 // INSTRUCTOR CARD COMPONENT
 // Card display for instructor listings
 // ============================================
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Heart } from 'lucide-react';
 
-export const InstructorCard = ({ instructor, onClick }) => {
+export const InstructorCard = ({ instructor, onClick, isFavourite, onToggleFavourite }) => {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-200 hover:shadow-lg transition cursor-pointer group"
+      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-200 hover:shadow-lg transition cursor-pointer group relative"
     >
       <div className="flex">
         {/* Image */}
         <div
-          className="w-32 md:w-40 h-full min-h-[200px] flex-shrink-0"
+          className="w-32 md:w-40 h-full min-h-[200px] flex-shrink-0 relative"
           style={{ background: instructor.image }}
-        />
+        >
+          {onToggleFavourite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavourite(instructor.id); }}
+              className="absolute top-2 left-2 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition shadow-sm"
+            >
+              <Heart className={`w-4 h-4 transition ${isFavourite ? 'fill-red-500 text-red-500' : 'text-stone-600'}`} />
+            </button>
+          )}
+        </div>
 
         {/* Content */}
         <div className="flex-1 p-5">
@@ -67,7 +76,7 @@ export const InstructorCard = ({ instructor, onClick }) => {
 };
 
 // Compact card for homepage carousel
-export const InstructorCardCompact = ({ instructor, onClick }) => {
+export const InstructorCardCompact = ({ instructor, onClick, isFavourite, onToggleFavourite }) => {
   return (
     <div
       onClick={onClick}

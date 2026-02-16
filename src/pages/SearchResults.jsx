@@ -19,7 +19,7 @@ const defaultFilters = {
   region: ''
 };
 
-export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
+export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [], onToggleFavouriteWater }) => {
   const [allWaters, setAllWaters] = useState(hardcodedFisheries);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(defaultFilters);
@@ -146,7 +146,7 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Filters sidebar - Desktop */}
           <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
               <AdvancedFilters
                 filters={filters}
                 onFilterChange={setFilters}
@@ -205,7 +205,13 @@ export const SearchResultsPage = ({ onSelectFishery, onBack }) => {
             ) : filteredFisheries.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-5">
                 {filteredFisheries.map((f) => (
-                  <FisheryCard key={f.id} fishery={f} onClick={() => onSelectFishery(f)} />
+                  <FisheryCard
+                    key={f.id}
+                    fishery={f}
+                    onClick={() => onSelectFishery(f)}
+                    isFavourite={favouriteWaters.includes(f.id)}
+                    onToggleFavourite={onToggleFavouriteWater}
+                  />
                 ))}
               </div>
             ) : (

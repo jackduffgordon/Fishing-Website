@@ -3,7 +3,7 @@
 // Card display for fishery listings
 // Now supports multiple booking options display
 // ============================================
-import { MapPin, Star, Tag } from 'lucide-react';
+import { MapPin, Star, Heart } from 'lucide-react';
 
 const typeColors = {
   game: 'bg-blue-50 text-blue-700',
@@ -17,7 +17,7 @@ const typeLabels = {
   sea: 'Sea'
 };
 
-export const FisheryCard = ({ fishery, onClick }) => {
+export const FisheryCard = ({ fishery, onClick, isFavourite, onToggleFavourite }) => {
   // Determine pricing display
   const hasBookingOptions = fishery.bookingOptions && fishery.bookingOptions.length > 0;
 
@@ -62,8 +62,18 @@ export const FisheryCard = ({ fishery, onClick }) => {
           )}
         </div>
 
+        {/* Favourite button */}
+        {onToggleFavourite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavourite(fishery.id); }}
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition shadow-sm"
+          >
+            <Heart className={`w-5 h-5 transition ${isFavourite ? 'fill-red-500 text-red-500' : 'text-stone-600'}`} />
+          </button>
+        )}
+
         {/* Booking type badge */}
-        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+        <div className={`absolute ${onToggleFavourite ? 'top-14' : 'top-3'} right-3 flex flex-col gap-1 items-end`}>
           {hasInstant && (
             <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-brand-500 text-white">
               Instant Book

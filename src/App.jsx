@@ -2,13 +2,14 @@
 // TIGHTLINES APP - Main Application Component
 // UK Fishing Booking Platform v2.0
 // ============================================
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authAPI, getToken, clearToken } from './utils/api';
 
 // Components
 import { Nav } from './components/Nav';
 import { SignInModal } from './components/modals/SignInModal';
 import { ListWaterModal } from './components/modals/ListWaterModal';
+import { ListInstructorModal } from './components/modals/ListInstructorModal';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -19,6 +20,7 @@ import { InstructorDetailPage } from './pages/InstructorDetail';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { AdminPage } from './pages/AdminPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 const App = () => {
   // Navigation state
@@ -36,36 +38,139 @@ const App = () => {
   // Modal state
   const [showSignIn, setShowSignIn] = useState(false);
   const [showListWater, setShowListWater] = useState(false);
+  const [showListInstructor, setShowListInstructor] = useState(false);
+
+  // Favourites state
+  const [favouriteWaters, setFavouriteWaters] = useState([]);
+  const [favouriteInstructors, setFavouriteInstructors] = useState([]);
+
+  // Fetch favourites when user logs in
+  const fetchFavourites = useCallback(async () => {
+    if (!user) {
+      setFavouriteWaters([]);
+      setFavouriteInstructors([]);
+      return;
+    }
+    try {
+      const token = getToken();
+      if (!token) return;
+      const res = await fetch('/api/user/favourites', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFavouriteWaters(data.waters || []);
+        setFavouriteInstructors(data.instructors || []);
+      }
+    } catch (err) {
+      console.log('Could not fetch favourites:', err.message);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchFavourites();
+  }, [fetchFavourites]);
+
+  // Toggle favourite water
+  const toggleFavouriteWater = async (waterId) => {
+    if (!user) {
+      setShowSignIn(true);
+      return;
+    }
+    const token = getToken();
+    if (!token) return;
+
+    const isFav = favouriteWaters.includes(waterId);
+    // Optimistic update
+    if (isFav) {
+      setFavouriteWaters(prev => prev.filter(id => id !== waterId));
+    } else {
+      setFavouriteWaters(prev => [...prev, waterId]);
+    }
+
+    try {
+      if (isFav) {
+        await fetch(`/api/favourites/waters/${waterId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } else {
+        await fetch('/api/favourites/waters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ waterId })
+        });
+      }
+    } catch (err) {
+      // Revert on failure
+      if (isFav) {
+        setFavouriteWaters(prev => [...prev, waterId]);
+      } else {
+        setFavouriteWaters(prev => prev.filter(id => id !== waterId));
+      }
+    }
+  };
+
+  // Toggle favourite instructor
+  const toggleFavouriteInstructor = async (instructorId) => {
+    if (!user) {
+      setShowSignIn(true);
+      return;
+    }
+    const token = getToken();
+    if (!token) return;
+
+    const isFav = favouriteInstructors.includes(instructorId);
+    // Optimistic update
+    if (isFav) {
+      setFavouriteInstructors(prev => prev.filter(id => id !== instructorId));
+    } else {
+      setFavouriteInstructors(prev => [...prev, instructorId]);
+    }
+
+    try {
+      if (isFav) {
+        await fetch(`/api/favourites/instructors/${instructorId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } else {
+        await fetch('/api/favourites/instructors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ instructorId })
+        });
+      }
+    } catch (err) {
+      // Revert on failure
+      if (isFav) {
+        setFavouriteInstructors(prev => [...prev, instructorId]);
+      } else {
+        setFavouriteInstructors(prev => prev.filter(id => id !== instructorId));
+      }
+    }
+  };
 
   // Check for existing auth token on load
   useEffect(() => {
-    console.log('[TightLines] Starting auth check...');
     const checkAuth = async () => {
       const token = getToken();
-      console.log('[TightLines] Token exists:', !!token);
-
       if (token) {
         try {
-          console.log('[TightLines] Calling /api/auth/me...');
           const data = await authAPI.me();
-          console.log('[TightLines] Auth successful');
           setUser(data.user);
         } catch (error) {
           console.error('[TightLines] Auth failed:', error.message);
           clearToken();
         } finally {
-          console.log('[TightLines] Setting authLoading to false');
           setAuthLoading(false);
         }
       } else {
-        console.log('[TightLines] No token, skipping auth check');
         setAuthLoading(false);
       }
     };
 
-    // Add timeout wrapper as extra safety
     const timeoutId = setTimeout(() => {
-      console.error('[TightLines] Auth check timeout - forcing app to load');
       setAuthLoading(false);
     }, 5000);
 
@@ -83,7 +188,6 @@ const App = () => {
       setSelectedInstructor(instructor);
       setCurrentPage('instructor-detail');
     } else {
-      // View all instructors
       setCurrentPage('instructors');
       setCurrentTab('instructors');
     }
@@ -100,6 +204,8 @@ const App = () => {
   const handleSignOut = () => {
     clearToken();
     setUser(null);
+    setFavouriteWaters([]);
+    setFavouriteInstructors([]);
     setCurrentPage('home');
   };
 
@@ -130,6 +236,8 @@ const App = () => {
         setUser={handleSignOut}
         onSignIn={() => setShowSignIn(true)}
         onListWater={() => setShowListWater(true)}
+        onListInstructor={() => setShowListInstructor(true)}
+        onProfile={() => setCurrentPage('profile')}
       />
 
       {/* Page Content */}
@@ -147,6 +255,8 @@ const App = () => {
         <SearchResultsPage
           onSelectFishery={handleSelectFishery}
           onBack={() => setCurrentPage('home')}
+          favouriteWaters={favouriteWaters}
+          onToggleFavouriteWater={toggleFavouriteWater}
         />
       )}
 
@@ -163,6 +273,8 @@ const App = () => {
         <InstructorsPage
           onSelectInstructor={handleSelectInstructor}
           onBack={() => setCurrentPage('home')}
+          favouriteInstructors={favouriteInstructors}
+          onToggleFavouriteInstructor={toggleFavouriteInstructor}
         />
       )}
 
@@ -193,6 +305,15 @@ const App = () => {
         <AdminPage user={user} />
       )}
 
+      {currentPage === 'profile' && user && (
+        <ProfilePage
+          user={user}
+          setUser={setUser}
+          onBack={() => setCurrentPage('home')}
+          onSignOut={handleSignOut}
+        />
+      )}
+
       {/* Modals */}
       <SignInModal
         isOpen={showSignIn}
@@ -203,6 +324,11 @@ const App = () => {
       <ListWaterModal
         isOpen={showListWater}
         onClose={() => setShowListWater(false)}
+      />
+
+      <ListInstructorModal
+        isOpen={showListInstructor}
+        onClose={() => setShowListInstructor(false)}
       />
     </div>
   );
