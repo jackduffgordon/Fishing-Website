@@ -3,7 +3,7 @@
 // Hero + Search, Featured Waters, How It Works, Testimonials
 // Clean, conversion-focused, no bloat
 // ============================================
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Search, MapPin, Star, ChevronLeft, ChevronRight, Fish, Calendar, Shield, Check, Quote, ArrowRight, TrendingUp, Heart
 } from 'lucide-react';
@@ -93,13 +93,42 @@ export const HomePage = ({
   const [searchType, setSearchType] = useState('');
   const [searchRadius, setSearchRadius] = useState(25);
   const instructorCarouselRef = useRef(null);
+  const [apiWaters, setApiWaters] = useState([]);
+  const [apiInstructors, setApiInstructors] = useState([]);
 
-  const featured = fisheries.filter((f) => f.featured);
-  const allFisheries = fisheries.slice(0, 6);
+  // Fetch real waters and instructors from the API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [watersRes, instructorsRes] = await Promise.all([
+          fetch('/api/waters'),
+          fetch('/api/instructors')
+        ]);
+        if (watersRes.ok) {
+          const watersData = await watersRes.json();
+          setApiWaters(watersData.waters || []);
+        }
+        if (instructorsRes.ok) {
+          const instructorsData = await instructorsRes.json();
+          setApiInstructors(instructorsData.instructors || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch data from API:', err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Use API data if available, fall back to local data
+  const displayWaters = apiWaters.length > 0 ? apiWaters : fisheries;
+  const displayInstructors = apiInstructors.length > 0 ? apiInstructors : instructors;
+
+  const featured = displayWaters.filter((f) => f.featured);
+  const allFisheries = displayWaters.slice(0, 6);
 
   // Build search suggestions
   const searchSuggestions = [
-    ...fisheries.map((f) => ({ type: 'water', name: f.name, id: f.id })),
+    ...displayWaters.map((f) => ({ type: 'water', name: f.name, id: f.id })),
     ...ukRegions.map((r) => ({ type: 'region', name: r.name, id: r.id })),
     ...ukSpecies.slice(0, 8).map((s) => ({ type: 'species', name: s.name }))
   ];
@@ -309,7 +338,7 @@ export const HomePage = ({
             className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide custom-scrollbar"
             style={{ scrollSnapType: 'x mandatory' }}
           >
-            {instructors.map((i) => (
+            {displayInstructors.map((i) => (
               <div key={i.id} style={{ scrollSnapAlign: 'start' }}>
                 <InstructorCardCompact
                   instructor={i}

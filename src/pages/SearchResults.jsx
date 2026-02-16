@@ -20,7 +20,7 @@ const defaultFilters = {
 };
 
 export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [], onToggleFavouriteWater }) => {
-  const [allWaters, setAllWaters] = useState(hardcodedFisheries);
+  const [allWaters, setAllWaters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(defaultFilters);
   const [sortBy, setSortBy] = useState('rating');
@@ -34,17 +34,14 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
       try {
         const apiWaters = await watersAPI.getAll();
         if (apiWaters && apiWaters.length > 0) {
-          // Merge: API waters + hardcoded (with dedup by name)
-          const apiNames = new Set(apiWaters.map(w => w.name.toLowerCase()));
-          const uniqueHardcoded = hardcodedFisheries.filter(
-            f => !apiNames.has(f.name.toLowerCase())
-          );
-          setAllWaters([...apiWaters, ...uniqueHardcoded]);
+          setAllWaters(apiWaters);
+        } else {
+          // Fallback to hardcoded only if API returns nothing
+          setAllWaters(hardcodedFisheries);
         }
-        // If API returns empty, keep hardcoded data
       } catch (err) {
         console.log('API unavailable, using local data:', err.message);
-        // Keep hardcoded data as fallback
+        setAllWaters(hardcodedFisheries);
       }
       setLoading(false);
     };
