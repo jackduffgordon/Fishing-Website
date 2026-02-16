@@ -42,6 +42,7 @@ const ProfilePage = ({
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
   const [showCatchReportModal, setShowCatchReportModal] = useState(false);
+  const [expandedCatchId, setExpandedCatchId] = useState(null);
 
   // Form states
   const [editForm, setEditForm] = useState({
@@ -214,12 +215,44 @@ const ProfilePage = ({
     }
   };
 
-  const handleRemoveFavouriteWater = (waterId) => {
-    showMessage(`Removed water #${waterId} from favourites`);
+  const handleRemoveFavouriteWater = async (waterId) => {
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/favourites/waters/${waterId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        showMessage('Removed from favourites');
+        // Trigger a page refresh or update parent state
+        window.location.reload();
+      } else {
+        showMessage('Failed to remove favourite', 'error');
+      }
+    } catch (err) {
+      showMessage('Failed to remove favourite', 'error');
+    }
   };
 
-  const handleRemoveFavouriteInstructor = (instructorId) => {
-    showMessage(`Removed instructor #${instructorId} from favourites`);
+  const handleRemoveFavouriteInstructor = async (instructorId) => {
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/favourites/instructors/${instructorId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        showMessage('Removed from favourites');
+        // Trigger a page refresh or update parent state
+        window.location.reload();
+      } else {
+        showMessage('Failed to remove favourite', 'error');
+      }
+    } catch (err) {
+      showMessage('Failed to remove favourite', 'error');
+    }
   };
 
   const getMemberSinceDate = () => {
@@ -393,35 +426,80 @@ const ProfilePage = ({
                 <p className="text-stone-500">Loading...</p>
               ) : catches.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {catches.slice(0, 4).map((catchReport) => (
-                    <div
-                      key={catchReport.id}
-                      className="bg-stone-50 rounded-lg p-4 border border-stone-200"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Fish className="w-5 h-5 text-brand-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-stone-900">
-                            {catchReport.species}
-                          </h4>
-                          {catchReport.weight && (
-                            <p className="text-sm text-stone-600">
-                              {catchReport.weight} lbs
+                  {catches.slice(0, 4).map((catchReport) => {
+                    const isExpanded = expandedCatchId === catchReport.id;
+                    return (
+                      <div
+                        key={catchReport.id}
+                        className="bg-stone-50 rounded-lg p-4 border border-stone-200 cursor-pointer hover:border-brand-700 transition"
+                        onClick={() => setExpandedCatchId(isExpanded ? null : catchReport.id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Fish className="w-5 h-5 text-brand-700" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-stone-900">
+                                {catchReport.species}
+                              </h4>
+                              {catchReport.verified && (
+                                <span className="px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                                  Verified
+                                </span>
+                              )}
+                              {!catchReport.isPublic && (
+                                <span className="px-1.5 py-0.5 text-xs font-medium bg-stone-300 text-stone-700 rounded">
+                                  Private
+                                </span>
+                              )}
+                            </div>
+                            {catchReport.weight && (
+                              <p className="text-sm text-stone-600">
+                                {catchReport.weight} lbs
+                              </p>
+                            )}
+                            <p className="text-xs text-stone-500 mt-1">
+                              {new Date(catchReport.createdAt).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
                             </p>
-                          )}
-                          <p className="text-xs text-stone-500 mt-1">
-                            {new Date(catchReport.createdAt).toLocaleDateString('en-GB', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </p>
+
+                            {/* Expanded details */}
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t border-stone-300 space-y-2">
+                                {catchReport.method && (
+                                  <div>
+                                    <span className="text-xs font-semibold text-stone-700">Method: </span>
+                                    <span className="text-xs text-stone-600">{catchReport.method}</span>
+                                  </div>
+                                )}
+                                {catchReport.comment && (
+                                  <div>
+                                    <span className="text-xs font-semibold text-stone-700 block mb-1">Comment:</span>
+                                    <p className="text-sm text-stone-600 bg-white rounded p-2">
+                                      {catchReport.comment}
+                                    </p>
+                                  </div>
+                                )}
+                                <p className="text-xs text-stone-400 italic">
+                                  Click to collapse
+                                </p>
+                              </div>
+                            )}
+
+                            {!isExpanded && (catchReport.method || catchReport.comment) && (
+                              <p className="text-xs text-brand-700 mt-2">
+                                Click to view details →
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-stone-600">
