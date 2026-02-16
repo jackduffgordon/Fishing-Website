@@ -21,8 +21,11 @@ import {
   CheckCircle,
   MessageSquare,
   TrendingUp,
+  X,
+  Plus,
 } from 'lucide-react';
 import { getToken } from '../utils/api';
+import { CatchReportForm } from '../components/forms/CatchReportForm';
 
 const ProfilePage = ({
   user,
@@ -38,6 +41,7 @@ const ProfilePage = ({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState('success');
+  const [showCatchReportModal, setShowCatchReportModal] = useState(false);
 
   // Form states
   const [editForm, setEditForm] = useState({
@@ -372,10 +376,19 @@ const ProfilePage = ({
 
             {/* Recent Catches */}
             <div className="bg-white rounded-xl p-8 shadow-sm border border-stone-100">
-              <h3 className="text-lg font-bold text-stone-900 mb-4 flex items-center gap-2">
-                <Fish className="w-5 h-5 text-brand-700" />
-                Recent Catches ({catches.length})
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                  <Fish className="w-5 h-5 text-brand-700" />
+                  Recent Catches ({catches.length})
+                </h3>
+                <button
+                  onClick={() => setShowCatchReportModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Report Catch
+                </button>
+              </div>
               {activityLoading ? (
                 <p className="text-stone-500">Loading...</p>
               ) : catches.length > 0 ? (
@@ -1004,6 +1017,38 @@ const ProfilePage = ({
           </div>
         )}
       </div>
+
+      {/* Catch Report Modal */}
+      {showCatchReportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <CatchReportForm
+              user={user}
+              onClose={() => setShowCatchReportModal(false)}
+              onSuccess={() => {
+                setShowCatchReportModal(false);
+                showMessage('Catch reported successfully!');
+                // Refresh catches
+                const fetchCatches = async () => {
+                  try {
+                    const token = getToken();
+                    const res = await fetch('/api/catches/user', {
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setCatches(data.catches || []);
+                    }
+                  } catch (err) {
+                    console.log('Failed to refresh catches:', err);
+                  }
+                };
+                fetchCatches();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -5,14 +5,18 @@ import { useState, useEffect } from 'react';
 import { Fish, X, Loader, AlertCircle, CheckCircle } from 'lucide-react';
 import { getToken } from '../../utils/api';
 
-export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }) => {
+export const CatchReportForm = ({ waterId: initialWaterId, waterName: initialWaterName, user, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [hasBooking, setHasBooking] = useState(false);
   const [checkingBooking, setCheckingBooking] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [waters, setWaters] = useState([]);
+  const [loadingWaters, setLoadingWaters] = useState(!initialWaterId);
 
   const [formData, setFormData] = useState({
+    waterId: initialWaterId || '',
+    waterName: initialWaterName || '',
     species: '',
     weight: '',
     method: '',
@@ -20,10 +24,33 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
     isPublic: true
   });
 
+  // Fetch available waters if waterId not provided
+  useEffect(() => {
+    const fetchWaters = async () => {
+      if (initialWaterId) {
+        setLoadingWaters(false);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/waters');
+        if (res.ok) {
+          const data = await res.json();
+          setWaters(data.waters || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch waters:', err);
+      }
+      setLoadingWaters(false);
+    };
+
+    fetchWaters();
+  }, [initialWaterId]);
+
   // Check if user has a confirmed booking for this water
   useEffect(() => {
     const checkBooking = async () => {
-      if (!user) {
+      if (!user || !formData.waterId) {
         setCheckingBooking(false);
         return;
       }
@@ -38,7 +65,7 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
           const data = await res.json();
           // Check if user has a confirmed booking for this water
           const confirmedBooking = data.inquiries?.find(
-            inquiry => inquiry.waterId === waterId && inquiry.status === 'confirmed'
+            inquiry => inquiry.waterId === formData.waterId && inquiry.status === 'confirmed'
           );
           setHasBooking(!!confirmedBooking);
         }
@@ -49,7 +76,7 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
     };
 
     checkBooking();
-  }, [user, waterId]);
+  }, [user, formData.waterId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -65,6 +92,11 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
 
     if (!user) {
       setError('Please sign in to report a catch');
+      return;
+    }
+
+    if (!formData.waterId) {
+      setError('Please select a water');
       return;
     }
 
@@ -84,7 +116,7 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          waterId,
+          waterId: formData.waterId,
           species: formData.species,
           weight: formData.weight ? parseFloat(formData.weight) : null,
           method: formData.method || null,
@@ -111,11 +143,13 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
     }
   };
 
-  if (checkingBooking) {
+  if (checkingBooking || loadingWaters) {
     return (
       <div className="bg-white rounded-xl p-8 text-center">
         <Loader className="w-8 h-8 text-brand-600 animate-spin mx-auto mb-4" />
-        <p className="text-stone-600">Checking your booking status...</p>
+        <p className="text-stone-600">
+          {loadingWaters ? 'Loading waters...' : 'Checking your booking status...'}
+        </p>
       </div>
     );
   }
@@ -143,7 +177,9 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
           </div>
           <div>
             <h3 className="text-lg font-bold text-stone-900">Report a Catch</h3>
-            <p className="text-sm text-stone-600">{waterName}</p>
+            <p className="text-sm text-stone-600">
+              {formData.waterName || (initialWaterName) || 'Select a water to report your catch'}
+            </p>
           </div>
         </div>
         {onClose && (
@@ -182,6 +218,35 @@ export const CatchReportForm = ({ waterId, waterName, user, onClose, onSuccess }
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {!initialWaterId && (
+          <div>
+            <label className="block text-sm font-semibold text-stone-900 mb-2">
+              Water <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="waterId"
+              value={formData.waterId}
+              onChange={(e) => {
+                const selectedWater = waters.find(w => w.id === e.target.value);
+                setFormData(prev => ({
+                  ...prev,
+                  waterId: e.target.value,
+                  waterName: selectedWater?.name || ''
+                }));
+              }}
+              className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-700 focus:border-transparent"
+              required
+            >
+              <option value="">Select a water</option>
+              {waters.map(water => (
+                <option key={water.id} value={water.id}>
+                  {water.name} - {water.region}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-semibold text-stone-900 mb-2">
             Species <span className="text-red-500">*</span>
