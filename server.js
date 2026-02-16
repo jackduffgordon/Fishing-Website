@@ -1,4 +1,4 @@
-// TightLines Backend Server - Supabase Version
+Page_Down// TightLines Backend Server - Supabase Version
 // Express + Supabase + JWT Auth + Role-Based Access
 
 const express = require('express');
@@ -59,7 +59,7 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'tightlines-secret-key-change-in-production';
 
 // Middleware
-app.use(cors());
+app.usecors({ origin: '*', credentials: false, methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 app.use(express.static(path.join(__dirname, 'dist')));
