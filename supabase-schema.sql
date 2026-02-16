@@ -177,6 +177,23 @@ CREATE TABLE IF NOT EXISTS inquiries (
 );
 
 -- ============================================
+-- REVIEWS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS reviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  water_id UUID REFERENCES waters(id) ON DELETE CASCADE,
+  instructor_id UUID REFERENCES instructors(id) ON DELETE CASCADE,
+  booking_id UUID REFERENCES inquiries(id) ON DELETE SET NULL,
+  author_name TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title TEXT,
+  text TEXT NOT NULL,
+  verified BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
 -- INDEXES
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_waters_status ON waters(status);
@@ -192,6 +209,9 @@ CREATE INDEX IF NOT EXISTS idx_catches_water ON catches(water_id);
 CREATE INDEX IF NOT EXISTS idx_catches_user ON catches(user_id);
 CREATE INDEX IF NOT EXISTS idx_inquiries_water ON inquiries(water_id);
 CREATE INDEX IF NOT EXISTS idx_inquiries_user ON inquiries(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_water ON reviews(water_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_instructor ON reviews(instructor_id);
 
 -- ============================================
 -- ROW LEVEL SECURITY
@@ -206,6 +226,7 @@ ALTER TABLE favourite_waters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE favourite_instructors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE catches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 -- Public read policies (no auth needed for browsing)
 CREATE POLICY "waters_public_read" ON waters FOR SELECT USING (status = 'approved');
@@ -222,3 +243,5 @@ CREATE POLICY "service_all_favourite_waters" ON favourite_waters FOR ALL USING (
 CREATE POLICY "service_all_favourite_instructors" ON favourite_instructors FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "service_all_catches" ON catches FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "service_all_inquiries" ON inquiries FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "reviews_public_read" ON reviews FOR SELECT USING (true);
+CREATE POLICY "service_all_reviews" ON reviews FOR ALL USING (true) WITH CHECK (true);

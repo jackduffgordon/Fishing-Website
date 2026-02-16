@@ -11,6 +11,7 @@ import { DatePickerCalendar } from '../components/common/DatePickerCalendar';
 import { CertificationBadgeList } from '../components/common/CertificationBadge';
 import { TypicalDay } from '../components/sections/TypicalDay';
 import { ReviewsList } from '../components/sections/ReviewsList';
+import { ReviewForm } from '../components/forms/ReviewForm';
 
 const tabs = [
   { id: 'about', label: 'About' },
@@ -267,7 +268,12 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
 
                 {/* Reviews Tab */}
                 {activeTab === 'reviews' && (
-                  <ReviewsList reviews={instructor.reviewsList || []} />
+                  <div className="space-y-8">
+                    <ReviewForm instructorId={instructor.id} user={user} onSuccess={() => {
+                      // Optionally refresh reviews here
+                    }} />
+                    <ReviewsList reviews={instructor.reviewsList || []} />
+                  </div>
                 )}
               </div>
             </div>

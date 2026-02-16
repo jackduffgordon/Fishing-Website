@@ -12,6 +12,8 @@ import { PhotoCarousel } from '../components/common/PhotoCarousel';
 import { DatePickerCalendar, DateRangePicker } from '../components/common/DatePickerCalendar';
 import { WhatToExpect } from '../components/sections/WhatToExpect';
 import { ReviewsList } from '../components/sections/ReviewsList';
+import { ReviewForm } from '../components/forms/ReviewForm';
+import { CatchesList } from '../components/sections/CatchesList';
 import { NearbyStaysMap, MapLegend } from '../components/maps/NearbyStaysMap';
 import { AccommodationCard } from '../components/cards/AccommodationCard';
 
@@ -35,6 +37,7 @@ const facilityIcons = {
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'species', label: 'Species & Records' },
+  { id: 'catches', label: 'Recent Catches' },
   { id: 'facilities', label: 'Facilities' },
   { id: 'rules', label: 'Rules' },
   { id: 'reviews', label: 'Reviews' },
@@ -325,9 +328,19 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                   </div>
                 )}
 
+                {/* Catches Tab */}
+                {activeTab === 'catches' && (
+                  <CatchesList waterId={fishery.id} />
+                )}
+
                 {/* Reviews Tab */}
                 {activeTab === 'reviews' && (
-                  <ReviewsList reviews={fishery.reviewsList || []} />
+                  <div className="space-y-8">
+                    <ReviewForm waterId={fishery.id} user={user} onSuccess={() => {
+                      // Optionally refresh reviews here
+                    }} />
+                    <ReviewsList reviews={fishery.reviewsList || []} />
+                  </div>
                 )}
 
                 {/* Nearby Stays Tab */}

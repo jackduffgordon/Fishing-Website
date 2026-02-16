@@ -3,7 +3,7 @@
 // Added: Become an Instructor, Clickable profile avatar
 // ============================================
 import { useState, useRef, useEffect } from 'react';
-import { Fish, Menu, X, ChevronDown, User, LogOut, Shield } from 'lucide-react';
+import { Fish, Menu, X, ChevronDown, User, LogOut, Shield, Droplets, Award } from 'lucide-react';
 
 export const Nav = ({
   currentTab,
@@ -161,6 +161,24 @@ export const Nav = ({
                       <User className="w-4 h-4 text-stone-400" />
                       My Profile
                     </button>
+                    {(user.role === 'water_owner' || user.role === 'pending_water_owner') && (
+                      <button
+                        onClick={() => { setCurrentPage('water-dashboard'); setUserMenuOpen(false); }}
+                        className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50"
+                      >
+                        <Droplets className="w-4 h-4 text-stone-400" />
+                        My Waters
+                      </button>
+                    )}
+                    {(user.role === 'instructor' || user.role === 'pending_instructor') && (
+                      <button
+                        onClick={() => { setCurrentPage('instructor-dashboard'); setUserMenuOpen(false); }}
+                        className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50"
+                      >
+                        <Award className="w-4 h-4 text-stone-400" />
+                        Instructor Dashboard
+                      </button>
+                    )}
                     {user.role === 'admin' && (
                       <button
                         onClick={() => { setCurrentPage('admin'); setUserMenuOpen(false); }}
@@ -282,6 +300,22 @@ export const Nav = ({
                   <span className="text-xs text-stone-500">View profile</span>
                 </div>
               </button>
+              {(user.role === 'water_owner' || user.role === 'pending_water_owner') && (
+                <button
+                  onClick={() => { setCurrentPage('water-dashboard'); setMobileOpen(false); }}
+                  className="mt-2 block text-sm text-brand-700 font-medium"
+                >
+                  My Waters
+                </button>
+              )}
+              {(user.role === 'instructor' || user.role === 'pending_instructor') && (
+                <button
+                  onClick={() => { setCurrentPage('instructor-dashboard'); setMobileOpen(false); }}
+                  className="mt-2 block text-sm text-brand-700 font-medium"
+                >
+                  Instructor Dashboard
+                </button>
+              )}
               {user.role === 'admin' && (
                 <button
                   onClick={() => { setCurrentPage('admin'); setMobileOpen(false); }}

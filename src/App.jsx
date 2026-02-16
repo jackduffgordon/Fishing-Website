@@ -21,6 +21,8 @@ import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { WaterOwnerDashboard } from './pages/WaterOwnerDashboard';
+import { InstructorDashboard } from './pages/InstructorDashboard';
 
 const App = () => {
   // Navigation state
@@ -40,20 +42,84 @@ const App = () => {
   const [showListWater, setShowListWater] = useState(false);
   const [showListInstructor, setShowListInstructor] = useState(false);
 
-  // Favourites state
-  const [favouriteWaters, setFavouriteWaters] = useState([]);
-  const [favouriteInstructors, setFavouriteInstructors] = useState([]);
+  // Favourites state - load from localStorage initially for guest users
+  const [favouriteWaters, setFavouriteWaters] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tightlines_guest_fav_waters');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [favouriteInstructors, setFavouriteInstructors] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tightlines_guest_fav_instructors');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Sync guest favorites to localStorage
+  useEffect(() => {
+    if (!user) {
+      localStorage.setItem('tightlines_guest_fav_waters', JSON.stringify(favouriteWaters));
+      localStorage.setItem('tightlines_guest_fav_instructors', JSON.stringify(favouriteInstructors));
+    }
+  }, [favouriteWaters, favouriteInstructors, user]);
+
+  // Sync pre-login favorites to database after authentication
+  const syncGuestFavourites = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    const guestWaters = favouriteWaters;
+    const guestInstructors = favouriteInstructors;
+
+    // Push each guest favorite to the database
+    for (const waterId of guestWaters) {
+      try {
+        await fetch('/api/favourites/waters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ waterId })
+        });
+      } catch (err) {
+        console.log('Failed to sync water favourite:', waterId);
+      }
+    }
+
+    for (const instructorId of guestInstructors) {
+      try {
+        await fetch('/api/favourites/instructors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ instructorId })
+        });
+      } catch (err) {
+        console.log('Failed to sync instructor favourite:', instructorId);
+      }
+    }
+
+    // Clear guest favorites from localStorage
+    localStorage.removeItem('tightlines_guest_fav_waters');
+    localStorage.removeItem('tightlines_guest_fav_instructors');
+  }, [favouriteWaters, favouriteInstructors]);
 
   // Fetch favourites when user logs in
   const fetchFavourites = useCallback(async () => {
     if (!user) {
-      setFavouriteWaters([]);
-      setFavouriteInstructors([]);
+      // Don't clear favorites - keep guest favorites in state
       return;
     }
     try {
       const token = getToken();
       if (!token) return;
+
+      // First, sync any guest favorites to the database
+      await syncGuestFavourites();
+
+      // Then fetch all favorites from database
       const res = await fetch('/api/user/favourites', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -65,7 +131,7 @@ const App = () => {
     } catch (err) {
       console.log('Could not fetch favourites:', err.message);
     }
-  }, [user]);
+  }, [user, syncGuestFavourites]);
 
   useEffect(() => {
     fetchFavourites();
@@ -73,20 +139,23 @@ const App = () => {
 
   // Toggle favourite water
   const toggleFavouriteWater = async (waterId) => {
-    if (!user) {
-      setShowSignIn(true);
-      return;
-    }
-    const token = getToken();
-    if (!token) return;
-
     const isFav = favouriteWaters.includes(waterId);
-    // Optimistic update
+
+    // Optimistic update for both guest and logged-in users
     if (isFav) {
       setFavouriteWaters(prev => prev.filter(id => id !== waterId));
     } else {
       setFavouriteWaters(prev => [...prev, waterId]);
     }
+
+    // If not logged in, store in localStorage only
+    if (!user) {
+      return;
+    }
+
+    // If logged in, sync to database
+    const token = getToken();
+    if (!token) return;
 
     try {
       if (isFav) {
@@ -113,20 +182,23 @@ const App = () => {
 
   // Toggle favourite instructor
   const toggleFavouriteInstructor = async (instructorId) => {
-    if (!user) {
-      setShowSignIn(true);
-      return;
-    }
-    const token = getToken();
-    if (!token) return;
-
     const isFav = favouriteInstructors.includes(instructorId);
-    // Optimistic update
+
+    // Optimistic update for both guest and logged-in users
     if (isFav) {
       setFavouriteInstructors(prev => prev.filter(id => id !== instructorId));
     } else {
       setFavouriteInstructors(prev => [...prev, instructorId]);
     }
+
+    // If not logged in, store in localStorage only
+    if (!user) {
+      return;
+    }
+
+    // If logged in, sync to database
+    const token = getToken();
+    if (!token) return;
 
     try {
       if (isFav) {
@@ -321,6 +393,21 @@ const App = () => {
           favouriteInstructors={favouriteInstructors}
           onNavigateToWater={() => setCurrentPage('search')}
           onNavigateToInstructor={() => { setCurrentPage('instructors'); setCurrentTab('instructors'); }}
+        />
+      )}
+
+      {currentPage === 'water-dashboard' && user && (user.role === 'water_owner' || user.role === 'pending_water_owner') && (
+        <WaterOwnerDashboard
+          user={user}
+          onBack={() => setCurrentPage('home')}
+          onListWater={() => setShowListWater(true)}
+        />
+      )}
+
+      {currentPage === 'instructor-dashboard' && user && (user.role === 'instructor' || user.role === 'pending_instructor') && (
+        <InstructorDashboard
+          user={user}
+          onBack={() => setCurrentPage('home')}
         />
       )}
 

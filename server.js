@@ -1256,6 +1256,171 @@ app.get('/api/catches/water/:id', async (req, res) => {
 });
 
 // ============================================================================
+// REVIEWS ROUTES
+// ============================================================================
+
+app.post('/api/reviews', authenticateToken, async (req, res) => {
+  try {
+    const { waterId, instructorId, rating, title, text } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Review text is required' });
+    }
+
+    if (!waterId && !instructorId) {
+      return res.status(400).json({ error: 'Either waterId or instructorId is required' });
+    }
+
+    // Check if user has a booking for this water/instructor
+    const { data: bookings } = await supabase
+      .from('inquiries')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('status', 'confirmed')
+      .or(waterId ? `water_id.eq.${waterId}` : `instructor_id.eq.${instructorId}`);
+
+    const isVerified = bookings && bookings.length > 0;
+
+    // Create review
+    const { data: review, error } = await supabase
+      .from('reviews')
+      .insert([{
+        user_id: req.user.id,
+        water_id: waterId || null,
+        instructor_id: instructorId || null,
+        author_name: req.user.name,
+        rating,
+        title: title || '',
+        text,
+        verified: isVerified,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: 'Failed to create review' });
+    }
+
+    // Update rating and review count for water/instructor
+    if (waterId) {
+      const { data: allReviews } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('water_id', waterId);
+
+      if (allReviews && allReviews.length > 0) {
+        const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+        await supabase
+          .from('waters')
+          .update({
+            rating: Number(avgRating.toFixed(1)),
+            review_count: allReviews.length
+          })
+          .eq('id', waterId);
+      }
+    }
+
+    if (instructorId) {
+      const { data: allReviews } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('instructor_id', instructorId);
+
+      if (allReviews && allReviews.length > 0) {
+        const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+        await supabase
+          .from('instructors')
+          .update({
+            rating: Number(avgRating.toFixed(1)),
+            review_count: allReviews.length
+          })
+          .eq('id', instructorId);
+      }
+    }
+
+    res.json({
+      message: 'Review submitted successfully',
+      review: {
+        id: review.id,
+        author: review.author_name,
+        rating: review.rating,
+        title: review.title,
+        text: review.text,
+        verified: review.verified,
+        date: review.created_at
+      },
+      verified: isVerified
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to submit review' });
+  }
+});
+
+app.get('/api/reviews/water/:id', async (req, res) => {
+  try {
+    const { data: reviews, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('water_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+
+    const formattedReviews = reviews.map(r => ({
+      id: r.id,
+      author: r.author_name,
+      rating: r.rating,
+      title: r.title,
+      text: r.text,
+      verified: r.verified,
+      date: r.created_at
+    }));
+
+    res.json({ reviews: formattedReviews });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+app.get('/api/reviews/instructor/:id', async (req, res) => {
+  try {
+    const { data: reviews, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('instructor_id', req.params.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to fetch reviews' });
+    }
+
+    const formattedReviews = reviews.map(r => ({
+      id: r.id,
+      author: r.author_name,
+      rating: r.rating,
+      title: r.title,
+      text: r.text,
+      verified: r.verified,
+      date: r.created_at
+    }));
+
+    res.json({ reviews: formattedReviews });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+// ============================================================================
 // REGISTRATION FORMS - List Water / Register Instructor
 // ============================================================================
 
