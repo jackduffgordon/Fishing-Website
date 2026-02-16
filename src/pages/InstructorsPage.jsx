@@ -214,7 +214,7 @@ const MobileFilterDrawer = ({ isOpen, onClose, filters, onFilterChange, onClearF
 };
 
 export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructors = [], onToggleFavouriteInstructor }) => {
-  const [allInstructors, setAllInstructors] = useState(hardcodedInstructors);
+  const [allInstructors, setAllInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(defaultFilters);
   const [sortBy, setSortBy] = useState('rating');
@@ -227,14 +227,13 @@ export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructo
       try {
         const apiInstructors = await instructorsAPI.getAll();
         if (apiInstructors && apiInstructors.length > 0) {
-          const apiNames = new Set(apiInstructors.map(i => i.name.toLowerCase()));
-          const uniqueHardcoded = hardcodedInstructors.filter(
-            i => !apiNames.has(i.name.toLowerCase())
-          );
-          setAllInstructors([...apiInstructors, ...uniqueHardcoded]);
+          setAllInstructors(apiInstructors);
+        } else {
+          setAllInstructors(hardcodedInstructors);
         }
       } catch (err) {
         console.log('API unavailable, using local data:', err.message);
+        setAllInstructors(hardcodedInstructors);
       }
       setLoading(false);
     };
