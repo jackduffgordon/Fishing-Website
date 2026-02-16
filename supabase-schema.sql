@@ -151,6 +151,8 @@ CREATE TABLE IF NOT EXISTS catches (
   weight NUMERIC(5,2),
   method TEXT,
   comment TEXT,
+  is_public BOOLEAN DEFAULT true,
+  verified BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -232,7 +234,7 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "waters_public_read" ON waters FOR SELECT USING (status = 'approved');
 CREATE POLICY "booking_options_public_read" ON booking_options FOR SELECT USING (true);
 CREATE POLICY "instructors_public_read" ON instructors FOR SELECT USING (status = 'approved');
-CREATE POLICY "catches_public_read" ON catches FOR SELECT USING (true);
+CREATE POLICY "catches_public_read" ON catches FOR SELECT USING (is_public = true);
 
 -- Service role can do everything (backend uses service key)
 CREATE POLICY "service_all_users" ON users FOR ALL USING (true) WITH CHECK (true);

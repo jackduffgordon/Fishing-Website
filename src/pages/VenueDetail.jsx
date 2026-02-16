@@ -13,6 +13,7 @@ import { DatePickerCalendar, DateRangePicker } from '../components/common/DatePi
 import { WhatToExpect } from '../components/sections/WhatToExpect';
 import { ReviewsList } from '../components/sections/ReviewsList';
 import { ReviewForm } from '../components/forms/ReviewForm';
+import { CatchReportForm } from '../components/forms/CatchReportForm';
 import { CatchesList } from '../components/sections/CatchesList';
 import { NearbyStaysMap, MapLegend } from '../components/maps/NearbyStaysMap';
 import { AccommodationCard } from '../components/cards/AccommodationCard';
@@ -330,7 +331,17 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
 
                 {/* Catches Tab */}
                 {activeTab === 'catches' && (
-                  <CatchesList waterId={fishery.id} />
+                  <div className="space-y-8">
+                    <CatchReportForm
+                      waterId={fishery.id}
+                      waterName={fishery.name}
+                      user={user}
+                      onSuccess={() => {
+                        // Optionally refresh catches here
+                      }}
+                    />
+                    <CatchesList waterId={fishery.id} />
+                  </div>
                 )}
 
                 {/* Reviews Tab */}

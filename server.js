@@ -658,6 +658,8 @@ app.get('/api/catches/user', authenticateToken, async (req, res) => {
       weight: c.weight,
       method: c.method,
       comment: c.comment,
+      isPublic: c.is_public,
+      verified: c.verified,
       createdAt: c.created_at,
       anglerName: c.angler_name
     }));
@@ -1268,7 +1270,7 @@ app.delete('/api/favourites/instructors/:id', authenticateToken, async (req, res
 
 app.post('/api/catches', authenticateToken, async (req, res) => {
   try {
-    const { waterId, species, weight, method, comment } = req.body;
+    const { waterId, species, weight, method, comment, isPublic, verified } = req.body;
     if (!waterId || !species) return res.status(400).json({ error: 'waterId and species required' });
 
     const catchRecord = {
@@ -1278,6 +1280,8 @@ app.post('/api/catches', authenticateToken, async (req, res) => {
       weight,
       method,
       comment,
+      is_public: isPublic !== undefined ? isPublic : true,
+      verified: verified || false,
       created_at: new Date().toISOString(),
       angler_name: req.user.name
     };
@@ -1289,6 +1293,7 @@ app.post('/api/catches', authenticateToken, async (req, res) => {
       .single();
 
     if (error) {
+      console.error('Catch insert error:', error);
       return res.status(400).json({ error: 'Failed to create catch' });
     }
 
@@ -1319,6 +1324,8 @@ app.get('/api/catches/water/:id', async (req, res) => {
       weight: c.weight,
       method: c.method,
       comment: c.comment,
+      isPublic: c.is_public,
+      verified: c.verified,
       createdAt: c.created_at,
       anglerName: c.angler_name
     }));
