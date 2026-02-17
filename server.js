@@ -939,6 +939,44 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
       return res.status(400).json({ error: 'Booking failed' });
     }
 
+    // Send confirmation email to the angler
+    const waterName = waterId ? (await supabase.from('waters').select('name').eq('id', waterId).single())?.data?.name : null;
+    const instructorName = instructorId ? (await supabase.from('instructors').select('name').eq('id', instructorId).single())?.data?.name : null;
+    const locationName = waterName || instructorName || 'your booking';
+
+    await sendEmail(anglerEmail, `Booking Confirmed - ${locationName}`, `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1B5E3B; padding: 24px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+        </div>
+        <div style="padding: 32px 24px; background: #fff;">
+          <h2 style="color: #1a1a1a;">Booking Confirmed!</h2>
+          <p style="color: #555;">Hi ${anglerName},</p>
+          <p style="color: #555;">Your booking has been confirmed. Here are the details:</p>
+          <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
+            <p style="margin: 4px 0;"><strong>Location:</strong> ${locationName}</p>
+            <p style="margin: 4px 0;"><strong>Date:</strong> ${date || startDate}</p>
+            ${numberOfDays > 1 ? `<p style="margin: 4px 0;"><strong>Duration:</strong> ${numberOfDays} days</p>` : ''}
+            ${message ? `<p style="margin: 4px 0;"><strong>Notes:</strong> ${message}</p>` : ''}
+          </div>
+          <p style="color: #555;">If you have any questions, reply to this email or contact the venue directly.</p>
+          <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
+        </div>
+      </div>
+    `);
+
+    // Notify admin
+    await sendEmail(ADMIN_EMAIL, `New Booking - ${locationName}`, `
+      <p>New booking received:</p>
+      <ul>
+        <li><strong>Customer:</strong> ${anglerName} (${anglerEmail})</li>
+        <li><strong>Location:</strong> ${locationName}</li>
+        <li><strong>Date:</strong> ${date || startDate}</li>
+        <li><strong>Days:</strong> ${numberOfDays || 1}</li>
+        ${message ? `<li><strong>Message:</strong> ${message}</li>` : ''}
+      </ul>
+    `);
+
     res.json({ message: 'Booking confirmed!', bookingId: newBooking.id, booking: newBooking });
   } catch (e) {
     console.error(e);
@@ -976,6 +1014,40 @@ app.post('/api/contact', async (req, res) => {
     if (error) {
       return res.status(400).json({ error: 'Submission failed' });
     }
+
+    // Send confirmation to the enquirer
+    const waterName = waterId ? (await supabase.from('waters').select('name').eq('id', waterId).single())?.data?.name : null;
+    const instructorName = instructorId ? (await supabase.from('instructors').select('name').eq('id', instructorId).single())?.data?.name : null;
+    const locationName = waterName || instructorName || 'TightLines';
+
+    await sendEmail(email, `Enquiry Received - ${locationName}`, `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1B5E3B; padding: 24px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+        </div>
+        <div style="padding: 32px 24px; background: #fff;">
+          <h2 style="color: #1a1a1a;">Enquiry Received</h2>
+          <p style="color: #555;">Hi ${name},</p>
+          <p style="color: #555;">Thanks for your enquiry about <strong>${locationName}</strong>. We've passed it on and you should hear back within 24-48 hours.</p>
+          <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
+            ${date ? `<p style="margin: 4px 0;"><strong>Preferred date:</strong> ${date}</p>` : ''}
+            <p style="margin: 4px 0;"><strong>Your message:</strong> ${message}</p>
+          </div>
+          <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
+        </div>
+      </div>
+    `);
+
+    // Notify admin
+    await sendEmail(ADMIN_EMAIL, `New Enquiry - ${locationName}`, `
+      <p>New enquiry received:</p>
+      <ul>
+        <li><strong>From:</strong> ${name} (${email})</li>
+        <li><strong>About:</strong> ${locationName}</li>
+        ${date ? `<li><strong>Date:</strong> ${date}</li>` : ''}
+        <li><strong>Message:</strong> ${message}</li>
+      </ul>
+    `);
 
     res.json({ message: 'Enquiry submitted! We\'ll be in touch soon.', inquiryId: newInquiry.id });
   } catch (e) {
@@ -1747,6 +1819,51 @@ app.post('/api/register/water', async (req, res) => {
         .insert(optionsWithWaterId);
     }
 
+    // Send confirmation email to owner
+    await sendEmail(ownerEmail, `Water Listing Submitted - ${waterName}`, `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1B5E3B; padding: 24px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+        </div>
+        <div style="padding: 32px 24px; background: #fff;">
+          <h2 style="color: #1a1a1a;">Listing Submitted!</h2>
+          <p style="color: #555;">Hi ${ownerName},</p>
+          <p style="color: #555;">Thanks for submitting <strong>${waterName}</strong> to TightLines. Our team will review your listing within 48 hours.</p>
+          <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
+            <p style="margin: 4px 0;"><strong>Water:</strong> ${waterName}</p>
+            <p style="margin: 4px 0;"><strong>Type:</strong> ${waterType}</p>
+            <p style="margin: 4px 0;"><strong>Region:</strong> ${region}</p>
+            <p style="margin: 4px 0;"><strong>Booking options:</strong> ${processedOptions.length}</p>
+          </div>
+          ${isNewUser ? `
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 16px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">Your Account</h3>
+              <p style="color: #555;">We've created an account for you to manage your listing:</p>
+              <p style="margin: 4px 0;"><strong>Email:</strong> ${ownerEmail}</p>
+              <p style="margin: 4px 0;"><strong>Temporary password:</strong> ${tempPassword}</p>
+              <p style="color: #888; font-size: 12px;">Please change your password after your first login.</p>
+            </div>
+          ` : ''}
+          <p style="color: #555;">Once approved, your water will go live and you'll get a dashboard to manage bookings.</p>
+          <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
+        </div>
+      </div>
+    `);
+
+    // Notify admin
+    await sendEmail(ADMIN_EMAIL, `New Water Listing - ${waterName}`, `
+      <p>New water listing submitted for review:</p>
+      <ul>
+        <li><strong>Water:</strong> ${waterName}</li>
+        <li><strong>Owner:</strong> ${ownerName} (${ownerEmail})</li>
+        <li><strong>Type:</strong> ${waterType}</li>
+        <li><strong>Region:</strong> ${region}</li>
+        <li><strong>Booking options:</strong> ${processedOptions.length}</li>
+        <li><strong>New user:</strong> ${isNewUser ? 'Yes' : 'No'}</li>
+      </ul>
+      <p>Log in to the admin dashboard to approve or reject.</p>
+    `);
+
     res.json({
       message: 'Submitted for approval',
       waterId: water.id,
@@ -1821,6 +1938,50 @@ app.post('/api/register/instructor', async (req, res) => {
     }
 
     console.log(`[Register Instructor] Created instructor "${name}" (${instructor.id}) for user ${user.id} - status: pending`);
+
+    // Send confirmation email
+    await sendEmail(email, `Instructor Profile Submitted - ${name}`, `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1B5E3B; padding: 24px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+        </div>
+        <div style="padding: 32px 24px; background: #fff;">
+          <h2 style="color: #1a1a1a;">Profile Submitted!</h2>
+          <p style="color: #555;">Hi ${name},</p>
+          <p style="color: #555;">Thanks for registering as an instructor on TightLines. Our team will review your profile within 48 hours.</p>
+          <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
+            <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
+            <p style="margin: 4px 0;"><strong>Region:</strong> ${region}</p>
+            <p style="margin: 4px 0;"><strong>Specialties:</strong> ${(specialties || []).join(', ')}</p>
+          </div>
+          ${isNewUser ? `
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 16px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">Your Account</h3>
+              <p style="color: #555;">We've created an account for you:</p>
+              <p style="margin: 4px 0;"><strong>Email:</strong> ${email}</p>
+              <p style="margin: 4px 0;"><strong>Temporary password:</strong> ${tempPassword}</p>
+              <p style="color: #888; font-size: 12px;">Please change your password after your first login.</p>
+            </div>
+          ` : ''}
+          <p style="color: #555;">Once approved, your profile will go live and students can book sessions with you.</p>
+          <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
+        </div>
+      </div>
+    `);
+
+    // Notify admin
+    await sendEmail(ADMIN_EMAIL, `New Instructor - ${name}`, `
+      <p>New instructor registration for review:</p>
+      <ul>
+        <li><strong>Name:</strong> ${name}</li>
+        <li><strong>Email:</strong> ${email}</li>
+        <li><strong>Region:</strong> ${region}</li>
+        <li><strong>Specialties:</strong> ${(specialties || []).join(', ')}</li>
+        <li><strong>Experience:</strong> ${experience} years</li>
+        <li><strong>New user:</strong> ${isNewUser ? 'Yes' : 'No'}</li>
+      </ul>
+      <p>Log in to the admin dashboard to approve or reject.</p>
+    `);
 
     res.json({
       message: 'Submitted for approval',
