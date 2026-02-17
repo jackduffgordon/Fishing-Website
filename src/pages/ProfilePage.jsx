@@ -97,52 +97,35 @@ const ProfilePage = ({
     }
   };
 
-  // Fetch user activity data
+  // Fetch user activity data - each fetch is independent so one failure doesn't block others
   useEffect(() => {
     const fetchUserActivity = async () => {
       if (!user) return;
       setActivityLoading(true);
-      try {
-        const token = getToken();
+      const token = getToken();
+      const authHeaders = { 'Authorization': `Bearer ${token}` };
 
-        // Fetch catches
-        const catchesRes = await fetch('/api/catches/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (catchesRes.ok) {
-          const catchesData = await catchesRes.json();
-          setCatches(catchesData.catches || []);
-        }
+      // Fetch all in parallel, each with its own error handling
+      const [catchesResult, reviewsResult, bookingsResult, appsResult] = await Promise.allSettled([
+        fetch('/api/catches/user', { headers: authHeaders }).then(r => r.ok ? r.json() : null),
+        fetch('/api/reviews/user', { headers: authHeaders }).then(r => r.ok ? r.json() : null),
+        fetch('/api/inquiries/user', { headers: authHeaders }).then(r => r.ok ? r.json() : null),
+        fetch('/api/user/applications', { headers: authHeaders }).then(r => r.ok ? r.json() : null)
+      ]);
 
-        // Fetch reviews
-        const reviewsRes = await fetch('/api/reviews/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (reviewsRes.ok) {
-          const reviewsData = await reviewsRes.json();
-          setReviews(reviewsData.reviews || []);
-        }
-
-        // Fetch bookings/inquiries
-        const bookingsRes = await fetch('/api/inquiries/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (bookingsRes.ok) {
-          const bookingsData = await bookingsRes.json();
-          setBookings(bookingsData.inquiries || []);
-        }
-
-        // Fetch user's applications (submitted waters/instructors)
-        const appsRes = await fetch('/api/user/applications', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (appsRes.ok) {
-          const appsData = await appsRes.json();
-          setApplications({ waters: appsData.waters || [], instructors: appsData.instructors || [] });
-        }
-      } catch (err) {
-        console.log('Failed to fetch activity:', err);
+      if (catchesResult.status === 'fulfilled' && catchesResult.value) {
+        setCatches(catchesResult.value.catches || []);
       }
+      if (reviewsResult.status === 'fulfilled' && reviewsResult.value) {
+        setReviews(reviewsResult.value.reviews || []);
+      }
+      if (bookingsResult.status === 'fulfilled' && bookingsResult.value) {
+        setBookings(bookingsResult.value.inquiries || []);
+      }
+      if (appsResult.status === 'fulfilled' && appsResult.value) {
+        setApplications({ waters: appsResult.value.waters || [], instructors: appsResult.value.instructors || [] });
+      }
+
       setActivityLoading(false);
     };
 
@@ -629,7 +612,6 @@ const ProfilePage = ({
             </div>
 
             {/* My Applications */}
-            {(applications.waters.length > 0 || applications.instructors.length > 0) && (
             <div className="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
               <div className="flex items-center gap-2 mb-4">
                 <Bookmark className="w-5 h-5 text-brand-700" />
@@ -697,8 +679,13 @@ const ProfilePage = ({
                   </div>
                 </div>
               )}
+
+              {applications.waters.length === 0 && applications.instructors.length === 0 && (
+                <p className="text-stone-500 text-sm">
+                  No applications yet. List a water or register as an instructor to see your submissions here.
+                </p>
+              )}
             </div>
-            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
