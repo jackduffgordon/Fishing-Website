@@ -61,6 +61,7 @@ export const ListInstructorModal = ({ isOpen, onClose }) => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [validationMsg, setValidationMsg] = useState(null);
 
   if (!isOpen) return null;
 
@@ -438,13 +439,26 @@ export const ListInstructorModal = ({ isOpen, onClose }) => {
           )}
 
           {step < 3 ? (
-            <button
-              onClick={() => setStep(step + 1)}
-              disabled={step === 1 ? !canProceedStep1 : step === 2 ? !canProceedStep2 : false}
-              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Continue
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              {validationMsg && <p className="text-xs text-red-600">{validationMsg}</p>}
+              <button
+                onClick={() => {
+                  const canProceed = step === 1 ? canProceedStep1 : step === 2 ? canProceedStep2 : true;
+                  if (!canProceed) {
+                    if (step === 1) setValidationMsg('Please fill in your name and email to continue.');
+                    if (step === 2) setValidationMsg('Please select at least one specialty to continue.');
+                    return;
+                  }
+                  setValidationMsg(null);
+                  setStep(step + 1);
+                }}
+                className={`px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 ${
+                  (step === 1 ? !canProceedStep1 : step === 2 ? !canProceedStep2 : false) ? 'opacity-70' : ''
+                }`}
+              >
+                Continue
+              </button>
+            </div>
           ) : (
             <button
               onClick={handleSubmit}

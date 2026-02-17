@@ -181,11 +181,15 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                         <MapPin className="w-4 h-4 mr-1" />
                         {fishery.location}, {fishery.region}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        <span className="font-medium">{fishery.rating}</span>
-                        <span className="text-stone-400">({fishery.reviews} reviews)</span>
-                      </span>
+                      {(fishery.rating > 0 || fishery.reviews > 0) ? (
+                        <span className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                          <span className="font-medium">{fishery.rating}</span>
+                          <span className="text-stone-400">({fishery.reviews} reviews)</span>
+                        </span>
+                      ) : (
+                        <span className="text-stone-400 text-sm">New listing</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -299,7 +303,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                       <p className="text-stone-500">Contact the fishery for facility information.</p>
                     )}
 
-                    {fishery.rods && (
+                    {fishery.rods > 0 && (
                       <div className="mt-6">
                         <h4 className="font-semibold mb-2">Rod Allocation</h4>
                         <p className="text-stone-600">{fishery.rods} rods available</p>

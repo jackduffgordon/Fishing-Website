@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { X, Check, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ukRegions } from '../../data/regions';
+import { registerAPI } from '../../utils/api';
 
 const OPTION_CATEGORIES = [
   { id: 'day-tickets', label: 'Day Tickets & Passes', description: 'Day ticket, half-day, evening, season ticket, syndicate membership' },
@@ -69,8 +70,11 @@ export const ListWaterModal = ({ isOpen, onClose }) => {
     contactPhone: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [expandedOption, setExpandedOption] = useState(null);
   const [showTemplates, setShowTemplates] = useState(null);
+  const [validationMsg, setValidationMsg] = useState(null);
 
   if (!isOpen) return null;
 
@@ -135,8 +139,37 @@ export const ListWaterModal = ({ isOpen, onClose }) => {
     if (expandedOption === id) setExpandedOption(null);
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const payload = {
+        ownerName: formData.contactName,
+        ownerEmail: formData.contactEmail,
+        ownerPhone: formData.contactPhone,
+        waterName: formData.name,
+        waterType: formData.type,
+        region: formData.region,
+        description: formData.description,
+        species: formData.species,
+        facilities: formData.amenities,
+        bookingOptions: formData.bookingOptions.map(opt => ({
+          category: opt.category,
+          name: opt.name,
+          description: opt.description || '',
+          price: opt.price,
+          priceType: opt.priceType,
+          bookingType: opt.bookingType || 'enquiry'
+        }))
+      };
+
+      await registerAPI.water(payload);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message || 'Failed to submit listing');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -647,6 +680,12 @@ export const ListWaterModal = ({ isOpen, onClose }) => {
           </div>
         )}
 
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex justify-between mt-6 pt-6 border-t border-stone-200">
           {step > 1 ? (
@@ -661,19 +700,36 @@ export const ListWaterModal = ({ isOpen, onClose }) => {
           )}
 
           {step < 4 ? (
-            <button
-              onClick={() => { setStep(step + 1); setShowTemplates(null); }}
-              disabled={step === 3 && !canProceedStep3}
-              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Continue
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              {validationMsg && <p className="text-xs text-red-600">{validationMsg}</p>}
+              <button
+                onClick={() => {
+                  if (step === 1 && (!formData.name.trim() || !formData.region)) {
+                    setValidationMsg('Please fill in the water name and region.');
+                    return;
+                  }
+                  if (step === 3 && !canProceedStep3) {
+                    setValidationMsg('Please add at least one booking option with a name and price.');
+                    return;
+                  }
+                  setValidationMsg(null);
+                  setStep(step + 1);
+                  setShowTemplates(null);
+                }}
+                className={`px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 ${
+                  (step === 3 && !canProceedStep3) ? 'opacity-70' : ''
+                }`}
+              >
+                Continue
+              </button>
+            </div>
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800"
+              disabled={loading}
+              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Submit Listing
+              {loading ? 'Submitting...' : 'Submit Listing'}
             </button>
           )}
         </div>
