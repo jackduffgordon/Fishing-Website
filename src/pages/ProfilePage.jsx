@@ -73,6 +73,7 @@ const ProfilePage = ({
   const [catches, setCatches] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [applications, setApplications] = useState({ waters: [], instructors: [] });
   const [activityLoading, setActivityLoading] = useState(true);
 
   const handleDeleteCatch = async (e, catchId) => {
@@ -129,6 +130,15 @@ const ProfilePage = ({
         if (bookingsRes.ok) {
           const bookingsData = await bookingsRes.json();
           setBookings(bookingsData.inquiries || []);
+        }
+
+        // Fetch user's applications (submitted waters/instructors)
+        const appsRes = await fetch('/api/user/applications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (appsRes.ok) {
+          const appsData = await appsRes.json();
+          setApplications({ waters: appsData.waters || [], instructors: appsData.instructors || [] });
         }
       } catch (err) {
         console.log('Failed to fetch activity:', err);
@@ -617,6 +627,78 @@ const ProfilePage = ({
                 </p>
               )}
             </div>
+
+            {/* My Applications */}
+            {(applications.waters.length > 0 || applications.instructors.length > 0) && (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
+              <div className="flex items-center gap-2 mb-4">
+                <Bookmark className="w-5 h-5 text-brand-700" />
+                <h3 className="text-lg font-bold text-stone-900">
+                  My Applications ({applications.waters.length + applications.instructors.length})
+                </h3>
+              </div>
+
+              {/* Water Applications */}
+              {applications.waters.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-stone-700 mb-2">Water Listings</h4>
+                  <div className="space-y-2">
+                    {applications.waters.map((water) => (
+                      <div key={water.id} className="bg-stone-50 rounded-lg p-3 border border-stone-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-semibold text-stone-900">{water.name}</h5>
+                            <p className="text-xs text-stone-500">{water.type} &middot; {water.region}</p>
+                            {water.email && <p className="text-xs text-stone-400 mt-0.5">Submitted as: {water.email}</p>}
+                            <p className="text-xs text-stone-400">
+                              {new Date(water.createdAt).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+                            water.status === 'approved' ? 'bg-green-100 text-green-700' :
+                            water.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {water.status === 'approved' ? 'Approved' : water.status === 'rejected' ? 'Rejected' : 'Pending Review'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Instructor Applications */}
+              {applications.instructors.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-stone-700 mb-2">Instructor Profiles</h4>
+                  <div className="space-y-2">
+                    {applications.instructors.map((inst) => (
+                      <div key={inst.id} className="bg-stone-50 rounded-lg p-3 border border-stone-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-semibold text-stone-900">{inst.name}</h5>
+                            <p className="text-xs text-stone-500">{inst.region}</p>
+                            {inst.email && <p className="text-xs text-stone-400 mt-0.5">Submitted as: {inst.email}</p>}
+                            <p className="text-xs text-stone-400">
+                              {new Date(inst.createdAt).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+                            inst.status === 'approved' ? 'bg-green-100 text-green-700' :
+                            inst.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {inst.status === 'approved' ? 'Approved' : inst.status === 'rejected' ? 'Rejected' : 'Pending Review'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

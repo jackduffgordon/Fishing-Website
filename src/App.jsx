@@ -493,7 +493,7 @@ const App = () => {
         />
       )}
 
-      {currentPage === 'water-dashboard' && user && (user.role === 'water_owner' || user.role === 'pending_water_owner') && (
+      {currentPage === 'water-dashboard' && user && (user.role === 'water_owner' || user.role === 'pending_water_owner' || user.hasWaters) && (
         <WaterOwnerDashboard
           user={user}
           onBack={() => setCurrentPage('home')}
@@ -501,7 +501,7 @@ const App = () => {
         />
       )}
 
-      {currentPage === 'instructor-dashboard' && user && (user.role === 'instructor' || user.role === 'pending_instructor') && (
+      {currentPage === 'instructor-dashboard' && user && (user.role === 'instructor' || user.role === 'pending_instructor' || user.hasInstructorProfile) && (
         <InstructorDashboard
           user={user}
           onBack={() => setCurrentPage('home')}

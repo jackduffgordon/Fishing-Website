@@ -496,6 +496,20 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Check if user has any water listings or instructor profiles
+    const { data: userWaters } = await supabase
+      .from('waters')
+      .select('id, status')
+      .or(`owner_id.eq.${user.id},owner_email.eq.${user.email}`);
+
+    const { data: userInstructors } = await supabase
+      .from('instructors')
+      .select('id, status')
+      .eq('user_id', user.id);
+
+    const hasWaters = (userWaters || []).length > 0;
+    const hasInstructorProfile = (userInstructors || []).length > 0;
+
     res.json({ user: {
       id: user.id,
       email: user.email,
@@ -508,7 +522,9 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       favouriteSpecies: user.favourite_species || '',
       experienceLevel: user.experience_level || 'beginner',
       notifications: user.notifications || { bookings: true, catches: true, newsletters: false, promotions: false },
-      privacy: user.privacy || { profilePublic: false, showCatches: true, showFavourites: false }
+      privacy: user.privacy || { profilePublic: false, showCatches: true, showFavourites: false },
+      hasWaters,
+      hasInstructorProfile
     }});
   } catch (e) {
     console.error(e);
@@ -634,6 +650,62 @@ app.put('/api/auth/password', authenticateToken, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Password change failed' });
+  }
+});
+
+// Get user's submitted applications (waters and instructor listings)
+app.get('/api/user/applications', authenticateToken, async (req, res) => {
+  try {
+    // Fetch waters owned by this user
+    const { data: waters, error: watersError } = await supabase
+      .from('waters')
+      .select('id, name, type, region, status, created_at, owner_email')
+      .eq('owner_id', req.user.id);
+
+    // Fetch instructor profiles for this user
+    const { data: instructorProfiles, error: instError } = await supabase
+      .from('instructors')
+      .select('id, name, region, status, created_at, email')
+      .eq('user_id', req.user.id);
+
+    if (watersError) console.error('[Applications] Error fetching user waters:', watersError);
+    if (instError) console.error('[Applications] Error fetching user instructors:', instError);
+
+    // Also check by email if owner_id wasn't set
+    let extraWaters = [];
+    if (req.user.email) {
+      const { data: byEmail } = await supabase
+        .from('waters')
+        .select('id, name, type, region, status, created_at, owner_email')
+        .eq('owner_email', req.user.email.toLowerCase());
+
+      const existingIds = new Set((waters || []).map(w => w.id));
+      extraWaters = (byEmail || []).filter(w => !existingIds.has(w.id));
+    }
+
+    const allWaters = [...(waters || []), ...extraWaters].map(w => ({
+      id: w.id,
+      name: w.name,
+      type: w.type,
+      region: w.region,
+      status: w.status,
+      createdAt: w.created_at,
+      email: w.owner_email
+    }));
+
+    const allInstructors = (instructorProfiles || []).map(i => ({
+      id: i.id,
+      name: i.name,
+      region: i.region,
+      status: i.status,
+      createdAt: i.created_at,
+      email: i.email
+    }));
+
+    res.json({ waters: allWaters, instructors: allInstructors });
+  } catch (e) {
+    console.error('[Applications] Exception:', e);
+    res.status(500).json({ error: 'Failed to fetch applications' });
   }
 });
 
@@ -1657,8 +1729,11 @@ app.post('/api/register/water', async (req, res) => {
       .single();
 
     if (waterError) {
-      return res.status(400).json({ error: 'Failed to create water' });
+      console.error('[Register Water] Insert error:', waterError);
+      return res.status(400).json({ error: 'Failed to create water', details: waterError.message });
     }
+
+    console.log(`[Register Water] Created water "${waterName}" (${water.id}) for user ${user.id} - status: pending`);
 
     // Insert booking options for this water
     if (processedOptions.length > 0) {
@@ -1741,8 +1816,11 @@ app.post('/api/register/instructor', async (req, res) => {
       .single();
 
     if (error) {
-      return res.status(400).json({ error: 'Failed to create instructor' });
+      console.error('[Register Instructor] Insert error:', error);
+      return res.status(400).json({ error: 'Failed to create instructor', details: error.message });
     }
+
+    console.log(`[Register Instructor] Created instructor "${name}" (${instructor.id}) for user ${user.id} - status: pending`);
 
     res.json({
       message: 'Submitted for approval',
@@ -1887,38 +1965,46 @@ app.get('/api/admin/users', authenticateToken, requireRole('admin'), async (req,
 
 app.get('/api/admin/waters', authenticateToken, requireRole('admin'), async (req, res) => {
   try {
-    const { data: approved } = await supabase
+    const { data: approved, error: approvedError } = await supabase
       .from('waters')
       .select('*')
       .eq('status', 'approved');
 
-    const { data: pending } = await supabase
+    const { data: pending, error: pendingError } = await supabase
       .from('waters')
       .select('*')
       .eq('status', 'pending');
 
-    res.json({ approved, pending });
+    if (approvedError) console.error('[Admin] Error fetching approved waters:', approvedError);
+    if (pendingError) console.error('[Admin] Error fetching pending waters:', pendingError);
+
+    console.log(`[Admin] Waters: ${(approved || []).length} approved, ${(pending || []).length} pending`);
+    res.json({ approved: approved || [], pending: pending || [] });
   } catch (e) {
-    console.error(e);
+    console.error('[Admin] Exception fetching waters:', e);
     res.status(500).json({ error: 'Failed to fetch waters' });
   }
 });
 
 app.get('/api/admin/instructors', authenticateToken, requireRole('admin'), async (req, res) => {
   try {
-    const { data: approved } = await supabase
+    const { data: approved, error: approvedError } = await supabase
       .from('instructors')
       .select('*')
       .eq('status', 'approved');
 
-    const { data: pending } = await supabase
+    const { data: pending, error: pendingError } = await supabase
       .from('instructors')
       .select('*')
       .eq('status', 'pending');
 
-    res.json({ approved, pending });
+    if (approvedError) console.error('[Admin] Error fetching approved instructors:', approvedError);
+    if (pendingError) console.error('[Admin] Error fetching pending instructors:', pendingError);
+
+    console.log(`[Admin] Instructors: ${(approved || []).length} approved, ${(pending || []).length} pending`);
+    res.json({ approved: approved || [], pending: pending || [] });
   } catch (e) {
-    console.error(e);
+    console.error('[Admin] Exception fetching instructors:', e);
     res.status(500).json({ error: 'Failed to fetch instructors' });
   }
 });
