@@ -67,6 +67,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
   const [selectedPrimary, setSelectedPrimary] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
+  const [numberOfDays, setNumberOfDays] = useState(1);
 
   // Determine if this fishery uses the new multi-option system
   const hasBookingOptions = fishery.bookingOptions && fishery.bookingOptions.length > 0;
@@ -116,7 +117,12 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
           </p>
           {hasBookingOptions && activeOption && (
             <p className="text-stone-500 text-sm mb-4">
-              Option: {activeOption.name} — £{activeOption.price}/{activeOption.priceType}
+              {activeOption.name} — {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'} — £{(activeOption.price || 0) * numberOfDays}
+            </p>
+          )}
+          {selectedDate && (
+            <p className="text-stone-400 text-xs mb-4">
+              Starting {selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           )}
           <button
@@ -564,68 +570,83 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                     </div>
                   )}
 
-                  {/* Booking action based on selected option's type */}
-                  {activeOption && activeOption.bookingType === 'instant' && (
+                  {/* Calendar & booking - always visible when option selected */}
+                  {activeOption && (
                     <div className="space-y-3 pt-2">
-                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
-                        <label className="block text-sm font-medium text-stone-700 mb-3">
-                          Select Date
-                        </label>
-                        <DatePickerCalendar
-                          selected={selectedDate}
-                          onChange={setSelectedDate}
-                          availability={fishery.availability || {}}
-                          placeholder="Choose your fishing date"
-                        />
-                        <div className="mt-3 pt-3 border-t border-stone-300 space-y-1.5 text-xs text-stone-600">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                            <span>Available</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-                            <span>Booked</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                            <span>Closed</span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleBooking}
-                        disabled={!selectedDate}
-                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                      >
-                        {user ? `Book ${activeOption.name}` : 'Sign In to Book'}
-                      </button>
-                      <p className="text-center text-sm text-stone-500">
-                        <Check className="w-4 h-4 inline mr-1" />
-                        Instant confirmation
-                      </p>
-                    </div>
-                  )}
-
-                  {activeOption && activeOption.bookingType === 'enquiry' && (
-                    <div className="space-y-3 pt-2">
-                      <p className="text-sm text-stone-600 text-center">
-                        Send an enquiry to check availability for {activeOption.name}.
-                      </p>
-                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
+                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-4">
+                        {/* Date picker */}
                         <div>
                           <label className="block text-sm font-medium text-stone-700 mb-2">
-                            Preferred Date(s)
+                            Select Start Date
                           </label>
-                          <DateRangePicker
-                            startDate={dateRange[0]}
-                            endDate={dateRange[1]}
-                            onChange={(dates) => setDateRange(dates)}
-                            placeholder="Select preferred dates"
+                          <DatePickerCalendar
+                            selected={selectedDate}
+                            onChange={setSelectedDate}
+                            availability={fishery.availability || {}}
+                            placeholder="Choose your fishing date"
                           />
                         </div>
+
+                        {/* Number of days */}
+                        <div>
+                          <label className="block text-sm font-medium text-stone-700 mb-2">
+                            Number of Days
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setNumberOfDays(Math.max(1, numberOfDays - 1))}
+                              className="w-10 h-10 rounded-lg border border-stone-300 flex items-center justify-center text-lg font-medium hover:bg-stone-100 transition"
+                            >
+                              -
+                            </button>
+                            <span className="text-xl font-bold text-stone-900 w-8 text-center">{numberOfDays}</span>
+                            <button
+                              onClick={() => setNumberOfDays(numberOfDays + 1)}
+                              className="w-10 h-10 rounded-lg border border-stone-300 flex items-center justify-center text-lg font-medium hover:bg-stone-100 transition"
+                            >
+                              +
+                            </button>
+                            <span className="text-sm text-stone-500">
+                              {numberOfDays === 1 ? 'day' : 'days'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Price summary */}
+                        {selectedDate && (
+                          <div className="pt-3 border-t border-stone-300">
+                            <div className="flex justify-between text-sm text-stone-600">
+                              <span>{activeOption.name} x {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}</span>
+                              <span className="font-medium">£{(activeOption.price || 0) * numberOfDays}</span>
+                            </div>
+                            {selectedExtras.length > 0 && selectedExtras.map(extraId => {
+                              const extra = fishery.bookingOptions.find(o => o.id === extraId);
+                              return (
+                                <div key={extraId} className="flex justify-between text-sm text-stone-600 mt-1">
+                                  <span>{extra?.name} x {numberOfDays}</span>
+                                  <span className="font-medium">£{(extra?.price || 0) * numberOfDays}</span>
+                                </div>
+                              );
+                            })}
+                            <div className="flex justify-between font-bold text-stone-900 mt-2 pt-2 border-t border-stone-300">
+                              <span>Total</span>
+                              <span>£{(
+                                (activeOption.price || 0) +
+                                selectedExtras.reduce((sum, id) => {
+                                  const extra = fishery.bookingOptions.find(o => o.id === id);
+                                  return sum + (parseInt(extra?.price) || 0);
+                                }, 0)
+                              ) * numberOfDays}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Enquiry message for enquiry types */}
+                      {activeOption.bookingType === 'enquiry' && (
                         <div>
                           <label className="block text-sm font-medium text-stone-700 mb-1">
-                            Message
+                            Message (optional)
                           </label>
                           <textarea
                             rows={3}
@@ -635,13 +656,27 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                             placeholder="Tell them about your experience, number in party, etc."
                           />
                         </div>
-                      </div>
+                      )}
+
+                      {/* Book / Enquire button */}
                       <button
                         onClick={handleBooking}
-                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 transition"
+                        disabled={!selectedDate}
+                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                       >
-                        {user ? `Enquire About ${activeOption.name}` : 'Sign In to Enquire'}
+                        {!user
+                          ? 'Sign In to Book'
+                          : activeOption.bookingType === 'instant'
+                            ? `Book ${activeOption.name}`
+                            : `Enquire About ${activeOption.name}`
+                        }
                       </button>
+                      {activeOption.bookingType === 'instant' && (
+                        <p className="text-center text-sm text-stone-500">
+                          <Check className="w-4 h-4 inline mr-1" />
+                          Instant confirmation
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
