@@ -8,6 +8,7 @@ import {
   Save, X, Trash2, Upload, Image
 } from 'lucide-react';
 import { getToken } from '../utils/api';
+import { VenueDetailPage } from './VenueDetail';
 
 const SPECIES = [
   'Brown Trout', 'Rainbow Trout', 'Salmon', 'Sea Trout', 'Grayling',
@@ -221,6 +222,40 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
   const [editingWater, setEditingWater] = useState(null);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [previewWater, setPreviewWater] = useState(null);
+
+  const mapWaterToFishery = (w) => ({
+    id: w.id,
+    name: w.name,
+    type: w.type,
+    region: w.region,
+    location: w.location || w.town_city || '',
+    species: w.species || [],
+    amenities: w.amenities || w.facilities || [],
+    rules: w.rules || [],
+    description: w.description || '',
+    fullDescription: w.description || '',
+    price: w.price || 0,
+    priceType: w.price_type || w.priceType || 'day',
+    bookingType: w.booking_type || w.bookingType || 'enquiry',
+    image: w.images?.[0] || '',
+    gallery: w.images || [],
+    rating: 0,
+    reviews: 0,
+    bookingOptions: (w.booking_options || w.bookingOptions || []).map((opt, i) => ({
+      ...opt,
+      id: opt.id || `opt-${i}`,
+      bookingType: opt.booking_type || opt.bookingType || 'enquiry',
+      priceType: opt.price_type || opt.priceType || 'day',
+    })),
+    contact: {
+      name: w.owner_name || '',
+      email: w.owner_email || '',
+      phone: w.owner_phone || '',
+    },
+    coordinates: w.coordinates || null,
+    rods: w.rods || 0,
+  });
 
   useEffect(() => {
     fetchData();
@@ -439,6 +474,28 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* Preview Modal */}
+      {previewWater && (
+        <div className="fixed inset-0 z-50 bg-black/60 overflow-y-auto">
+          <div className="sticky top-0 z-10 flex justify-end p-4">
+            <button
+              onClick={() => setPreviewWater(null)}
+              className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-100 transition"
+            >
+              <X className="w-5 h-5 text-stone-700" />
+            </button>
+          </div>
+          <div className="max-w-7xl mx-auto bg-stone-50 min-h-screen">
+            <VenueDetailPage
+              fishery={mapWaterToFishery(previewWater)}
+              onBack={() => setPreviewWater(null)}
+              user={null}
+              onSignIn={() => {}}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-stone-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -558,7 +615,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Pending Approval ({pendingWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {pendingWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
+                      {pendingWaters.map(w => <WaterCard key={w.id} water={w} onView={setPreviewWater} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}
@@ -570,7 +627,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Live Waters ({approvedWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {approvedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
+                      {approvedWaters.map(w => <WaterCard key={w.id} water={w} onView={setPreviewWater} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}
@@ -582,7 +639,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Removal Requested ({removalWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {removalWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
+                      {removalWaters.map(w => <WaterCard key={w.id} water={w} onView={setPreviewWater} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}
@@ -594,7 +651,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Rejected ({rejectedWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {rejectedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
+                      {rejectedWaters.map(w => <WaterCard key={w.id} water={w} onView={setPreviewWater} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}

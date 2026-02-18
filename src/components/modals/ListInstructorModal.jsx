@@ -1,40 +1,22 @@
 // ============================================
 // LIST YOUR INSTRUCTOR PROFILE MODAL COMPONENT
-// 3-step submission wizard for instructors
+// 4-step submission wizard for instructors
 // ============================================
 import { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, Trash2, Plus } from 'lucide-react';
 import { ukRegions } from '../../data/regions';
 import { registerAPI } from '../../utils/api';
 
 const SPECIALTIES = [
-  'Fly Fishing',
-  'Salmon',
-  'Trout',
-  'Sea Fishing',
-  'Bass',
-  'Shore Fishing',
-  'Carp Fishing',
-  'Coarse',
-  'Beginners',
-  'Fly Tying',
-  "Women's Courses",
-  'Kids/Juniors',
-  'Pike',
-  'Barbel'
+  'Fly Fishing', 'Salmon', 'Trout', 'Sea Fishing', 'Bass', 'Shore Fishing',
+  'Carp Fishing', 'Coarse', 'Beginners', 'Fly Tying', "Women's Courses",
+  'Kids/Juniors', 'Pike', 'Barbel'
 ];
 
 const CERTIFICATIONS = [
-  'AAPGAI',
-  'AAPGAI Master',
-  'GAIA',
-  'GAIA Advanced',
-  'SGAIC',
-  'Angling Trust Level 2',
-  'Angling Trust Level 3',
-  'First Aid',
-  'DBS Checked',
-  'River Rescue'
+  'AAPGAI', 'AAPGAI Master', 'GAIA', 'GAIA Advanced', 'SGAIC',
+  'Angling Trust Level 2', 'Angling Trust Level 3', 'First Aid',
+  'DBS Checked', 'River Rescue'
 ];
 
 const AVAILABILITY_OPTIONS = [
@@ -56,7 +38,8 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
     availability: [],
     price: '',
     bio: '',
-    whatYouLearn: ''
+    whatYouLearn: '',
+    booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
   });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
@@ -67,28 +50,26 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
 
   const updateForm = (field, value) => setFormData({ ...formData, [field]: value });
 
-  const toggleSpecialty = (specialty) => {
-    if (formData.specialties.includes(specialty)) {
-      updateForm('specialties', formData.specialties.filter(s => s !== specialty));
+  const toggleItem = (field, item) => {
+    if (formData[field].includes(item)) {
+      updateForm(field, formData[field].filter(s => s !== item));
     } else {
-      updateForm('specialties', [...formData.specialties, specialty]);
+      updateForm(field, [...formData[field], item]);
     }
   };
 
-  const toggleCertification = (cert) => {
-    if (formData.certifications.includes(cert)) {
-      updateForm('certifications', formData.certifications.filter(c => c !== cert));
-    } else {
-      updateForm('certifications', [...formData.certifications, cert]);
-    }
+  const updateBookingOption = (index, key, value) => {
+    const opts = [...formData.booking_options];
+    opts[index] = { ...opts[index], [key]: value };
+    updateForm('booking_options', opts);
   };
 
-  const toggleAvailability = (id) => {
-    if (formData.availability.includes(id)) {
-      updateForm('availability', formData.availability.filter(a => a !== id));
-    } else {
-      updateForm('availability', [...formData.availability, id]);
-    }
+  const addBookingOption = () => {
+    updateForm('booking_options', [...formData.booking_options, { name: '', price: '', priceType: 'session', description: '' }]);
+  };
+
+  const removeBookingOption = (index) => {
+    updateForm('booking_options', formData.booking_options.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -106,7 +87,8 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
         availability: formData.availability,
         price: formData.price ? parseFloat(formData.price) : null,
         bio: formData.bio,
-        whatYouLearn: formData.whatYouLearn
+        whatYouLearn: formData.whatYouLearn,
+        booking_options: formData.booking_options.filter(o => o.name.trim() && o.price)
       };
 
       await registerAPI.instructor(payload);
@@ -125,25 +107,16 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
     setStep(1);
     setError(null);
     setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      region: '',
-      experience: '',
-      specialties: [],
-      certifications: [],
-      availability: [],
-      price: '',
-      bio: '',
-      whatYouLearn: ''
+      name: '', email: '', phone: '', region: '', experience: '',
+      specialties: [], certifications: [], availability: [],
+      price: '', bio: '', whatYouLearn: '',
+      booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
     });
   };
 
-  // Validation for each step
   const canProceedStep1 = formData.name.trim() && formData.email.trim();
   const canProceedStep2 = formData.specialties.length > 0;
 
-  // Success state
   if (submitted) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -177,29 +150,20 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-xl font-bold">Register as an Instructor</h2>
-            <p className="text-stone-500 text-sm">Step {step} of 3</p>
+            <p className="text-stone-500 text-sm">Step {step} of 4</p>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-stone-400 hover:text-stone-600"
-          >
+          <button onClick={handleClose} className="text-stone-400 hover:text-stone-600">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Progress bar */}
         <div className="flex gap-2 mb-6">
-          {[1, 2, 3].map((s) => (
-            <div
-              key={s}
-              className={`flex-1 h-2 rounded-full ${
-                s <= step ? 'bg-brand-600' : 'bg-stone-200'
-              }`}
-            />
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className={`flex-1 h-2 rounded-full ${s <= step ? 'bg-brand-600' : 'bg-stone-200'}`} />
           ))}
         </div>
 
-        {/* Error message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-700">
             {error}
@@ -211,50 +175,39 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Personal Information</h3>
 
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => updateForm('name', e.target.value)}
-                className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                placeholder="John Smith"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Email *
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => updateForm('email', e.target.value)}
-                className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                placeholder="john@example.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => updateForm('phone', e.target.value)}
-                className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                placeholder="07123 456789"
-              />
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => updateForm('name', e.target.value)}
+                  className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
+                  placeholder="John Smith"
+                />
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => updateForm('email', e.target.value)}
+                  className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
+                  placeholder="john@example.com"
+                />
+              </div>
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Region
-                </label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => updateForm('phone', e.target.value)}
+                  className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
+                  placeholder="07123 456789"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Region</label>
                 <select
                   value={formData.region}
                   onChange={(e) => updateForm('region', e.target.value)}
@@ -266,11 +219,8 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                   ))}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Years of Experience
-                </label>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Years of Experience</label>
                 <input
                   type="number"
                   value={formData.experience}
@@ -294,18 +244,18 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 Specialties (select all that apply) *
               </label>
               <div className="flex flex-wrap gap-2">
-                {SPECIALTIES.map((specialty) => (
+                {SPECIALTIES.map((s) => (
                   <button
-                    key={specialty}
+                    key={s}
                     type="button"
-                    onClick={() => toggleSpecialty(specialty)}
+                    onClick={() => toggleItem('specialties', s)}
                     className={`px-3 py-1.5 rounded-full text-sm transition ${
-                      formData.specialties.includes(specialty)
+                      formData.specialties.includes(s)
                         ? 'bg-brand-600 text-white'
                         : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
                     }`}
                   >
-                    {specialty}
+                    {s}
                   </button>
                 ))}
               </div>
@@ -316,34 +266,32 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 Certifications (select all that apply)
               </label>
               <div className="flex flex-wrap gap-2">
-                {CERTIFICATIONS.map((cert) => (
+                {CERTIFICATIONS.map((c) => (
                   <button
-                    key={cert}
+                    key={c}
                     type="button"
-                    onClick={() => toggleCertification(cert)}
+                    onClick={() => toggleItem('certifications', c)}
                     className={`px-3 py-1.5 rounded-full text-sm transition ${
-                      formData.certifications.includes(cert)
+                      formData.certifications.includes(c)
                         ? 'bg-brand-600 text-white'
                         : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
                     }`}
                   >
-                    {cert}
+                    {c}
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Availability
-              </label>
+              <label className="block text-sm font-medium text-stone-700 mb-2">Availability</label>
               <div className="space-y-2">
                 {AVAILABILITY_OPTIONS.map((option) => (
                   <label key={option.id} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.availability.includes(option.id)}
-                      onChange={() => toggleAvailability(option.id)}
+                      onChange={() => toggleItem('availability', option.id)}
                       className="w-4 h-4 rounded border-stone-300 text-brand-600"
                     />
                     <span className="text-sm text-stone-700">{option.label}</span>
@@ -351,33 +299,97 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 ))}
               </div>
             </div>
+          </div>
+        )}
 
+        {/* Step 3: Booking Options */}
+        {step === 3 && (
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Price per Day (£)
-              </label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => updateForm('price', e.target.value)}
-                className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                placeholder="150"
-                min="0"
-                step="0.01"
-              />
+              <h3 className="font-semibold text-lg">Booking Options</h3>
+              <p className="text-sm text-stone-500 mt-1">
+                Add different session types you offer with pricing. Students will see these when booking.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {formData.booking_options.map((opt, i) => (
+                <div key={i} className="border border-stone-200 rounded-xl p-4 bg-stone-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-stone-700">Option {i + 1}</span>
+                    {formData.booking_options.length > 1 && (
+                      <button
+                        onClick={() => removeBookingOption(i)}
+                        className="p-1 text-stone-400 hover:text-red-500 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-xs text-stone-500 mb-1">Session Name *</label>
+                      <input
+                        type="text"
+                        value={opt.name}
+                        onChange={e => updateBookingOption(i, 'name', e.target.value)}
+                        placeholder="e.g. Half Day Fly Fishing Lesson"
+                        className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-stone-500 mb-1">Price (£) *</label>
+                      <input
+                        type="number"
+                        value={opt.price}
+                        onChange={e => updateBookingOption(i, 'price', e.target.value)}
+                        placeholder="150"
+                        className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-stone-500 mb-1">Price Type</label>
+                      <select
+                        value={opt.priceType}
+                        onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
+                        className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                      >
+                        <option value="session">Per Session</option>
+                        <option value="day">Per Day</option>
+                        <option value="hour">Per Hour</option>
+                        <option value="person">Per Person</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs text-stone-500 mb-1">Description</label>
+                      <input
+                        type="text"
+                        value={opt.description}
+                        onChange={e => updateBookingOption(i, 'description', e.target.value)}
+                        placeholder="What's included in this session..."
+                        className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={addBookingOption}
+                className="w-full py-2.5 border-2 border-dashed border-stone-300 rounded-xl text-sm font-medium text-stone-600 hover:border-brand-400 hover:text-brand-700 transition flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" /> Add Another Option
+              </button>
             </div>
           </div>
         )}
 
-        {/* Step 3: About You */}
-        {step === 3 && (
+        {/* Step 4: About You */}
+        {step === 4 && (
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">About You</h3>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
-                Bio
-              </label>
+              <label className="block text-sm font-medium text-stone-700 mb-1">Bio</label>
               <textarea
                 rows={4}
                 value={formData.bio}
@@ -396,18 +408,18 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.whatYouLearn}
                 onChange={(e) => updateForm('whatYouLearn', e.target.value)}
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                placeholder="Outline the key skills and knowledge your students will gain from your courses..."
+                placeholder="Outline the key skills and knowledge your students will gain..."
               />
             </div>
 
-            {/* Summary of profile */}
+            {/* Summary */}
             <div className="bg-brand-50 p-4 rounded-xl">
               <h4 className="font-medium text-brand-800 mb-2">Profile Summary</h4>
               <div className="text-sm text-brand-700 space-y-1">
                 <p>• {formData.name} — {ukRegions.find(r => r.id === formData.region)?.name || 'No region'}</p>
-                <p>• {formData.experience} years experience</p>
+                <p>• {formData.experience || '0'} years experience</p>
                 <p>• {formData.specialties.length} specialt{formData.specialties.length !== 1 ? 'ies' : 'y'}</p>
-                <p>• £{formData.price || '0'} per day</p>
+                <p>• {formData.booking_options.filter(o => o.name.trim()).length} booking option{formData.booking_options.filter(o => o.name.trim()).length !== 1 ? 's' : ''}</p>
                 {formData.certifications.length > 0 && (
                   <p>• {formData.certifications.length} certification{formData.certifications.length !== 1 ? 's' : ''}</p>
                 )}
@@ -439,7 +451,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
             <div />
           )}
 
-          {step < 3 ? (
+          {step < 4 ? (
             <div className="flex flex-col items-end gap-1">
               {validationMsg && <p className="text-xs text-red-600">{validationMsg}</p>}
               <button

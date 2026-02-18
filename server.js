@@ -1879,7 +1879,7 @@ app.post('/api/register/water', async (req, res) => {
 
 app.post('/api/register/instructor', async (req, res) => {
   try {
-    const { name, email, phone, specialties, region, experience, bio, price, certifications, availability } = req.body;
+    const { name, email, phone, specialties, region, experience, bio, price, certifications, availability, booking_options, whatYouLearn } = req.body;
 
     let { data: user } = await supabase
       .from('users')
@@ -1925,6 +1925,8 @@ app.post('/api/register/instructor', async (req, res) => {
         review_count: 0,
         certifications: certifications || [],
         availability: availability || [],
+        booking_options: booking_options || [],
+        what_you_learn: whatYouLearn || '',
         images: [],
         status: 'pending',
         created_at: new Date().toISOString()
@@ -2613,7 +2615,7 @@ app.put('/api/instructor/profile', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    const allowed = ['name', 'bio', 'price', 'availability', 'specialties', 'images', 'phone', 'region', 'certifications', 'experience'];
+    const allowed = ['name', 'bio', 'price', 'availability', 'specialties', 'images', 'phone', 'region', 'certifications', 'experience', 'booking_options', 'what_you_learn'];
     const updates = {};
     allowed.forEach(k => {
       if (req.body[k] !== undefined) updates[k] = req.body[k];

@@ -155,6 +155,8 @@ export const InstructorDashboard = ({ user, onBack }) => {
       certifications: (instructor.certifications || []).join(', '),
       experience: instructor.experience || '',
       images: instructor.images || [],
+      booking_options: instructor.booking_options || [],
+      what_you_learn: instructor.what_you_learn || '',
     });
     setEditing(true);
   };
@@ -224,6 +226,8 @@ export const InstructorDashboard = ({ user, onBack }) => {
           ? editData.certifications.split(',').map(c => c.trim()).filter(Boolean)
           : [],
         images: editData.images || [],
+        booking_options: (editData.booking_options || []).filter(o => o.name && o.price),
+        what_you_learn: editData.what_you_learn || '',
       };
       const res = await fetch('/api/instructor/profile', {
         method: 'PUT',
@@ -249,6 +253,27 @@ export const InstructorDashboard = ({ user, onBack }) => {
       specialties: prev.specialties.includes(s)
         ? prev.specialties.filter(x => x !== s)
         : [...prev.specialties, s]
+    }));
+  };
+
+  const addBookingOption = () => {
+    setEditData(prev => ({
+      ...prev,
+      booking_options: [...(prev.booking_options || []), { name: '', price: '', priceType: 'session', description: '' }]
+    }));
+  };
+
+  const updateBookingOption = (index, field, value) => {
+    setEditData(prev => ({
+      ...prev,
+      booking_options: prev.booking_options.map((opt, i) => i === index ? { ...opt, [field]: value } : opt)
+    }));
+  };
+
+  const removeBookingOption = (index) => {
+    setEditData(prev => ({
+      ...prev,
+      booking_options: prev.booking_options.filter((_, i) => i !== index)
     }));
   };
 
@@ -490,6 +515,30 @@ export const InstructorDashboard = ({ user, onBack }) => {
                   </div>
                 </div>
               )}
+
+              {instructor.what_you_learn && (
+                <div className="mt-6">
+                  <p className="text-sm text-stone-500 mb-2">What You'll Learn</p>
+                  <p className="text-stone-700">{instructor.what_you_learn}</p>
+                </div>
+              )}
+
+              {(instructor.booking_options || []).length > 0 && (
+                <div className="mt-6">
+                  <p className="text-sm text-stone-500 mb-3">Booking Options</p>
+                  <div className="grid gap-3">
+                    {instructor.booking_options.map((opt, i) => (
+                      <div key={i} className="flex items-center justify-between bg-stone-50 rounded-lg p-3 border border-stone-200">
+                        <div>
+                          <p className="font-medium text-stone-900">{opt.name}</p>
+                          {opt.description && <p className="text-sm text-stone-500 mt-0.5">{opt.description}</p>}
+                        </div>
+                        <span className="font-semibold text-brand-700">£{opt.price}/{opt.priceType || 'session'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -615,6 +664,86 @@ export const InstructorDashboard = ({ user, onBack }) => {
                   </label>
                 </div>
                 <p className="text-xs text-stone-500">Upload photos of yourself or your sessions. JPG, PNG or WebP.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">What You'll Learn</label>
+                <textarea
+                  rows={3}
+                  value={editData.what_you_learn}
+                  onChange={e => setEditData({ ...editData, what_you_learn: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  placeholder="Describe what students will learn in your sessions..."
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-stone-700">Booking Options</label>
+                  <button
+                    type="button"
+                    onClick={addBookingOption}
+                    className="text-sm text-brand-700 hover:text-brand-800 font-medium"
+                  >
+                    + Add Option
+                  </button>
+                </div>
+                {(editData.booking_options || []).length === 0 && (
+                  <p className="text-sm text-stone-500 italic">No booking options yet. Add one to let students book specific sessions.</p>
+                )}
+                <div className="space-y-3">
+                  {(editData.booking_options || []).map((opt, i) => (
+                    <div key={i} className="border border-stone-200 rounded-lg p-4 bg-stone-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-sm font-medium text-stone-600">Option {i + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeBookingOption(i)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-3">
+                        <div className="md:col-span-2">
+                          <input
+                            type="text"
+                            value={opt.name}
+                            onChange={e => updateBookingOption(i, 'name', e.target.value)}
+                            placeholder="e.g. Half Day Session"
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={opt.price}
+                            onChange={e => updateBookingOption(i, 'price', e.target.value)}
+                            placeholder="Price"
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                          />
+                          <select
+                            value={opt.priceType || 'session'}
+                            onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
+                            className="px-2 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                          >
+                            <option value="session">/session</option>
+                            <option value="hour">/hour</option>
+                            <option value="day">/day</option>
+                            <option value="person">/person</option>
+                          </select>
+                        </div>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={opt.description || ''}
+                        onChange={e => updateBookingOption(i, 'description', e.target.value)}
+                        placeholder="Brief description of this option..."
+                        className="w-full mt-3 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

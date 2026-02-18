@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   Fish, Users, Droplets, Clock, CheckCircle, XCircle, X,
   ChevronDown, ChevronUp, Loader, AlertTriangle, Eye, Trash2,
-  BarChart3, RefreshCw, MapPin, Star
+  BarChart3, RefreshCw, MapPin, Star, Mail, Phone, Award
 } from 'lucide-react';
 import { adminAPI } from '../utils/api';
 import { VenueDetailPage } from './VenueDetail';
@@ -271,7 +271,7 @@ const WaterRow = ({ water, onApprove, onReject, onPreview, onDelete, actionLoadi
 };
 
 // --- Instructor Row ---
-const InstructorRow = ({ instructor, onApprove, onReject, actionLoading }) => {
+const InstructorRow = ({ instructor, onApprove, onReject, onPreview, actionLoading }) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -367,6 +367,14 @@ const InstructorRow = ({ instructor, onApprove, onReject, actionLoading }) => {
 
           {/* Action buttons */}
           <div className="flex gap-2 pt-2 border-t border-stone-200">
+            {onPreview && (
+              <button
+                onClick={() => onPreview(instructor)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-brand-50 text-brand-700 rounded-lg text-sm font-medium hover:bg-brand-100 transition"
+              >
+                <Eye className="w-4 h-4" /> Preview
+              </button>
+            )}
             {instructor.status === 'pending' && (
               <>
                 <button
@@ -421,6 +429,7 @@ export const AdminPage = ({ user }) => {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [previewWater, setPreviewWater] = useState(null);
+  const [previewInstructor, setPreviewInstructor] = useState(null);
 
   // Fetch all admin data
   const fetchData = async () => {
@@ -594,6 +603,155 @@ export const AdminPage = ({ user }) => {
         </div>
       )}
 
+      {/* Instructor Preview Modal */}
+      {previewInstructor && (
+        <div className="fixed inset-0 z-50 bg-black/60 overflow-y-auto">
+          <div className="sticky top-0 z-10 flex justify-end p-4">
+            <button
+              onClick={() => setPreviewInstructor(null)}
+              className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-100 transition"
+            >
+              <X className="w-5 h-5 text-stone-700" />
+            </button>
+          </div>
+          <div className="max-w-3xl mx-auto pb-12">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              {/* Hero */}
+              <div className="bg-gradient-to-br from-brand-700 to-brand-900 p-8 text-white">
+                <div className="flex items-center gap-6">
+                  {previewInstructor.images?.[0] ? (
+                    <img src={previewInstructor.images[0]} alt={previewInstructor.name} className="w-24 h-24 rounded-full object-cover border-4 border-white/20" />
+                  ) : (
+                    <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-4xl font-bold">
+                      {(previewInstructor.name || '?')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="text-3xl font-bold">{previewInstructor.name}</h2>
+                    <p className="text-brand-200 mt-1">
+                      {previewInstructor.location || previewInstructor.region || 'Location not set'}
+                    </p>
+                    <div className="flex items-center gap-4 mt-3">
+                      {previewInstructor.price && (
+                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                          From £{previewInstructor.price}/day
+                        </span>
+                      )}
+                      {previewInstructor.experience && (
+                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                          {previewInstructor.experience} years exp
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Contact */}
+                <div className="flex flex-wrap gap-4">
+                  {previewInstructor.email && (
+                    <div className="flex items-center gap-2 text-stone-600 text-sm">
+                      <Mail className="w-4 h-4" /> {previewInstructor.email}
+                    </div>
+                  )}
+                  {previewInstructor.phone && (
+                    <div className="flex items-center gap-2 text-stone-600 text-sm">
+                      <Phone className="w-4 h-4" /> {previewInstructor.phone}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bio */}
+                {previewInstructor.bio && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-2">About</h3>
+                    <p className="text-stone-700 whitespace-pre-line">{previewInstructor.bio}</p>
+                  </div>
+                )}
+
+                {/* What You'll Learn */}
+                {previewInstructor.what_you_learn && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-2">What You'll Learn</h3>
+                    <p className="text-stone-700 whitespace-pre-line">{previewInstructor.what_you_learn}</p>
+                  </div>
+                )}
+
+                {/* Booking Options */}
+                {(previewInstructor.booking_options || []).length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-3">Booking Options</h3>
+                    <div className="grid gap-3">
+                      {previewInstructor.booking_options.map((opt, i) => (
+                        <div key={i} className="border border-stone-200 rounded-xl p-4 flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-stone-900">{opt.name}</p>
+                            {opt.description && <p className="text-sm text-stone-500 mt-0.5">{opt.description}</p>}
+                          </div>
+                          <span className="text-lg font-bold text-brand-700">£{opt.price}/{opt.priceType || 'session'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Specialties */}
+                {(previewInstructor.specialties || []).length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-2">Specialties</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {previewInstructor.specialties.map(s => (
+                        <span key={s} className="px-3 py-1.5 bg-brand-100 text-brand-700 rounded-full text-sm font-medium">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certifications */}
+                {(previewInstructor.certifications || []).length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-2">Certifications</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {previewInstructor.certifications.map(c => (
+                        <span key={c} className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium flex items-center gap-1">
+                          <Award className="w-3.5 h-3.5" /> {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Gallery */}
+                {(previewInstructor.images || []).length > 1 && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-2">Photos</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {previewInstructor.images.map((img, i) => (
+                        <img key={i} src={img} alt={`${previewInstructor.name} ${i + 1}`}
+                          className="w-full h-32 rounded-lg object-cover border border-stone-200" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Availability */}
+                {previewInstructor.availability && (
+                  <div>
+                    <h3 className="font-semibold text-stone-900 mb-2">Availability</h3>
+                    <p className="text-stone-700">
+                      {Array.isArray(previewInstructor.availability)
+                        ? previewInstructor.availability.join(', ')
+                        : previewInstructor.availability}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-stone-900 text-white py-6">
         <div className="max-w-7xl mx-auto px-4">
@@ -720,6 +878,7 @@ export const AdminPage = ({ user }) => {
                           instructor={i}
                           onApprove={handleApproveInstructor}
                           onReject={handleRejectInstructor}
+                          onPreview={setPreviewInstructor}
                           actionLoading={actionLoading}
                         />
                       ))}
@@ -768,6 +927,7 @@ export const AdminPage = ({ user }) => {
                   instructor={i}
                   onApprove={handleApproveInstructor}
                   onReject={handleRejectInstructor}
+                  onPreview={setPreviewInstructor}
                   actionLoading={actionLoading}
                 />
               ))
