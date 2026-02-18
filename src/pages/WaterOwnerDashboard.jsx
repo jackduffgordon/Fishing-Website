@@ -4,9 +4,29 @@
 import { useState, useEffect } from 'react';
 import {
   Droplets, ChevronLeft, Plus, Eye, Edit3, Loader, AlertTriangle,
-  CheckCircle, Clock, XCircle, Mail, Phone, Calendar, MessageSquare
+  CheckCircle, Clock, XCircle, Mail, Phone, Calendar, MessageSquare,
+  Save, X, Trash2
 } from 'lucide-react';
 import { getToken } from '../utils/api';
+
+const SPECIES = [
+  'Brown Trout', 'Rainbow Trout', 'Salmon', 'Sea Trout', 'Grayling',
+  'Carp', 'Pike', 'Perch', 'Roach', 'Tench', 'Barbel', 'Bream',
+  'Chub', 'Bass', 'Cod', 'Mackerel'
+];
+
+const AMENITIES = [
+  'Parking', 'Toilets', 'Cafe', 'Tackle Shop', 'Boat Hire',
+  'Disabled Access', 'Night Fishing', 'Showers', 'Fishing Hut',
+  'Ghillie', 'Lunch', 'Wading', 'Rod Room'
+];
+
+const REGIONS = [
+  'Scottish Highlands', 'Scottish Lowlands', 'North East England',
+  'North West England', 'Yorkshire', 'East Midlands', 'West Midlands',
+  'East of England', 'South East England', 'South West England',
+  'Wales', 'Northern Ireland', 'Ireland'
+];
 
 // --- Status Badge ---
 const StatusBadge = ({ status }) => {
@@ -33,7 +53,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // --- Water Card ---
-const WaterCard = ({ water, onView }) => {
+const WaterCard = ({ water, onView, onEdit }) => {
   return (
     <div className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-md transition">
       <div className="flex items-start gap-4 p-4">
@@ -97,8 +117,9 @@ const WaterCard = ({ water, onView }) => {
             >
               <Eye className="w-4 h-4" /> View Details
             </button>
-            {water.status === 'approved' && (
+            {water.status === 'approved' && onEdit && (
               <button
+                onClick={() => onEdit(water)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 transition"
               >
                 <Edit3 className="w-4 h-4" /> Edit
@@ -177,6 +198,9 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingWater, setEditingWater] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -213,13 +237,102 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
     setLoading(false);
   };
 
+  const startEditWater = (water) => {
+    setEditData({
+      name: water.name || '',
+      description: water.description || '',
+      type: water.type || '',
+      region: water.region || '',
+      species: water.species || [],
+      amenities: water.amenities || water.facilities || [],
+      rules: water.rules || [],
+      booking_options: (water.booking_options || water.bookingOptions || []).map(opt => ({
+        name: opt.name || '',
+        price: opt.price || '',
+        priceType: opt.price_type || opt.priceType || 'day',
+        category: opt.category || 'day-tickets',
+        bookingType: opt.booking_type || opt.bookingType || 'enquiry',
+        description: opt.description || '',
+      })),
+    });
+    setEditingWater(water);
+    setTab('edit');
+  };
+
+  const saveEditWater = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const token = getToken();
+      const payload = {
+        name: editData.name,
+        description: editData.description,
+        type: editData.type,
+        region: editData.region,
+        species: editData.species,
+        amenities: editData.amenities,
+        rules: editData.rules.filter(r => r.trim()),
+        booking_options: editData.booking_options,
+      };
+      const res = await fetch(`/api/owner/waters/${editingWater.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      await fetchData();
+      setEditingWater(null);
+      setTab('waters');
+    } catch (err) {
+      setError(err.message);
+    }
+    setSaving(false);
+  };
+
+  const toggleArrayItem = (field, item) => {
+    setEditData(prev => ({
+      ...prev,
+      [field]: prev[field].includes(item)
+        ? prev[field].filter(x => x !== item)
+        : [...prev[field], item]
+    }));
+  };
+
+  const updateBookingOption = (index, key, value) => {
+    setEditData(prev => {
+      const opts = [...prev.booking_options];
+      opts[index] = { ...opts[index], [key]: value };
+      return { ...prev, booking_options: opts };
+    });
+  };
+
+  const addBookingOption = () => {
+    setEditData(prev => ({
+      ...prev,
+      booking_options: [...prev.booking_options, {
+        name: '', price: '', priceType: 'day', category: 'day-tickets', bookingType: 'enquiry', description: ''
+      }]
+    }));
+  };
+
+  const removeBookingOption = (index) => {
+    setEditData(prev => ({
+      ...prev,
+      booking_options: prev.booking_options.filter((_, i) => i !== index)
+    }));
+  };
+
   const pendingWaters = waters.filter(w => w.status === 'pending');
   const approvedWaters = waters.filter(w => w.status === 'approved');
   const rejectedWaters = waters.filter(w => w.status === 'rejected');
 
-  const tabs = [
+  const tabsList = [
     { id: 'waters', label: 'My Waters', count: waters.length },
-    { id: 'inquiries', label: 'Inquiries', count: inquiries.length }
+    { id: 'inquiries', label: 'Inquiries', count: inquiries.length },
+    ...(editingWater ? [{ id: 'edit', label: `Edit: ${editingWater.name}` }] : [])
   ];
 
   if (loading) {
@@ -309,7 +422,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-stone-200">
-          {tabs.map(t => (
+          {tabsList.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -354,7 +467,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Pending Approval ({pendingWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {pendingWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} />)}
+                      {pendingWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} />)}
                     </div>
                   </div>
                 )}
@@ -366,7 +479,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Live Waters ({approvedWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {approvedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} />)}
+                      {approvedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} />)}
                     </div>
                   </div>
                 )}
@@ -378,7 +491,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Rejected ({rejectedWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {rejectedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} />)}
+                      {rejectedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} />)}
                     </div>
                   </div>
                 )}
@@ -401,6 +514,275 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                 {inquiries.map(inq => <InquiryCard key={inq.id} inquiry={inq} />)}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Edit Water Tab */}
+        {tab === 'edit' && editingWater && (
+          <div className="space-y-6">
+            {/* Save / Cancel bar */}
+            <div className="flex items-center justify-between bg-white rounded-xl border border-stone-200 p-4">
+              <h3 className="font-semibold text-stone-900">Editing: {editingWater.name}</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveEditWater}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-50 transition"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  onClick={() => { setEditingWater(null); setTab('waters'); }}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 transition"
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Basic Details */}
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
+              <h4 className="font-semibold text-stone-900 mb-4">Basic Details</h4>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Water Name</label>
+                  <input
+                    type="text"
+                    value={editData.name}
+                    onChange={e => setEditData({ ...editData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Type</label>
+                  <select
+                    value={editData.type}
+                    onChange={e => setEditData({ ...editData, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  >
+                    <option value="">Select type</option>
+                    <option value="River">River</option>
+                    <option value="Lake">Lake</option>
+                    <option value="Reservoir">Reservoir</option>
+                    <option value="Loch">Loch</option>
+                    <option value="Canal">Canal</option>
+                    <option value="Pond">Pond</option>
+                    <option value="Coastal">Coastal</option>
+                    <option value="Chalk Stream">Chalk Stream</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Region</label>
+                  <select
+                    value={editData.region}
+                    onChange={e => setEditData({ ...editData, region: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  >
+                    <option value="">Select region</option>
+                    {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
+                <textarea
+                  rows={4}
+                  value={editData.description}
+                  onChange={e => setEditData({ ...editData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  placeholder="Describe your water..."
+                />
+              </div>
+            </div>
+
+            {/* Species */}
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
+              <h4 className="font-semibold text-stone-900 mb-3">Species</h4>
+              <div className="flex flex-wrap gap-2">
+                {SPECIES.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => toggleArrayItem('species', s)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                      editData.species.includes(s)
+                        ? 'bg-brand-100 text-brand-700 border-brand-300'
+                        : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Amenities */}
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
+              <h4 className="font-semibold text-stone-900 mb-3">Amenities</h4>
+              <div className="flex flex-wrap gap-2">
+                {AMENITIES.map(a => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => toggleArrayItem('amenities', a)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                      editData.amenities.includes(a)
+                        ? 'bg-green-100 text-green-700 border-green-300'
+                        : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rules */}
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
+              <h4 className="font-semibold text-stone-900 mb-3">Rules</h4>
+              <div className="space-y-2">
+                {editData.rules.map((rule, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-stone-400 text-sm w-6">{i + 1}.</span>
+                    <input
+                      type="text"
+                      value={rule}
+                      onChange={e => {
+                        const newRules = [...editData.rules];
+                        newRules[i] = e.target.value;
+                        setEditData({ ...editData, rules: newRules });
+                      }}
+                      className="flex-1 px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm"
+                    />
+                    <button
+                      onClick={() => setEditData({ ...editData, rules: editData.rules.filter((_, j) => j !== i) })}
+                      className="p-1.5 text-stone-400 hover:text-red-500 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setEditData({ ...editData, rules: [...editData.rules, ''] })}
+                  className="text-sm text-brand-700 hover:text-brand-800 font-medium"
+                >
+                  + Add Rule
+                </button>
+              </div>
+            </div>
+
+            {/* Booking Options */}
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
+              <h4 className="font-semibold text-stone-900 mb-3">Booking Options</h4>
+              <div className="space-y-4">
+                {editData.booking_options.map((opt, i) => (
+                  <div key={i} className="border border-stone-200 rounded-lg p-4 bg-stone-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-stone-700">Option {i + 1}</span>
+                      <button
+                        onClick={() => removeBookingOption(i)}
+                        className="p-1 text-stone-400 hover:text-red-500 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={opt.name}
+                          onChange={e => updateBookingOption(i, 'name', e.target.value)}
+                          placeholder="e.g. Full Day Ticket"
+                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">Price (£)</label>
+                        <input
+                          type="number"
+                          value={opt.price}
+                          onChange={e => updateBookingOption(i, 'price', e.target.value)}
+                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">Category</label>
+                        <select
+                          value={opt.category}
+                          onChange={e => updateBookingOption(i, 'category', e.target.value)}
+                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                        >
+                          <option value="day-tickets">Day Tickets</option>
+                          <option value="guided">Guided</option>
+                          <option value="accommodation">Accommodation</option>
+                          <option value="extras">Extras</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">Booking Type</label>
+                        <select
+                          value={opt.bookingType}
+                          onChange={e => updateBookingOption(i, 'bookingType', e.target.value)}
+                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                        >
+                          <option value="instant">Instant Book</option>
+                          <option value="enquiry">Enquiry</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">Price Type</label>
+                        <select
+                          value={opt.priceType}
+                          onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
+                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                        >
+                          <option value="day">Per Day</option>
+                          <option value="session">Per Session</option>
+                          <option value="rod">Per Rod</option>
+                          <option value="night">Per Night</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-500 mb-1">Description</label>
+                        <input
+                          type="text"
+                          value={opt.description}
+                          onChange={e => updateBookingOption(i, 'description', e.target.value)}
+                          placeholder="Brief description"
+                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={addBookingOption}
+                  className="w-full py-2.5 border-2 border-dashed border-stone-300 rounded-lg text-sm font-medium text-stone-600 hover:border-brand-400 hover:text-brand-700 transition"
+                >
+                  + Add Booking Option
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom save bar */}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setEditingWater(null); setTab('waters'); }}
+                className="px-6 py-2.5 bg-stone-100 text-stone-700 rounded-lg font-medium hover:bg-stone-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEditWater}
+                disabled={saving}
+                className="flex items-center gap-2 px-6 py-2.5 bg-brand-700 text-white rounded-lg font-medium hover:bg-brand-800 disabled:opacity-50 transition"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         )}
       </div>

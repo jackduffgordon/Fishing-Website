@@ -4,9 +4,15 @@
 import { useState, useEffect } from 'react';
 import {
   User, ChevronLeft, Edit3, Loader, AlertTriangle, CheckCircle,
-  Clock, XCircle, Mail, Phone, Calendar, MessageSquare, Award, Star
+  Clock, XCircle, Mail, Phone, Calendar, MessageSquare, Award, Star, Save, X
 } from 'lucide-react';
 import { getToken } from '../utils/api';
+
+const SPECIALTIES = [
+  'Fly Fishing', 'Salmon', 'Trout', 'Sea Fishing', 'Bass', 'Shore Fishing',
+  'Carp Fishing', 'Coarse', 'Beginners', 'Fly Tying', "Women's Courses",
+  'Kids/Juniors', 'Pike', 'Barbel'
+];
 
 // --- Status Badge ---
 const StatusBadge = ({ status }) => {
@@ -98,6 +104,9 @@ export const InstructorDashboard = ({ user, onBack }) => {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -132,6 +141,59 @@ export const InstructorDashboard = ({ user, onBack }) => {
       setError('Failed to load dashboard data');
     }
     setLoading(false);
+  };
+
+  const startEdit = () => {
+    setEditData({
+      name: instructor.name || '',
+      bio: instructor.bio || '',
+      price: instructor.price || '',
+      phone: instructor.phone || '',
+      region: instructor.region || instructor.location || '',
+      specialties: instructor.specialties || [],
+      certifications: (instructor.certifications || []).join(', '),
+      experience: instructor.experience || '',
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const token = getToken();
+      const payload = {
+        ...editData,
+        price: parseFloat(editData.price) || 0,
+        certifications: editData.certifications
+          ? editData.certifications.split(',').map(c => c.trim()).filter(Boolean)
+          : [],
+      };
+      const res = await fetch('/api/instructor/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Failed to save');
+      const data = await res.json();
+      setInstructor(data.instructor);
+      setEditing(false);
+    } catch (err) {
+      setError(err.message);
+    }
+    setSaving(false);
+  };
+
+  const toggleSpecialty = (s) => {
+    setEditData(prev => ({
+      ...prev,
+      specialties: prev.specialties.includes(s)
+        ? prev.specialties.filter(x => x !== s)
+        : [...prev.specialties, s]
+    }));
   };
 
   const tabs = [
@@ -260,11 +322,33 @@ export const InstructorDashboard = ({ user, onBack }) => {
                 </div>
               )}
 
-              {instructor.status === 'approved' && (
+              {instructor.status === 'approved' && !editing && (
                 <div className="mt-4">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition">
+                  <button
+                    onClick={startEdit}
+                    className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition"
+                  >
                     <Edit3 className="w-4 h-4" />
                     Edit Profile
+                  </button>
+                </div>
+              )}
+              {editing && (
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={saveEdit}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800 disabled:opacity-50 transition"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg hover:bg-stone-200 transition"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
                   </button>
                 </div>
               )}
@@ -297,7 +381,7 @@ export const InstructorDashboard = ({ user, onBack }) => {
         </div>
 
         {/* Overview Tab */}
-        {tab === 'overview' && (
+        {tab === 'overview' && !editing && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-stone-200 p-6">
               <h3 className="font-semibold text-stone-900 mb-4">Profile Information</h3>
@@ -339,6 +423,103 @@ export const InstructorDashboard = ({ user, onBack }) => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Edit Form */}
+        {tab === 'overview' && editing && (
+          <div className="bg-white rounded-xl border border-stone-200 p-6">
+            <h3 className="font-semibold text-stone-900 mb-4">Edit Profile</h3>
+            <div className="space-y-5">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editData.name}
+                    onChange={e => setEditData({ ...editData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Phone</label>
+                  <input
+                    type="text"
+                    value={editData.phone}
+                    onChange={e => setEditData({ ...editData, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Region</label>
+                  <input
+                    type="text"
+                    value={editData.region}
+                    onChange={e => setEditData({ ...editData, region: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Price (£/day)</label>
+                  <input
+                    type="number"
+                    value={editData.price}
+                    onChange={e => setEditData({ ...editData, price: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Experience (years)</label>
+                  <input
+                    type="text"
+                    value={editData.experience}
+                    onChange={e => setEditData({ ...editData, experience: e.target.value })}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Certifications</label>
+                  <input
+                    type="text"
+                    value={editData.certifications}
+                    onChange={e => setEditData({ ...editData, certifications: e.target.value })}
+                    placeholder="AAPGAI, Level 2 Coach (comma separated)"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Bio</label>
+                <textarea
+                  rows={4}
+                  value={editData.bio}
+                  onChange={e => setEditData({ ...editData, bio: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  placeholder="Tell potential students about yourself..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Specialties</label>
+                <div className="flex flex-wrap gap-2">
+                  {SPECIALTIES.map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleSpecialty(s)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                        editData.specialties.includes(s)
+                          ? 'bg-brand-100 text-brand-700 border-brand-300'
+                          : 'bg-stone-50 text-stone-600 border-stone-200 hover:border-stone-300'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

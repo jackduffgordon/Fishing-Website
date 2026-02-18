@@ -67,6 +67,31 @@
   background-color: #ccfbf1 !important;
 }
 
+.react-datepicker__day--range-start {
+  border-radius: 50% 0 0 50% !important;
+  background-color: #0f766e !important;
+}
+
+.react-datepicker__day--range-end {
+  border-radius: 0 50% 50% 0 !important;
+  background-color: #0f766e !important;
+}
+
+.react-datepicker__day--range-start.react-datepicker__day--range-end {
+  border-radius: 50% !important;
+}
+
+/* Inline calendar fits sidebar */
+.date-picker-container .react-datepicker--inline {
+  width: 100% !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.date-picker-container .react-datepicker__month-container {
+  width: 100% !important;
+}
+
 /* Custom day classes for availability */
 .day-available {
   background-color: #dcfce7 !important;

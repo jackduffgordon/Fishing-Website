@@ -2414,7 +2414,7 @@ app.get('/api/owner/waters', authenticateToken, requireRole('water_owner', 'admi
   }
 });
 
-app.put('/api/owner/waters/:id', authenticateToken, requireRole('water_owner', 'admin'), async (req, res) => {
+app.put('/api/owner/waters/:id', authenticateToken, async (req, res) => {
   try {
     const waterId = req.params.id;
 
@@ -2428,7 +2428,7 @@ app.put('/api/owner/waters/:id', authenticateToken, requireRole('water_owner', '
       return res.status(404).json({ error: 'Not found or not yours' });
     }
 
-    const allowed = ['description', 'price', 'facilities', 'rules', 'images', 'booking_type'];
+    const allowed = ['name', 'description', 'price', 'facilities', 'rules', 'images', 'booking_type', 'species', 'amenities', 'region', 'type', 'location', 'booking_options'];
     const updates = {};
     allowed.forEach(k => {
       // Convert camelCase to snake_case if needed
@@ -2512,7 +2512,7 @@ app.get('/api/instructor/profile', authenticateToken, requireRole('instructor', 
   }
 });
 
-app.put('/api/instructor/profile', authenticateToken, requireRole('instructor', 'admin'), async (req, res) => {
+app.put('/api/instructor/profile', authenticateToken, async (req, res) => {
   try {
     const { data: instructor, error: fetchError } = await supabase
       .from('instructors')
@@ -2524,7 +2524,7 @@ app.put('/api/instructor/profile', authenticateToken, requireRole('instructor', 
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    const allowed = ['bio', 'price', 'availability', 'specialties', 'images'];
+    const allowed = ['name', 'bio', 'price', 'availability', 'specialties', 'images', 'phone', 'region', 'certifications', 'experience'];
     const updates = {};
     allowed.forEach(k => {
       if (req.body[k] !== undefined) updates[k] = req.body[k];

@@ -3,11 +3,12 @@
 // ============================================
 import { useState, useEffect } from 'react';
 import {
-  Fish, Users, Droplets, Clock, CheckCircle, XCircle,
+  Fish, Users, Droplets, Clock, CheckCircle, XCircle, X,
   ChevronDown, ChevronUp, Loader, AlertTriangle, Eye, Trash2,
   BarChart3, RefreshCw, MapPin, Star
 } from 'lucide-react';
 import { adminAPI } from '../utils/api';
+import { VenueDetailPage } from './VenueDetail';
 
 // --- Status Badge ---
 const StatusBadge = ({ status }) => {
@@ -38,9 +39,17 @@ const StatCard = ({ icon: Icon, label, value, color = 'brand' }) => (
   </div>
 );
 
+// --- Pill Badge ---
+const PillBadge = ({ text, color = 'stone' }) => (
+  <span className={`px-2 py-0.5 rounded-full text-xs font-medium bg-${color}-100 text-${color}-700`}>
+    {text}
+  </span>
+);
+
 // --- Water Row ---
-const WaterRow = ({ water, onApprove, onReject, actionLoading }) => {
+const WaterRow = ({ water, onApprove, onReject, onPreview, actionLoading }) => {
   const [expanded, setExpanded] = useState(false);
+  const bookingOptions = water.booking_options || water.bookingOptions || [];
 
   return (
     <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
@@ -54,7 +63,7 @@ const WaterRow = ({ water, onApprove, onReject, actionLoading }) => {
           <div className="min-w-0">
             <h4 className="font-medium text-stone-900 truncate">{water.name}</h4>
             <p className="text-sm text-stone-500 truncate">
-              {water.type} • {water.region} • {water.ownerEmail || 'No email'}
+              {water.type} • {water.region} • {water.ownerEmail || water.owner_email || 'No email'}
             </p>
           </div>
         </div>
@@ -65,40 +74,134 @@ const WaterRow = ({ water, onApprove, onReject, actionLoading }) => {
       </div>
 
       {expanded && (
-        <div className="border-t border-stone-200 p-4 bg-stone-50">
-          <div className="grid md:grid-cols-2 gap-4 text-sm mb-4">
+        <div className="border-t border-stone-200 p-4 bg-stone-50 space-y-4">
+          {/* Basic info grid */}
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-stone-500">Owner</p>
-              <p className="font-medium">{water.ownerName || 'Not provided'}</p>
+              <p className="font-medium">{water.ownerName || water.owner_name || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-stone-500">Email</p>
-              <p className="font-medium">{water.ownerEmail || 'Not provided'}</p>
+              <p className="font-medium">{water.ownerEmail || water.owner_email || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-stone-500">Phone</p>
-              <p className="font-medium">{water.ownerPhone || 'Not provided'}</p>
+              <p className="font-medium">{water.ownerPhone || water.owner_phone || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-stone-500">Location</p>
-              <p className="font-medium">{water.location || water.townCity || 'Not provided'}</p>
+              <p className="font-medium">{water.location || water.town_city || 'Not provided'}</p>
             </div>
             <div>
-              <p className="text-stone-500">Species</p>
-              <p className="font-medium">{(water.species || []).join(', ') || 'None listed'}</p>
+              <p className="text-stone-500">Type</p>
+              <p className="font-medium">{water.type || 'Not specified'}</p>
             </div>
             <div>
-              <p className="text-stone-500">Price</p>
-              <p className="font-medium">£{water.price || 0}/{water.priceType || 'day'}</p>
+              <p className="text-stone-500">Region</p>
+              <p className="font-medium">{water.region || 'Not specified'}</p>
             </div>
           </div>
+
+          {/* Description */}
           {water.description && (
-            <div className="mb-4">
-              <p className="text-stone-500 text-sm">Description</p>
-              <p className="text-sm text-stone-700 mt-1">{water.description}</p>
+            <div>
+              <p className="text-stone-500 text-sm mb-1">Description</p>
+              <p className="text-sm text-stone-700 whitespace-pre-line">{water.description}</p>
             </div>
           )}
-          <div className="flex gap-2">
+
+          {/* Species */}
+          {(water.species || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Species</p>
+              <div className="flex flex-wrap gap-1.5">
+                {water.species.map(s => <PillBadge key={s} text={s} color="brand" />)}
+              </div>
+            </div>
+          )}
+
+          {/* Amenities */}
+          {(water.amenities || water.facilities || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Amenities</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(water.amenities || water.facilities || []).map(a => <PillBadge key={a} text={a} color="green" />)}
+              </div>
+            </div>
+          )}
+
+          {/* Booking Options */}
+          {bookingOptions.length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Booking Options ({bookingOptions.length})</p>
+              <div className="space-y-2">
+                {bookingOptions.map((opt, i) => (
+                  <div key={opt.id || i} className="bg-white border border-stone-200 rounded-lg p-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-stone-900">{opt.name}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                          opt.category === 'guided' ? 'bg-amber-100 text-amber-700' :
+                          opt.category === 'accommodation' ? 'bg-purple-100 text-purple-700' :
+                          opt.category === 'extras' ? 'bg-blue-100 text-blue-700' :
+                          'bg-brand-50 text-brand-700'
+                        }`}>
+                          {opt.category || 'day-tickets'}
+                        </span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                          (opt.booking_type || opt.bookingType) === 'instant'
+                            ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {(opt.booking_type || opt.bookingType) === 'instant' ? 'Instant' : 'Enquiry'}
+                        </span>
+                      </div>
+                      <span className="font-bold text-stone-900">
+                        £{opt.price}/{opt.price_type || opt.priceType || 'day'}
+                      </span>
+                    </div>
+                    {opt.description && (
+                      <p className="text-stone-500 text-xs mt-1">{opt.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Rules */}
+          {(water.rules || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Rules</p>
+              <ol className="list-decimal list-inside text-sm text-stone-700 space-y-1">
+                {water.rules.map((rule, i) => <li key={i}>{rule}</li>)}
+              </ol>
+            </div>
+          )}
+
+          {/* Images */}
+          {(water.images || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Images ({water.images.length})</p>
+              <div className="flex gap-2 overflow-x-auto">
+                {water.images.map((img, i) => (
+                  <img key={i} src={img} alt={`${water.name} ${i + 1}`}
+                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-stone-200" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-2 pt-2 border-t border-stone-200">
+            {onPreview && (
+              <button
+                onClick={() => onPreview(water)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-brand-50 text-brand-700 rounded-lg text-sm font-medium hover:bg-brand-100 transition"
+              >
+                <Eye className="w-4 h-4" /> Preview
+              </button>
+            )}
             {water.status === 'pending' && (
               <>
                 <button
@@ -167,8 +270,9 @@ const InstructorRow = ({ instructor, onApprove, onReject, actionLoading }) => {
       </div>
 
       {expanded && (
-        <div className="border-t border-stone-200 p-4 bg-stone-50">
-          <div className="grid md:grid-cols-2 gap-4 text-sm mb-4">
+        <div className="border-t border-stone-200 p-4 bg-stone-50 space-y-4">
+          {/* Basic info grid */}
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-stone-500">Email</p>
               <p className="font-medium">{instructor.email || 'Not provided'}</p>
@@ -178,21 +282,66 @@ const InstructorRow = ({ instructor, onApprove, onReject, actionLoading }) => {
               <p className="font-medium">{instructor.phone || 'Not provided'}</p>
             </div>
             <div>
-              <p className="text-stone-500">Location</p>
+              <p className="text-stone-500">Region</p>
               <p className="font-medium">{instructor.location || instructor.region || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-stone-500">Price</p>
               <p className="font-medium">£{instructor.price || 0}</p>
             </div>
+            <div>
+              <p className="text-stone-500">Experience</p>
+              <p className="font-medium">{instructor.experience ? `${instructor.experience} years` : 'Not specified'}</p>
+            </div>
+            <div>
+              <p className="text-stone-500">Availability</p>
+              <p className="font-medium">{instructor.availability || 'Not specified'}</p>
+            </div>
           </div>
+
+          {/* Bio */}
           {instructor.bio && (
-            <div className="mb-4">
-              <p className="text-stone-500 text-sm">Bio</p>
-              <p className="text-sm text-stone-700 mt-1">{instructor.bio}</p>
+            <div>
+              <p className="text-stone-500 text-sm mb-1">Bio</p>
+              <p className="text-sm text-stone-700 whitespace-pre-line">{instructor.bio}</p>
             </div>
           )}
-          <div className="flex gap-2">
+
+          {/* Specialties */}
+          {(instructor.specialties || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Specialties</p>
+              <div className="flex flex-wrap gap-1.5">
+                {instructor.specialties.map(s => <PillBadge key={s} text={s} color="brand" />)}
+              </div>
+            </div>
+          )}
+
+          {/* Certifications */}
+          {(instructor.certifications || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Certifications</p>
+              <div className="flex flex-wrap gap-1.5">
+                {instructor.certifications.map(c => <PillBadge key={c} text={c} color="amber" />)}
+              </div>
+            </div>
+          )}
+
+          {/* Images */}
+          {(instructor.images || []).length > 0 && (
+            <div>
+              <p className="text-stone-500 text-sm mb-1.5">Images ({instructor.images.length})</p>
+              <div className="flex gap-2 overflow-x-auto">
+                {instructor.images.map((img, i) => (
+                  <img key={i} src={img} alt={`${instructor.name} ${i + 1}`}
+                    className="w-20 h-20 rounded-lg object-cover flex-shrink-0 border border-stone-200" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-2 pt-2 border-t border-stone-200">
             {instructor.status === 'pending' && (
               <>
                 <button
@@ -246,6 +395,7 @@ export const AdminPage = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const [previewWater, setPreviewWater] = useState(null);
 
   // Fetch all admin data
   const fetchData = async () => {
@@ -336,6 +486,40 @@ export const AdminPage = ({ user }) => {
     { id: 'users', label: 'Users', count: users.length }
   ];
 
+  // Convert DB water to VenueDetailPage format
+  const mapWaterToFishery = (w) => ({
+    id: w.id,
+    name: w.name,
+    type: w.type,
+    region: w.region,
+    location: w.location || w.town_city || '',
+    species: w.species || [],
+    amenities: w.amenities || w.facilities || [],
+    rules: w.rules || [],
+    description: w.description || '',
+    fullDescription: w.description || '',
+    price: w.price || 0,
+    priceType: w.price_type || w.priceType || 'day',
+    bookingType: w.booking_type || w.bookingType || 'enquiry',
+    image: w.images?.[0] || '',
+    gallery: w.images || [],
+    rating: 0,
+    reviews: 0,
+    bookingOptions: (w.booking_options || w.bookingOptions || []).map((opt, i) => ({
+      ...opt,
+      id: opt.id || `opt-${i}`,
+      bookingType: opt.booking_type || opt.bookingType || 'enquiry',
+      priceType: opt.price_type || opt.priceType || 'day',
+    })),
+    contact: {
+      name: w.ownerName || w.owner_name || '',
+      email: w.ownerEmail || w.owner_email || '',
+      phone: w.ownerPhone || w.owner_phone || '',
+    },
+    coordinates: w.coordinates || null,
+    rods: w.rods || 0,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -349,6 +533,27 @@ export const AdminPage = ({ user }) => {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* Preview Modal */}
+      {previewWater && (
+        <div className="fixed inset-0 z-50 bg-black/60 overflow-y-auto">
+          <div className="sticky top-0 z-10 flex justify-end p-4">
+            <button
+              onClick={() => setPreviewWater(null)}
+              className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-100 transition"
+            >
+              <X className="w-5 h-5 text-stone-700" />
+            </button>
+          </div>
+          <div className="max-w-7xl mx-auto">
+            <VenueDetailPage
+              fishery={mapWaterToFishery(previewWater)}
+              onBack={() => setPreviewWater(null)}
+              user={null}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-stone-900 text-white py-6">
         <div className="max-w-7xl mx-auto px-4">
@@ -434,6 +639,7 @@ export const AdminPage = ({ user }) => {
                           water={w}
                           onApprove={handleApproveWater}
                           onReject={handleRejectWater}
+                          onPreview={setPreviewWater}
                           actionLoading={actionLoading}
                         />
                       ))}
@@ -477,6 +683,7 @@ export const AdminPage = ({ user }) => {
                   water={w}
                   onApprove={handleApproveWater}
                   onReject={handleRejectWater}
+                  onPreview={setPreviewWater}
                   actionLoading={actionLoading}
                 />
               ))

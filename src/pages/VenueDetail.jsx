@@ -61,13 +61,18 @@ const categoryLabels = {
 
 export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, onToggleFavourite }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedDate, setSelectedDate] = useState(null);
   const [dateRange, setDateRange] = useState([null, null]);
   const [enquiryMessage, setEnquiryMessage] = useState('');
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
   const [selectedPrimary, setSelectedPrimary] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
-  const [numberOfDays, setNumberOfDays] = useState(1);
+
+  // Derive selectedDate and numberOfDays from dateRange
+  const [startDate, endDate] = dateRange;
+  const selectedDate = startDate;
+  const numberOfDays = startDate && endDate
+    ? Math.max(1, Math.ceil((endDate - startDate) / 86400000) + 1)
+    : startDate ? 1 : 0;
 
   // Determine if this fishery uses the new multi-option system
   const hasBookingOptions = fishery.bookingOptions && fishery.bookingOptions.length > 0;
@@ -120,9 +125,12 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
               {activeOption.name} — {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'} — £{(activeOption.price || 0) * numberOfDays}
             </p>
           )}
-          {selectedDate && (
+          {startDate && (
             <p className="text-stone-400 text-xs mb-4">
-              Starting {selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              {startDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' })}
+              {endDate && endDate.getTime() !== startDate.getTime() && (
+                <> — {endDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' })}</>
+              )}
             </p>
           )}
           <button
@@ -573,47 +581,29 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                   {/* Calendar & booking - always visible when option selected */}
                   {activeOption && (
                     <div className="space-y-3 pt-2">
-                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-4">
-                        {/* Date picker */}
+                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200 space-y-3">
+                        {/* Inline date range calendar */}
                         <div>
                           <label className="block text-sm font-medium text-stone-700 mb-2">
-                            Select Start Date
+                            Select Dates
                           </label>
+                          <p className="text-xs text-stone-500 mb-2">
+                            {!startDate ? 'Click a start date' : !endDate ? 'Now click an end date' : `${numberOfDays} ${numberOfDays === 1 ? 'day' : 'days'} selected`}
+                          </p>
                           <DatePickerCalendar
-                            selected={selectedDate}
-                            onChange={setSelectedDate}
+                            selected={startDate}
+                            onChange={(dates) => setDateRange(dates)}
                             availability={fishery.availability || {}}
-                            placeholder="Choose your fishing date"
+                            selectsRange={true}
+                            startDate={startDate}
+                            endDate={endDate}
+                            inline={true}
+                            showPrice={false}
                           />
                         </div>
 
-                        {/* Number of days */}
-                        <div>
-                          <label className="block text-sm font-medium text-stone-700 mb-2">
-                            Number of Days
-                          </label>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => setNumberOfDays(Math.max(1, numberOfDays - 1))}
-                              className="w-10 h-10 rounded-lg border border-stone-300 flex items-center justify-center text-lg font-medium hover:bg-stone-100 transition"
-                            >
-                              -
-                            </button>
-                            <span className="text-xl font-bold text-stone-900 w-8 text-center">{numberOfDays}</span>
-                            <button
-                              onClick={() => setNumberOfDays(numberOfDays + 1)}
-                              className="w-10 h-10 rounded-lg border border-stone-300 flex items-center justify-center text-lg font-medium hover:bg-stone-100 transition"
-                            >
-                              +
-                            </button>
-                            <span className="text-sm text-stone-500">
-                              {numberOfDays === 1 ? 'day' : 'days'}
-                            </span>
-                          </div>
-                        </div>
-
                         {/* Price summary */}
-                        {selectedDate && (
+                        {startDate && (
                           <div className="pt-3 border-t border-stone-300">
                             <div className="flex justify-between text-sm text-stone-600">
                               <span>{activeOption.name} x {numberOfDays} {numberOfDays === 1 ? 'day' : 'days'}</span>
@@ -707,10 +697,14 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                           Select Date
                         </label>
                         <DatePickerCalendar
-                          selected={selectedDate}
-                          onChange={setSelectedDate}
+                          selected={startDate}
+                          onChange={(dates) => setDateRange(dates)}
                           availability={fishery.availability || {}}
-                          placeholder="Choose your fishing date"
+                          selectsRange={true}
+                          startDate={startDate}
+                          endDate={endDate}
+                          inline={true}
+                          showPrice={false}
                         />
                       </div>
                       <button
