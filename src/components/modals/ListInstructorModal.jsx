@@ -43,7 +43,7 @@ const AVAILABILITY_OPTIONS = [
   { id: 'evenings', label: 'Evenings' }
 ];
 
-export const ListInstructorModal = ({ isOpen, onClose }) => {
+export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -111,6 +111,7 @@ export const ListInstructorModal = ({ isOpen, onClose }) => {
 
       await registerAPI.instructor(payload);
       setSubmitted(true);
+      if (onSuccess) onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to submit registration');
     } finally {

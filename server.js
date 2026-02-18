@@ -2139,8 +2139,29 @@ app.get('/api/admin/waters', authenticateToken, requireRole('admin'), async (req
     if (approvedError) console.error('[Admin] Error fetching approved waters:', approvedError);
     if (pendingError) console.error('[Admin] Error fetching pending waters:', pendingError);
 
+    // Attach booking options to each water
+    const allWaters = [...(approved || []), ...(pending || [])];
+    const waterIds = allWaters.map(w => w.id);
+    let optionsByWater = {};
+    if (waterIds.length > 0) {
+      const { data: allOptions } = await supabase
+        .from('booking_options')
+        .select('*')
+        .in('water_id', waterIds)
+        .order('sort_order', { ascending: true });
+      (allOptions || []).forEach(opt => {
+        if (!optionsByWater[opt.water_id]) optionsByWater[opt.water_id] = [];
+        optionsByWater[opt.water_id].push(opt);
+      });
+    }
+
+    const attachOptions = (waters) => (waters || []).map(w => ({
+      ...w,
+      booking_options: optionsByWater[w.id] || []
+    }));
+
     console.log(`[Admin] Waters: ${(approved || []).length} approved, ${(pending || []).length} pending`);
-    res.json({ approved: approved || [], pending: pending || [] });
+    res.json({ approved: attachOptions(approved), pending: attachOptions(pending) });
   } catch (e) {
     console.error('[Admin] Exception fetching waters:', e);
     res.status(500).json({ error: 'Failed to fetch waters' });
@@ -2396,18 +2417,38 @@ app.delete('/api/admin/instructors/:id', authenticateToken, requireRole('admin')
 // WATER OWNER ROUTES
 // ============================================================================
 
-app.get('/api/owner/waters', authenticateToken, requireRole('water_owner', 'admin'), async (req, res) => {
+app.get('/api/owner/waters', authenticateToken, async (req, res) => {
   try {
     const { data: waters, error } = await supabase
       .from('waters')
       .select('*')
-      .eq('owner_id', req.user.id);
+      .or(`owner_id.eq.${req.user.id},owner_email.eq.${req.user.email}`);
 
     if (error) {
       return res.status(500).json({ error: 'Failed to fetch waters' });
     }
 
-    res.json({ waters });
+    // Attach booking options
+    const waterIds = (waters || []).map(w => w.id);
+    let optionsByWater = {};
+    if (waterIds.length > 0) {
+      const { data: allOptions } = await supabase
+        .from('booking_options')
+        .select('*')
+        .in('water_id', waterIds)
+        .order('sort_order', { ascending: true });
+      (allOptions || []).forEach(opt => {
+        if (!optionsByWater[opt.water_id]) optionsByWater[opt.water_id] = [];
+        optionsByWater[opt.water_id].push(opt);
+      });
+    }
+
+    const watersWithOptions = (waters || []).map(w => ({
+      ...w,
+      booking_options: optionsByWater[w.id] || []
+    }));
+
+    res.json({ waters: watersWithOptions });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch waters' });
@@ -2424,7 +2465,8 @@ app.put('/api/owner/waters/:id', authenticateToken, async (req, res) => {
       .eq('id', waterId)
       .single();
 
-    if (fetchError || !water || water.owner_id !== req.user.id) {
+    const isOwner = water && (water.owner_id === req.user.id || water.owner_email === req.user.email);
+    if (fetchError || !water || !isOwner) {
       return res.status(404).json({ error: 'Not found or not yours' });
     }
 

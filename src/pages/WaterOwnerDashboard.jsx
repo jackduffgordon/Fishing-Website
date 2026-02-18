@@ -117,7 +117,7 @@ const WaterCard = ({ water, onView, onEdit }) => {
             >
               <Eye className="w-4 h-4" /> View Details
             </button>
-            {water.status === 'approved' && onEdit && (
+            {onEdit && (
               <button
                 onClick={() => onEdit(water)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 transition"

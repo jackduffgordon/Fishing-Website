@@ -518,11 +518,17 @@ const App = () => {
       <ListWaterModal
         isOpen={showListWater}
         onClose={() => setShowListWater(false)}
+        onSuccess={async () => {
+          try { const data = await authAPI.me(); setUser(data.user); } catch {}
+        }}
       />
 
       <ListInstructorModal
         isOpen={showListInstructor}
         onClose={() => setShowListInstructor(false)}
+        onSuccess={async () => {
+          try { const data = await authAPI.me(); setUser(data.user); } catch {}
+        }}
       />
     </div>
   );

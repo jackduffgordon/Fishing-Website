@@ -54,7 +54,7 @@ const emptyOption = () => ({
   bookingType: 'instant'
 });
 
-export const ListWaterModal = ({ isOpen, onClose }) => {
+export const ListWaterModal = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
@@ -165,6 +165,7 @@ export const ListWaterModal = ({ isOpen, onClose }) => {
 
       await registerAPI.water(payload);
       setSubmitted(true);
+      if (onSuccess) onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to submit listing');
     } finally {
