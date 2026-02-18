@@ -15,11 +15,18 @@ const StatusBadge = ({ status }) => {
   const styles = {
     pending: 'bg-amber-100 text-amber-700',
     approved: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700'
+    rejected: 'bg-red-100 text-red-700',
+    removal_requested: 'bg-orange-100 text-orange-700'
+  };
+  const labels = {
+    pending: 'pending',
+    approved: 'approved',
+    rejected: 'rejected',
+    removal_requested: 'removal requested'
   };
   return (
     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-stone-100 text-stone-600'}`}>
-      {status}
+      {labels[status] || status}
     </span>
   );
 };
@@ -47,7 +54,7 @@ const PillBadge = ({ text, color = 'stone' }) => (
 );
 
 // --- Water Row ---
-const WaterRow = ({ water, onApprove, onReject, onPreview, actionLoading }) => {
+const WaterRow = ({ water, onApprove, onReject, onPreview, onDelete, actionLoading }) => {
   const [expanded, setExpanded] = useState(false);
   const bookingOptions = water.booking_options || water.bookingOptions || [];
 
@@ -238,6 +245,24 @@ const WaterRow = ({ water, onApprove, onReject, onPreview, actionLoading }) => {
                 <CheckCircle className="w-4 h-4" /> Approve
               </button>
             )}
+            {water.status === 'removal_requested' && (
+              <>
+                <button
+                  onClick={() => onDelete(water.id)}
+                  disabled={actionLoading}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
+                >
+                  <Trash2 className="w-4 h-4" /> Confirm Delete
+                </button>
+                <button
+                  onClick={() => onApprove(water.id)}
+                  disabled={actionLoading}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-stone-200 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-300 disabled:opacity-50 transition"
+                >
+                  <CheckCircle className="w-4 h-4" /> Keep (Re-approve)
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -409,10 +434,11 @@ export const AdminPage = ({ user }) => {
         adminAPI.getUsers().catch(() => ({ users: [] }))
       ]);
       if (statsRes) setStats(statsRes);
-      // Admin endpoint returns { approved: [], pending: [] }
+      // Admin endpoint returns { approved: [], pending: [], removal_requested: [] }
       const allWaters = [
         ...(watersRes.pending || []).map(w => ({ ...w, status: w.status || 'pending' })),
-        ...(watersRes.approved || []).map(w => ({ ...w, status: w.status || 'approved' }))
+        ...(watersRes.approved || []).map(w => ({ ...w, status: w.status || 'approved' })),
+        ...(watersRes.removal_requested || []).map(w => ({ ...w, status: w.status || 'removal_requested' }))
       ];
       setWaters(allWaters);
       const allInstructors = [
@@ -474,10 +500,23 @@ export const AdminPage = ({ user }) => {
     setActionLoading(false);
   };
 
+  const handleDeleteWater = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this water listing?')) return;
+    setActionLoading(true);
+    try {
+      await adminAPI.deleteWater(id);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    }
+    setActionLoading(false);
+  };
+
   // Filtered lists
   const pendingWaters = waters.filter(w => w.status === 'pending');
+  const removalWaters = waters.filter(w => w.status === 'removal_requested');
   const pendingInstructors = instructors.filter(i => i.status === 'pending');
-  const pendingCount = pendingWaters.length + pendingInstructors.length;
+  const pendingCount = pendingWaters.length + pendingInstructors.length + removalWaters.length;
 
   const tabs = [
     { id: 'pending', label: 'Pending Review', count: pendingCount },
@@ -544,11 +583,12 @@ export const AdminPage = ({ user }) => {
               <X className="w-5 h-5 text-stone-700" />
             </button>
           </div>
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto bg-stone-50 min-h-screen">
             <VenueDetailPage
               fishery={mapWaterToFishery(previewWater)}
               onBack={() => setPreviewWater(null)}
               user={null}
+              onSignIn={() => {}}
             />
           </div>
         </div>
@@ -640,6 +680,28 @@ export const AdminPage = ({ user }) => {
                           onApprove={handleApproveWater}
                           onReject={handleRejectWater}
                           onPreview={setPreviewWater}
+                          onDelete={handleDeleteWater}
+                          actionLoading={actionLoading}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {removalWaters.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                      <Trash2 className="w-5 h-5 text-orange-600" />
+                      Removal Requests ({removalWaters.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {removalWaters.map(w => (
+                        <WaterRow
+                          key={w.id}
+                          water={w}
+                          onApprove={handleApproveWater}
+                          onReject={handleRejectWater}
+                          onPreview={setPreviewWater}
+                          onDelete={handleDeleteWater}
                           actionLoading={actionLoading}
                         />
                       ))}
@@ -684,6 +746,7 @@ export const AdminPage = ({ user }) => {
                   onApprove={handleApproveWater}
                   onReject={handleRejectWater}
                   onPreview={setPreviewWater}
+                  onDelete={handleDeleteWater}
                   actionLoading={actionLoading}
                 />
               ))

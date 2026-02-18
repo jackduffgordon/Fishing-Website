@@ -2136,11 +2136,17 @@ app.get('/api/admin/waters', authenticateToken, requireRole('admin'), async (req
       .select('*')
       .eq('status', 'pending');
 
+    const { data: removalRequested, error: removalError } = await supabase
+      .from('waters')
+      .select('*')
+      .eq('status', 'removal_requested');
+
     if (approvedError) console.error('[Admin] Error fetching approved waters:', approvedError);
     if (pendingError) console.error('[Admin] Error fetching pending waters:', pendingError);
+    if (removalError) console.error('[Admin] Error fetching removal_requested waters:', removalError);
 
     // Attach booking options to each water
-    const allWaters = [...(approved || []), ...(pending || [])];
+    const allWaters = [...(approved || []), ...(pending || []), ...(removalRequested || [])];
     const waterIds = allWaters.map(w => w.id);
     let optionsByWater = {};
     if (waterIds.length > 0) {
@@ -2160,8 +2166,8 @@ app.get('/api/admin/waters', authenticateToken, requireRole('admin'), async (req
       booking_options: optionsByWater[w.id] || []
     }));
 
-    console.log(`[Admin] Waters: ${(approved || []).length} approved, ${(pending || []).length} pending`);
-    res.json({ approved: attachOptions(approved), pending: attachOptions(pending) });
+    console.log(`[Admin] Waters: ${(approved || []).length} approved, ${(pending || []).length} pending, ${(removalRequested || []).length} removal_requested`);
+    res.json({ approved: attachOptions(approved), pending: attachOptions(pending), removal_requested: attachOptions(removalRequested) });
   } catch (e) {
     console.error('[Admin] Exception fetching waters:', e);
     res.status(500).json({ error: 'Failed to fetch waters' });
@@ -2497,6 +2503,37 @@ app.put('/api/owner/waters/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Request removal of a water listing
+app.post('/api/owner/waters/:id/request-removal', authenticateToken, async (req, res) => {
+  try {
+    const waterId = req.params.id;
+    const { data: water, error: fetchError } = await supabase
+      .from('waters')
+      .select('*')
+      .eq('id', waterId)
+      .single();
+
+    const isOwner = water && (water.owner_id === req.user.id || water.owner_email === req.user.email);
+    if (fetchError || !water || !isOwner) {
+      return res.status(404).json({ error: 'Not found or not yours' });
+    }
+
+    const { error: updateError } = await supabase
+      .from('waters')
+      .update({ status: 'removal_requested' })
+      .eq('id', waterId);
+
+    if (updateError) {
+      return res.status(400).json({ error: 'Failed to request removal' });
+    }
+
+    res.json({ message: 'Removal requested' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to request removal' });
+  }
+});
+
 app.get('/api/owner/inquiries', authenticateToken, requireRole('water_owner', 'admin'), async (req, res) => {
   try {
     const { data: waters } = await supabase
@@ -2535,15 +2572,25 @@ app.get('/api/owner/inquiries', authenticateToken, requireRole('water_owner', 'a
 // INSTRUCTOR ROUTES
 // ============================================================================
 
-app.get('/api/instructor/profile', authenticateToken, requireRole('instructor', 'admin'), async (req, res) => {
+app.get('/api/instructor/profile', authenticateToken, async (req, res) => {
   try {
-    const { data: instructor, error } = await supabase
+    // Try by user_id first, then by email
+    let { data: instructor, error } = await supabase
       .from('instructors')
       .select('*')
       .eq('user_id', req.user.id)
       .single();
 
     if (error || !instructor) {
+      const { data: byEmail } = await supabase
+        .from('instructors')
+        .select('*')
+        .eq('email', req.user.email)
+        .single();
+      instructor = byEmail;
+    }
+
+    if (!instructor) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 

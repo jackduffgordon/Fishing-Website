@@ -4,7 +4,8 @@
 import { useState, useEffect } from 'react';
 import {
   User, ChevronLeft, Edit3, Loader, AlertTriangle, CheckCircle,
-  Clock, XCircle, Mail, Phone, Calendar, MessageSquare, Award, Star, Save, X
+  Clock, XCircle, Mail, Phone, Calendar, MessageSquare, Award, Star, Save, X,
+  Upload, Trash2
 } from 'lucide-react';
 import { getToken } from '../utils/api';
 
@@ -153,8 +154,62 @@ export const InstructorDashboard = ({ user, onBack }) => {
       specialties: instructor.specialties || [],
       certifications: (instructor.certifications || []).join(', '),
       experience: instructor.experience || '',
+      images: instructor.images || [],
     });
     setEditing(true);
+  };
+
+  const uploadImage = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const token = getToken();
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              imageData: reader.result,
+              fileName: file.name,
+              type: 'instructors'
+            })
+          });
+          if (!res.ok) throw new Error('Upload failed');
+          const data = await res.json();
+          resolve(data.url);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setSaving(true);
+    try {
+      const urls = await Promise.all(files.map(f => uploadImage(f)));
+      setEditData(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...urls]
+      }));
+    } catch (err) {
+      setError('Failed to upload image(s)');
+    }
+    setSaving(false);
+  };
+
+  const removeImage = (index) => {
+    setEditData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const saveEdit = async () => {
@@ -168,6 +223,7 @@ export const InstructorDashboard = ({ user, onBack }) => {
         certifications: editData.certifications
           ? editData.certifications.split(',').map(c => c.trim()).filter(Boolean)
           : [],
+        images: editData.images || [],
       };
       const res = await fetch('/api/instructor/profile', {
         method: 'PUT',
@@ -293,7 +349,7 @@ export const InstructorDashboard = ({ user, onBack }) => {
                 </div>
               )}
 
-              {instructor.status === 'approved' && (
+              {(instructor.status === 'approved' || instructor.status === 'pending') && (
                 <div className="grid grid-cols-3 gap-4 mt-6">
                   <div className="bg-stone-50 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-stone-600 mb-1">
@@ -322,7 +378,7 @@ export const InstructorDashboard = ({ user, onBack }) => {
                 </div>
               )}
 
-              {instructor.status === 'approved' && !editing && (
+              {!editing && (
                 <div className="mt-4">
                   <button
                     onClick={startEdit}
@@ -423,6 +479,17 @@ export const InstructorDashboard = ({ user, onBack }) => {
                   </div>
                 </div>
               )}
+
+              {(instructor.images || []).length > 0 && (
+                <div className="mt-6">
+                  <p className="text-sm text-stone-500 mb-2">Photos</p>
+                  <div className="flex flex-wrap gap-3">
+                    {instructor.images.map((img, i) => (
+                      <img key={i} src={img} alt={`Photo ${i + 1}`} className="w-24 h-24 rounded-lg object-cover border border-stone-200" />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -519,6 +586,35 @@ export const InstructorDashboard = ({ user, onBack }) => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">Photos</label>
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {(editData.images || []).map((img, i) => (
+                    <div key={i} className="relative group">
+                      <img src={img} alt={`Photo ${i + 1}`} className="w-24 h-24 rounded-lg object-cover border border-stone-200" />
+                      <button
+                        onClick={() => removeImage(i)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-24 h-24 rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition">
+                    <Upload className="w-5 h-5 text-stone-400 mb-1" />
+                    <span className="text-xs text-stone-500">Upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-stone-500">Upload photos of yourself or your sessions. JPG, PNG or WebP.</p>
               </div>
             </div>
           </div>

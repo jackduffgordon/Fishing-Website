@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import {
   Droplets, ChevronLeft, Plus, Eye, Edit3, Loader, AlertTriangle,
   CheckCircle, Clock, XCircle, Mail, Phone, Calendar, MessageSquare,
-  Save, X, Trash2
+  Save, X, Trash2, Upload, Image
 } from 'lucide-react';
 import { getToken } from '../utils/api';
 
@@ -33,12 +33,14 @@ const StatusBadge = ({ status }) => {
   const styles = {
     pending: 'bg-amber-100 text-amber-700 border-amber-200',
     approved: 'bg-green-100 text-green-700 border-green-200',
-    rejected: 'bg-red-100 text-red-700 border-red-200'
+    rejected: 'bg-red-100 text-red-700 border-red-200',
+    removal_requested: 'bg-orange-100 text-orange-700 border-orange-200'
   };
   const icons = {
     pending: Clock,
     approved: CheckCircle,
-    rejected: XCircle
+    rejected: XCircle,
+    removal_requested: Trash2
   };
   const Icon = icons[status] || Clock;
 
@@ -48,12 +50,13 @@ const StatusBadge = ({ status }) => {
       {status === 'pending' && 'Pending Approval'}
       {status === 'approved' && 'Live'}
       {status === 'rejected' && 'Rejected'}
+      {status === 'removal_requested' && 'Removal Requested'}
     </span>
   );
 };
 
 // --- Water Card ---
-const WaterCard = ({ water, onView, onEdit }) => {
+const WaterCard = ({ water, onView, onEdit, onRequestRemoval }) => {
   return (
     <div className="bg-white rounded-xl border border-stone-200 overflow-hidden hover:shadow-md transition">
       <div className="flex items-start gap-4 p-4">
@@ -94,6 +97,15 @@ const WaterCard = ({ water, onView, onEdit }) => {
             </div>
           )}
 
+          {water.status === 'removal_requested' && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
+              <p className="text-sm text-orange-800 flex items-center gap-2">
+                <Trash2 className="w-4 h-4" />
+                Removal requested. An admin will process this shortly.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4 text-sm mb-3">
             <div>
               <p className="text-stone-500">Species</p>
@@ -117,12 +129,20 @@ const WaterCard = ({ water, onView, onEdit }) => {
             >
               <Eye className="w-4 h-4" /> View Details
             </button>
-            {onEdit && (
+            {onEdit && water.status !== 'removal_requested' && (
               <button
                 onClick={() => onEdit(water)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 transition"
               >
                 <Edit3 className="w-4 h-4" /> Edit
+              </button>
+            )}
+            {onRequestRemoval && water.status !== 'removal_requested' && water.status !== 'rejected' && (
+              <button
+                onClick={() => onRequestRemoval(water)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition"
+              >
+                <Trash2 className="w-4 h-4" /> Request Removal
               </button>
             )}
           </div>
@@ -246,6 +266,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
       species: water.species || [],
       amenities: water.amenities || water.facilities || [],
       rules: water.rules || [],
+      images: water.images || [],
       booking_options: (water.booking_options || water.bookingOptions || []).map(opt => ({
         name: opt.name || '',
         price: opt.price || '',
@@ -272,6 +293,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
         species: editData.species,
         amenities: editData.amenities,
         rules: editData.rules.filter(r => r.trim()),
+        images: editData.images || [],
         booking_options: editData.booking_options,
       };
       const res = await fetch(`/api/owner/waters/${editingWater.id}`, {
@@ -325,9 +347,78 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
     }));
   };
 
+  const requestRemoval = async (water) => {
+    if (!window.confirm(`Are you sure you want to request removal of "${water.name}"? This will be reviewed by an admin.`)) return;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/owner/waters/${water.id}/request-removal`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed');
+      await fetchData();
+    } catch (err) {
+      setError('Failed to request removal');
+    }
+  };
+
+  const uploadImage = async (file, type = 'waters') => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const token = getToken();
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              imageData: reader.result,
+              fileName: file.name,
+              type
+            })
+          });
+          if (!res.ok) throw new Error('Upload failed');
+          const data = await res.json();
+          resolve(data.url);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setSaving(true);
+    try {
+      const urls = await Promise.all(files.map(f => uploadImage(f, 'waters')));
+      setEditData(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...urls]
+      }));
+    } catch (err) {
+      setError('Failed to upload image(s)');
+    }
+    setSaving(false);
+  };
+
+  const removeImage = (index) => {
+    setEditData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
   const pendingWaters = waters.filter(w => w.status === 'pending');
   const approvedWaters = waters.filter(w => w.status === 'approved');
   const rejectedWaters = waters.filter(w => w.status === 'rejected');
+  const removalWaters = waters.filter(w => w.status === 'removal_requested');
 
   const tabsList = [
     { id: 'waters', label: 'My Waters', count: waters.length },
@@ -467,7 +558,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Pending Approval ({pendingWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {pendingWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} />)}
+                      {pendingWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}
@@ -479,7 +570,19 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Live Waters ({approvedWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {approvedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} />)}
+                      {approvedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
+                    </div>
+                  </div>
+                )}
+
+                {removalWaters.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                      <Trash2 className="w-5 h-5 text-orange-600" />
+                      Removal Requested ({removalWaters.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {removalWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}
@@ -491,7 +594,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                       Rejected ({rejectedWaters.length})
                     </h3>
                     <div className="space-y-3">
-                      {rejectedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} />)}
+                      {rejectedWaters.map(w => <WaterCard key={w.id} water={w} onView={() => {}} onEdit={startEditWater} onRequestRemoval={requestRemoval} />)}
                     </div>
                   </div>
                 )}
@@ -764,6 +867,36 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                   + Add Booking Option
                 </button>
               </div>
+            </div>
+
+            {/* Images */}
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
+              <h4 className="font-semibold text-stone-900 mb-3">Photos</h4>
+              <div className="flex flex-wrap gap-3 mb-4">
+                {(editData.images || []).map((img, i) => (
+                  <div key={i} className="relative group">
+                    <img src={img} alt={`Photo ${i + 1}`} className="w-24 h-24 rounded-lg object-cover border border-stone-200" />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition">
+                  <Upload className="w-5 h-5 text-stone-400 mb-1" />
+                  <span className="text-xs text-stone-500">Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-stone-500">Upload photos of your water. JPG, PNG or WebP.</p>
             </div>
 
             {/* Bottom save bar */}
