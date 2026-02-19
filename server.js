@@ -8,9 +8,21 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const rateLimit = require('express-rate-limit');
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jackduffgordon@gmail.com';
+
+// Stripe setup
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+let stripe = null;
+if (STRIPE_SECRET_KEY) {
+  stripe = require('stripe')(STRIPE_SECRET_KEY);
+  console.log('Stripe initialized');
+} else {
+  console.log('STRIPE_SECRET_KEY not set — payment features disabled');
+}
 
 // Supabase setup — set these in Render environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -57,12 +69,122 @@ const sendEmail = async (to, subject, html) => {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'tightlines-secret-key-change-in-production';
+if (!process.env.JWT_SECRET) {
+  console.error('WARNING: JWT_SECRET not set in environment. Using fallback (not safe for production).');
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'tightlines-dev-fallback-key';
 
 // Middleware
 app.use(cors({ origin: '*', credentials: false, methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
-app.use(express.json());
+
+// Stripe webhook needs raw body — must come before express.json()
+app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) return res.status(400).json({ error: 'Stripe not configured' });
+
+  let event;
+  if (STRIPE_WEBHOOK_SECRET) {
+    try {
+      const sig = req.headers['stripe-signature'];
+      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error('Stripe webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+  } else {
+    // Without webhook secret, parse the event directly (test mode)
+    try {
+      event = JSON.parse(req.body);
+    } catch (err) {
+      return res.status(400).send('Invalid payload');
+    }
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const bookingMeta = session.metadata || {};
+
+    try {
+      // Create the booking record now that payment is confirmed
+      const booking = {
+        user_id: bookingMeta.userId || null,
+        user_name: bookingMeta.anglerName || session.customer_details?.name || '',
+        user_email: bookingMeta.anglerEmail || session.customer_details?.email || '',
+        user_phone: bookingMeta.anglerPhone || '',
+        water_id: bookingMeta.waterId || null,
+        instructor_id: bookingMeta.instructorId || null,
+        booking_option_id: bookingMeta.bookingOptionId || null,
+        date: bookingMeta.date || null,
+        start_date: bookingMeta.startDate || bookingMeta.date || null,
+        end_date: bookingMeta.endDate || bookingMeta.date || null,
+        number_of_days: parseInt(bookingMeta.numberOfDays) || 1,
+        message: bookingMeta.message || '',
+        type: 'booking',
+        status: 'confirmed',
+        stripe_session_id: session.id,
+        amount_paid: session.amount_total / 100,
+        created_at: new Date().toISOString()
+      };
+
+      const { data: newBooking, error } = await supabase
+        .from('inquiries')
+        .insert([booking])
+        .select()
+        .single();
+
+      if (!error && newBooking) {
+        // Send confirmation emails
+        const waterName = bookingMeta.waterId ? (await supabase.from('waters').select('name').eq('id', bookingMeta.waterId).single())?.data?.name : null;
+        const instructorName = bookingMeta.instructorId ? (await supabase.from('instructors').select('name').eq('id', bookingMeta.instructorId).single())?.data?.name : null;
+        const locationName = waterName || instructorName || 'your booking';
+
+        await sendEmail(booking.user_email, `Booking Confirmed - ${locationName}`, `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #1B5E3B; padding: 24px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+            </div>
+            <div style="padding: 32px 24px; background: #fff;">
+              <h2 style="color: #1a1a1a;">Payment Received & Booking Confirmed!</h2>
+              <p style="color: #555;">Hi ${booking.user_name},</p>
+              <p style="color: #555;">Your payment of <strong>£${booking.amount_paid}</strong> has been received and your booking is confirmed.</p>
+              <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
+                <p style="margin: 4px 0;"><strong>Location:</strong> ${locationName}</p>
+                <p style="margin: 4px 0;"><strong>Date:</strong> ${booking.date}</p>
+                ${booking.number_of_days > 1 ? `<p style="margin: 4px 0;"><strong>Duration:</strong> ${booking.number_of_days} days</p>` : ''}
+              </div>
+              <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
+            </div>
+          </div>
+        `);
+
+        await sendEmail(ADMIN_EMAIL, `Payment Received - ${locationName}`, `
+          <p>Payment received and booking confirmed:</p>
+          <ul>
+            <li><strong>Customer:</strong> ${booking.user_name} (${booking.user_email})</li>
+            <li><strong>Location:</strong> ${locationName}</li>
+            <li><strong>Date:</strong> ${booking.date}</li>
+            <li><strong>Amount:</strong> £${booking.amount_paid}</li>
+          </ul>
+        `);
+      }
+    } catch (err) {
+      console.error('Error processing Stripe webhook:', err);
+    }
+  }
+
+  res.json({ received: true });
+});
+
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per window
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // ============================================================================
 // DATABASE INITIALIZATION & SEED DATA
@@ -336,7 +458,8 @@ const ensureAdminUser = async () => {
       .single();
 
     if (!admin) {
-      const hashedPwd = await bcrypt.hash('admin123', 10);
+      const adminPwd = process.env.ADMIN_PASSWORD || 'admin123';
+      const hashedPwd = await bcrypt.hash(adminPwd, 10);
       await supabase
         .from('users')
         .insert([{
@@ -346,7 +469,7 @@ const ensureAdminUser = async () => {
           role: 'admin',
           created_at: new Date().toISOString()
         }]);
-      console.log('Admin account created: admin@tightlines.co.uk / admin123');
+      console.log('Admin account created: admin@tightlines.co.uk');
     }
   } catch (e) {
     console.error('Admin user check error:', e);
@@ -408,7 +531,7 @@ const requireRole = (...roles) => async (req, res, next) => {
 // AUTH ROUTES
 // ============================================================================
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { email, password, name } = req.body;
     if (!email || !password || !name) {
@@ -455,7 +578,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const { data: user, error } = await supabase
@@ -853,7 +976,7 @@ app.delete('/api/auth/account', authenticateToken, async (req, res) => {
 });
 
 // Password Reset - generates a new temporary password
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
@@ -993,6 +1116,56 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Booking failed' });
+  }
+});
+
+// Stripe checkout session – creates a payment page for instant bookings
+app.post('/api/create-checkout-session', optionalAuth, async (req, res) => {
+  if (!stripe) return res.status(400).json({ error: 'Payments are not yet available. Please enquire instead.' });
+
+  try {
+    const { waterId, instructorId, bookingOptionId, date, startDate, endDate, numberOfDays, anglerName, anglerEmail, anglerPhone, message, amount, description } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    if (!anglerEmail) return res.status(400).json({ error: 'Email required' });
+
+    const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://tightlines.co.uk';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      customer_email: anglerEmail,
+      line_items: [{
+        price_data: {
+          currency: 'gbp',
+          product_data: {
+            name: description || 'Fishing Booking',
+          },
+          unit_amount: Math.round(amount * 100), // pence
+        },
+        quantity: 1,
+      }],
+      metadata: {
+        userId: req.user?.id || '',
+        waterId: waterId || '',
+        instructorId: instructorId || '',
+        bookingOptionId: bookingOptionId || '',
+        date: date || startDate || '',
+        startDate: startDate || date || '',
+        endDate: endDate || '',
+        numberOfDays: String(numberOfDays || 1),
+        anglerName: anglerName || '',
+        anglerEmail: anglerEmail || '',
+        anglerPhone: anglerPhone || '',
+        message: (message || '').substring(0, 500),
+      },
+      success_url: `${origin}?booking=success`,
+      cancel_url: `${origin}?booking=cancelled`,
+    });
+
+    res.json({ url: session.url, sessionId: session.id });
+  } catch (e) {
+    console.error('Stripe checkout error:', e);
+    res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
 
@@ -2761,7 +2934,6 @@ Using Supabase Database:
 
 Admin Login:
   Email: admin@tightlines.co.uk
-  Password: admin123
 
 API Endpoints:
   Auth:    POST /api/auth/register, /api/auth/login

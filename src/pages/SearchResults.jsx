@@ -19,14 +19,17 @@ const defaultFilters = {
   region: ''
 };
 
-export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [], onToggleFavouriteWater }) => {
+export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [], onToggleFavouriteWater, initialSearch = {} }) => {
   const [allWaters, setAllWaters] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState(defaultFilters);
+  const [filters, setFilters] = useState(() => ({
+    ...defaultFilters,
+    fishingType: initialSearch.type || ''
+  }));
   const [sortBy, setSortBy] = useState('rating');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchRadius, setSearchRadius] = useState(25);
+  const [searchQuery, setSearchQuery] = useState(initialSearch.query || '');
+  const [searchRadius, setSearchRadius] = useState(initialSearch.radius || 25);
 
   // Fetch waters from API on mount
   useEffect(() => {

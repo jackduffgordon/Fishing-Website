@@ -76,6 +76,39 @@ const ProfilePage = ({
   const [applications, setApplications] = useState({ waters: [], instructors: [] });
   const [activityLoading, setActivityLoading] = useState(true);
 
+  // Favourites detail data
+  const [favWaterDetails, setFavWaterDetails] = useState({});
+  const [favInstructorDetails, setFavInstructorDetails] = useState({});
+
+  // Fetch favourite water/instructor details
+  useEffect(() => {
+    const fetchFavDetails = async () => {
+      if (favouriteWaters?.length > 0) {
+        try {
+          const res = await fetch('/api/waters');
+          if (res.ok) {
+            const data = await res.json();
+            const map = {};
+            (data.waters || []).forEach(w => { map[w.id] = w; });
+            setFavWaterDetails(map);
+          }
+        } catch (err) { /* ignore */ }
+      }
+      if (favouriteInstructors?.length > 0) {
+        try {
+          const res = await fetch('/api/instructors');
+          if (res.ok) {
+            const data = await res.json();
+            const map = {};
+            (data.instructors || []).forEach(i => { map[i.id] = i; });
+            setFavInstructorDetails(map);
+          }
+        } catch (err) { /* ignore */ }
+      }
+    };
+    fetchFavDetails();
+  }, [favouriteWaters, favouriteInstructors]);
+
   const handleDeleteCatch = async (e, catchId) => {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this catch report?')) return;
@@ -734,39 +767,47 @@ const ProfilePage = ({
               </h3>
               {favouriteWaters && favouriteWaters.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {favouriteWaters.map((waterId) => (
-                    <div
-                      key={waterId}
-                      className="bg-white rounded-xl p-6 shadow-sm border border-stone-100 hover:shadow-md transition"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <h4 className="font-semibold text-stone-900">
-                          Water #{waterId}
-                        </h4>
+                  {favouriteWaters.map((waterId) => {
+                    const w = favWaterDetails[waterId];
+                    return (
+                      <div
+                        key={waterId}
+                        className="bg-white rounded-xl p-6 shadow-sm border border-stone-100 hover:shadow-md transition"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <h4 className="font-semibold text-stone-900">
+                            {w?.name || 'Loading...'}
+                          </h4>
+                          <button
+                            onClick={() => handleRemoveFavouriteWater(waterId)}
+                            className="text-red-500 hover:text-red-700 transition"
+                          >
+                            <Heart className="w-5 h-5 fill-current" />
+                          </button>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                          <p className="text-sm text-stone-600">
+                            <MapPin className="w-4 h-4 inline mr-2" />
+                            {w?.region || w?.location || 'Unknown region'}
+                          </p>
+                          <p className="text-sm text-stone-600">
+                            {w?.type ? w.type.charAt(0).toUpperCase() + w.type.slice(1) + ' fishing' : ''}
+                          </p>
+                          {w?.price > 0 && (
+                            <p className="text-sm font-medium text-brand-700">
+                              From £{w.price}/day
+                            </p>
+                          )}
+                        </div>
                         <button
-                          onClick={() => handleRemoveFavouriteWater(waterId)}
-                          className="text-red-500 hover:text-red-700 transition"
+                          onClick={() => onNavigateToWater?.(waterId)}
+                          className="w-full text-center py-2 px-4 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition text-sm font-medium"
                         >
-                          <Heart className="w-5 h-5 fill-current" />
+                          View Water
                         </button>
                       </div>
-                      <div className="space-y-2 mb-4">
-                        <p className="text-sm text-stone-600">
-                          <MapPin className="w-4 h-4 inline mr-2" />
-                          Region: TBD
-                        </p>
-                        <p className="text-sm text-stone-600">
-                          Price: £0.00 per day
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => onNavigateToWater?.(waterId)}
-                        className="w-full text-center py-2 px-4 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition text-sm font-medium"
-                      >
-                        View Water
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="bg-white rounded-xl p-12 shadow-sm border border-stone-100 text-center">
@@ -793,44 +834,51 @@ const ProfilePage = ({
               </h3>
               {favouriteInstructors && favouriteInstructors.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {favouriteInstructors.map((instructorId) => (
-                    <div
-                      key={instructorId}
-                      className="bg-white rounded-xl p-6 shadow-sm border border-stone-100 hover:shadow-md transition"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <h4 className="font-semibold text-stone-900">
-                          Instructor #{instructorId}
-                        </h4>
+                  {favouriteInstructors.map((instructorId) => {
+                    const inst = favInstructorDetails[instructorId];
+                    return (
+                      <div
+                        key={instructorId}
+                        className="bg-white rounded-xl p-6 shadow-sm border border-stone-100 hover:shadow-md transition"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <h4 className="font-semibold text-stone-900">
+                            {inst?.name || 'Loading...'}
+                          </h4>
+                          <button
+                            onClick={() =>
+                              handleRemoveFavouriteInstructor(instructorId)
+                            }
+                            className="text-red-500 hover:text-red-700 transition"
+                          >
+                            <Heart className="w-5 h-5 fill-current" />
+                          </button>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                          <p className="text-sm text-stone-600">
+                            <MapPin className="w-4 h-4 inline mr-2" />
+                            {inst?.region || inst?.location || 'Unknown location'}
+                          </p>
+                          {(inst?.specialties || []).length > 0 && (
+                            <p className="text-sm text-stone-600">
+                              {inst.specialties.slice(0, 3).join(', ')}
+                            </p>
+                          )}
+                          {inst?.price > 0 && (
+                            <p className="text-sm font-medium text-brand-700">
+                              From £{inst.price}/session
+                            </p>
+                          )}
+                        </div>
                         <button
-                          onClick={() =>
-                            handleRemoveFavouriteInstructor(instructorId)
-                          }
-                          className="text-red-500 hover:text-red-700 transition"
+                          onClick={() => onNavigateToInstructor?.(instructorId)}
+                          className="w-full text-center py-2 px-4 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition text-sm font-medium"
                         >
-                          <Heart className="w-5 h-5 fill-current" />
+                          View Instructor
                         </button>
                       </div>
-                      <div className="space-y-2 mb-4">
-                        <p className="text-sm text-stone-600">
-                          <MapPin className="w-4 h-4 inline mr-2" />
-                          Location: TBD
-                        </p>
-                        <p className="text-sm text-stone-600">
-                          Specialties: TBD
-                        </p>
-                        <p className="text-sm text-stone-600">
-                          Price: £0.00 per hour
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => onNavigateToInstructor?.(instructorId)}
-                        className="w-full text-center py-2 px-4 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition text-sm font-medium"
-                      >
-                        View Instructor
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="bg-white rounded-xl p-12 shadow-sm border border-stone-100 text-center">

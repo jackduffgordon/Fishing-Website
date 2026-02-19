@@ -64,6 +64,8 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
   const [dateRange, setDateRange] = useState([null, null]);
   const [enquiryMessage, setEnquiryMessage] = useState('');
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState('');
   const [selectedPrimary, setSelectedPrimary] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
 
@@ -92,12 +94,95 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
     ? fishery.bookingOptions.find(o => o.id === selectedPrimary) || fishery.bookingOptions[0]
     : null;
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!user) {
       onSignIn();
       return;
     }
-    setBookingSubmitted(true);
+    setBookingLoading(true);
+    setBookingError('');
+
+    const isInstantBooking = hasBookingOptions
+      ? activeOption?.bookingType === 'instant'
+      : fishery.bookingType === 'instant';
+
+    const token = localStorage.getItem('tightlines_token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+
+    const bookingData = {
+      waterId: fishery.id,
+      bookingOptionId: activeOption?.id || null,
+      date: startDate ? startDate.toISOString().split('T')[0] : null,
+      startDate: startDate ? startDate.toISOString().split('T')[0] : null,
+      endDate: endDate ? endDate.toISOString().split('T')[0] : (startDate ? startDate.toISOString().split('T')[0] : null),
+      numberOfDays: numberOfDays || 1,
+      anglerName: user.fullName || user.name || user.email,
+      anglerEmail: user.email,
+      anglerPhone: user.phone || '',
+      message: enquiryMessage,
+    };
+
+    try {
+      if (isInstantBooking) {
+        // Calculate total price
+        const basePrice = activeOption?.price || fishery.price || 0;
+        const extrasTotal = selectedExtras.reduce((sum, exId) => {
+          const ex = fishery.bookingOptions?.find(o => o.id === exId);
+          return sum + (ex?.price || 0);
+        }, 0);
+        const total = (basePrice * (numberOfDays || 1)) + extrasTotal;
+
+        const optionName = activeOption?.name || fishery.name;
+        const description = `${fishery.name} — ${optionName} (${numberOfDays || 1} ${(numberOfDays || 1) === 1 ? 'day' : 'days'})`;
+
+        // Try Stripe checkout
+        const res = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...bookingData, amount: total, description })
+        });
+
+        if (res.ok) {
+          const { url } = await res.json();
+          if (url) {
+            window.location.href = url;
+            return;
+          }
+        }
+
+        // If Stripe isn't available, fall back to regular booking
+        const fallbackRes = await fetch('/api/bookings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...bookingData, type: 'booking' })
+        });
+        if (fallbackRes.ok) {
+          setBookingSubmitted(true);
+        } else {
+          const data = await fallbackRes.json();
+          setBookingError(data.error || 'Booking failed. Please try again.');
+        }
+      } else {
+        // Enquiry — no payment needed
+        const res = await fetch('/api/bookings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...bookingData, type: 'enquiry' })
+        });
+        if (res.ok) {
+          setBookingSubmitted(true);
+        } else {
+          const data = await res.json();
+          setBookingError(data.error || 'Booking failed. Please try again.');
+        }
+      }
+    } catch (err) {
+      setBookingError('Failed to submit. Please check your connection and try again.');
+    }
+    setBookingLoading(false);
   };
 
   // Success state
@@ -279,7 +364,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                           </div>
                           <div>
                             <h4 className="font-medium text-stone-900">{species}</h4>
-                            <p className="text-sm text-stone-500">Available year-round</p>
+                            <p className="text-sm text-stone-500">Check local regulations for season dates</p>
                           </div>
                         </div>
                       ))}
@@ -649,13 +734,14 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                       )}
 
                       {/* Book / Enquire button */}
+                      {bookingError && <p className="text-red-600 text-sm mb-2">{bookingError}</p>}
                       <button
                         onClick={handleBooking}
-                        disabled={!selectedDate}
+                        disabled={!selectedDate || bookingLoading}
                         className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                       >
-                        {!user
-                          ? 'Sign In to Book'
+                        {bookingLoading ? 'Submitting...'
+                          : !user ? 'Sign In to Book'
                           : activeOption.bookingType === 'instant'
                             ? `Book ${activeOption.name}`
                             : `Enquire About ${activeOption.name}`
@@ -707,12 +793,13 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                           showPrice={false}
                         />
                       </div>
+                      {bookingError && <p className="text-red-600 text-sm mb-2">{bookingError}</p>}
                       <button
                         onClick={handleBooking}
-                        disabled={!selectedDate}
+                        disabled={!selectedDate || bookingLoading}
                         className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                       >
-                        {user ? 'Book Now' : 'Sign In to Book'}
+                        {bookingLoading ? 'Submitting...' : user ? 'Book Now' : 'Sign In to Book'}
                       </button>
                       <p className="text-center text-sm text-stone-500">
                         <Check className="w-4 h-4 inline mr-1" />
@@ -749,11 +836,13 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                           placeholder="Tell them about your experience, number in party, etc."
                         />
                       </div>
+                      {bookingError && <p className="text-red-600 text-sm mb-2">{bookingError}</p>}
                       <button
                         onClick={handleBooking}
-                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 transition"
+                        disabled={bookingLoading}
+                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 transition"
                       >
-                        {user ? 'Send Enquiry' : 'Sign In to Enquire'}
+                        {bookingLoading ? 'Submitting...' : user ? 'Send Enquiry' : 'Sign In to Enquire'}
                       </button>
                     </div>
                   )}

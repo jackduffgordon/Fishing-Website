@@ -145,7 +145,7 @@ export const HomePage = ({
   };
 
   const handleSearchClick = () => {
-    onSearch();
+    onSearch({ query: searchLocation, type: searchType, radius: searchRadius });
   };
 
   const scrollInstructors = (direction) => {

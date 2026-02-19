@@ -40,6 +40,8 @@ const specialtyIcons = {
 export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => {
   const [activeTab, setActiveTab] = useState('about');
   const [bookingSubmitted, setBookingSubmitted] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [message, setMessage] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
@@ -51,12 +53,49 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
     message: ''
   });
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!user) {
       onSignIn();
       return;
     }
-    setBookingSubmitted(true);
+    setBookingLoading(true);
+    setBookingError('');
+    try {
+      const token = localStorage.getItem('tightlines_token');
+      const msgParts = [];
+      if (experienceLevel) msgParts.push(`Experience: ${experienceLevel}`);
+      if (message) msgParts.push(message);
+      if (contactForm.message) msgParts.push(contactForm.message);
+      if (contactForm.preferredDates) msgParts.push(`Preferred dates: ${contactForm.preferredDates}`);
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          instructorId: instructor.id,
+          date: selectedDate ? selectedDate.toISOString().split('T')[0] : contactForm.preferredDates || new Date().toISOString().split('T')[0],
+          startDate: selectedDate ? selectedDate.toISOString().split('T')[0] : null,
+          numberOfDays: 1,
+          anglerName: contactForm.name || user.fullName || user.name || user.email,
+          anglerEmail: contactForm.email || user.email,
+          anglerPhone: contactForm.phone || user.phone || '',
+          message: msgParts.join('. '),
+          type: instructor.hasCalendar ? 'booking' : 'enquiry'
+        })
+      });
+      if (res.ok) {
+        setBookingSubmitted(true);
+      } else {
+        const data = await res.json();
+        setBookingError(data.error || 'Failed to submit. Please try again.');
+      }
+    } catch (err) {
+      setBookingError('Failed to submit. Please check your connection and try again.');
+    }
+    setBookingLoading(false);
   };
 
   // Success state
@@ -334,12 +373,18 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                     />
                   </div>
 
+                  {bookingError && (
+                    <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+                      {bookingError}
+                    </div>
+                  )}
+
                   <button
                     onClick={handleBooking}
-                    disabled={!selectedDate}
+                    disabled={!selectedDate || bookingLoading}
                     className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                   >
-                    {user ? 'Request Booking' : 'Sign In to Book'}
+                    {bookingLoading ? 'Sending...' : user ? 'Request Booking' : 'Sign In to Book'}
                   </button>
                   <p className="text-center text-sm text-stone-500">
                     You won't be charged yet
@@ -417,11 +462,18 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                     />
                   </div>
 
+                  {bookingError && (
+                    <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+                      {bookingError}
+                    </div>
+                  )}
+
                   <button
                     onClick={handleBooking}
-                    className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 transition"
+                    disabled={bookingLoading}
+                    className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 transition"
                   >
-                    Send Message
+                    {bookingLoading ? 'Sending...' : 'Send Message'}
                   </button>
                 </div>
               )}

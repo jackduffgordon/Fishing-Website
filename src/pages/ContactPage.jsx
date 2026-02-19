@@ -8,13 +8,14 @@ export const ContactPage = () => {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.message) return;
 
     setSending(true);
-    // POST to the backend contact endpoint
+    setError('');
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -28,9 +29,11 @@ export const ContactPage = () => {
       });
       if (res.ok) {
         setSubmitted(true);
+      } else {
+        setError('Failed to send message. Please try again or email us directly.');
       }
     } catch (err) {
-      console.error('Contact form error:', err);
+      setError('Failed to send message. Please try again or email us directly.');
     }
     setSending(false);
   };
@@ -190,6 +193,12 @@ export const ContactPage = () => {
                     required
                   />
                 </div>
+
+                {error && (
+                  <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
 
                 <button
                   type="submit"

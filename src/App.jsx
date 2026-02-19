@@ -33,6 +33,9 @@ const App = () => {
   const [selectedFishery, setSelectedFishery] = useState(null);
   const [selectedInstructor, setSelectedInstructor] = useState(null);
 
+  // Search params passed from homepage
+  const [searchParams, setSearchParams] = useState({ query: '', type: '', radius: 25 });
+
   // User state
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -41,6 +44,18 @@ const App = () => {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showListWater, setShowListWater] = useState(false);
   const [showListInstructor, setShowListInstructor] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // Handle Stripe return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('booking') === 'success') {
+      setBookingSuccess(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('booking') === 'cancelled') {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Favourites state - load from localStorage initially for guest users
   const [favouriteWaters, setFavouriteWaters] = useState(() => {
@@ -410,7 +425,7 @@ const App = () => {
       {/* Page Content */}
       {currentPage === 'home' && (
         <HomePage
-          onSearch={() => setCurrentPage('search')}
+          onSearch={(params) => { if (params) setSearchParams(params); setCurrentPage('search'); }}
           onSelectFishery={handleSelectFishery}
           onSelectInstructor={handleSelectInstructor}
           onSelectRegion={handleSelectRegion}
@@ -428,6 +443,7 @@ const App = () => {
           onBack={() => setCurrentPage('home')}
           favouriteWaters={favouriteWaters}
           onToggleFavouriteWater={toggleFavouriteWater}
+          initialSearch={searchParams}
         />
       )}
 
@@ -506,6 +522,27 @@ const App = () => {
           user={user}
           onBack={() => setCurrentPage('home')}
         />
+      )}
+
+      {/* Booking success overlay (after Stripe return) */}
+      {bookingSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-lg">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
+            <p className="text-stone-600 mb-6">
+              Your booking has been confirmed. Check your email for full details.
+            </p>
+            <button
+              onClick={() => setBookingSuccess(false)}
+              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800"
+            >
+              Continue Browsing
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Modals */}
