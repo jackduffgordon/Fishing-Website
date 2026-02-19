@@ -214,9 +214,22 @@ export const normalizeInstructor = (inst, index = 0) => {
     availability: inst.availability || [],
     typicalDay: inst.typicalDay || inst.typical_day || [],
     reviewsList: inst.reviewsList || inst.reviews_list || [],
-    whatYouLearn: inst.whatYouLearn || [],
-    equipmentProvided: inst.equipmentProvided || [],
-    teachingPhilosophy: inst.teachingPhilosophy || ''
+    whatYouLearn: (() => {
+      const raw = inst.whatYouLearn || inst.what_you_learn || [];
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string' && raw.trim()) return raw.split('\n').map(s => s.trim()).filter(Boolean);
+      return [];
+    })(),
+    equipmentProvided: (() => {
+      const raw = inst.equipmentProvided || inst.equipment_provided || [];
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string' && raw.trim()) return raw.split('\n').map(s => s.trim()).filter(Boolean);
+      return [];
+    })(),
+    teachingPhilosophy: inst.teachingPhilosophy || inst.teaching_philosophy || '',
+    bookingOptions: inst.bookingOptions || inst.booking_options || [],
+    experience: inst.experience || '',
+    website: inst.website || ''
   };
 };
 

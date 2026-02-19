@@ -39,6 +39,8 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
     price: '',
     bio: '',
     whatYouLearn: '',
+    teachingPhilosophy: '',
+    equipmentProvided: '',
     booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
   });
   const [submitted, setSubmitted] = useState(false);
@@ -88,6 +90,8 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
         price: formData.price ? parseFloat(formData.price) : null,
         bio: formData.bio,
         whatYouLearn: formData.whatYouLearn,
+        teachingPhilosophy: formData.teachingPhilosophy,
+        equipmentProvided: formData.equipmentProvided,
         booking_options: formData.booking_options.filter(o => o.name.trim() && o.price)
       };
 
@@ -109,7 +113,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
     setFormData({
       name: '', email: '', phone: '', region: '', experience: '',
       specialties: [], certifications: [], availability: [],
-      price: '', bio: '', whatYouLearn: '',
+      price: '', bio: '', whatYouLearn: '', teachingPhilosophy: '', equipmentProvided: '',
       booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
     });
   };
@@ -408,7 +412,33 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.whatYouLearn}
                 onChange={(e) => updateForm('whatYouLearn', e.target.value)}
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                placeholder="Outline the key skills and knowledge your students will gain..."
+                placeholder="Outline the key skills and knowledge your students will gain (one per line)..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Teaching Philosophy
+              </label>
+              <textarea
+                rows={3}
+                value={formData.teachingPhilosophy}
+                onChange={(e) => updateForm('teachingPhilosophy', e.target.value)}
+                className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
+                placeholder="Describe your approach to teaching and what makes your lessons unique..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Equipment Provided
+              </label>
+              <textarea
+                rows={3}
+                value={formData.equipmentProvided}
+                onChange={(e) => updateForm('equipmentProvided', e.target.value)}
+                className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
+                placeholder="List equipment you provide for students (one per line)..."
               />
             </div>
 
