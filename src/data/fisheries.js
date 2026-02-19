@@ -44,7 +44,7 @@ export const fisheries = [
     priceType: "per rod/day",
     rating: 4.9,
     reviews: 47,
-    image: "linear-gradient(135deg, #2d5a4a 0%, #1a3a30 100%)",
+    image: "url(https://images.unsplash.com/photo-1545450660-3378a7f36261?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #2d5a4a 0%, #1a3a30 100%)",
       "linear-gradient(135deg, #3d6a5a 0%, #2a4a40 100%)",
@@ -99,7 +99,7 @@ export const fisheries = [
     priceType: "day ticket",
     rating: 4.7,
     reviews: 124,
-    image: "linear-gradient(135deg, #4a6fa5 0%, #2d4a6a 100%)",
+    image: "url(https://images.unsplash.com/photo-1500463959177-e0869687df26?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #4a6fa5 0%, #2d4a6a 100%)",
       "linear-gradient(135deg, #5a7fb5 0%, #3d5a7a 100%)",
@@ -155,7 +155,7 @@ export const fisheries = [
     priceType: "day ticket",
     rating: 4.8,
     reviews: 312,
-    image: "linear-gradient(135deg, #5a7a4a 0%, #3a5a2a 100%)",
+    image: "url(https://images.unsplash.com/photo-1468581264429-2548ef9eb732?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #5a7a4a 0%, #3a5a2a 100%)",
       "linear-gradient(135deg, #6a8a5a 0%, #4a6a3a 100%)",
@@ -213,7 +213,7 @@ export const fisheries = [
     priceType: "per rod/day",
     rating: 5.0,
     reviews: 28,
-    image: "linear-gradient(135deg, #3a5a6a 0%, #1a3a4a 100%)",
+    image: "url(https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #3a5a6a 0%, #1a3a4a 100%)",
       "linear-gradient(135deg, #4a6a7a 0%, #2a4a5a 100%)",
@@ -259,7 +259,7 @@ export const fisheries = [
     priceType: "per rod/day",
     rating: 4.9,
     reviews: 52,
-    image: "linear-gradient(135deg, #3a6a5a 0%, #1a4a3a 100%)",
+    image: "url(https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #3a6a5a 0%, #1a4a3a 100%)",
       "linear-gradient(135deg, #4a7a6a 0%, #2a5a4a 100%)",
@@ -307,7 +307,7 @@ export const fisheries = [
     priceType: "day ticket",
     rating: 4.6,
     reviews: 89,
-    image: "linear-gradient(135deg, #4a5a7a 0%, #2a3a5a 100%)",
+    image: "url(https://images.unsplash.com/photo-1472396961693-142e6e269027?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #4a5a7a 0%, #2a3a5a 100%)",
       "linear-gradient(135deg, #5a6a8a 0%, #3a4a6a 100%)",
@@ -352,7 +352,7 @@ export const fisheries = [
     priceType: "free",
     rating: 4.2,
     reviews: 45,
-    image: "linear-gradient(135deg, #5a6a4a 0%, #3a4a2a 100%)",
+    image: "url(https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80) center/cover no-repeat",
     gallery: [
       "linear-gradient(135deg, #5a6a4a 0%, #3a4a2a 100%)",
       "linear-gradient(135deg, #6a7a5a 0%, #4a5a3a 100%)"

@@ -683,6 +683,18 @@ app.get('/api/user/applications', authenticateToken, async (req, res) => {
       extraWaters = (byEmail || []).filter(w => !existingIds.has(w.id));
     }
 
+    // Also check instructors by email fallback
+    let extraInstructors = [];
+    if (req.user.email) {
+      const { data: instByEmail } = await supabase
+        .from('instructors')
+        .select('id, name, region, status, created_at, email')
+        .eq('email', req.user.email.toLowerCase());
+
+      const existingInstIds = new Set((instructorProfiles || []).map(i => i.id));
+      extraInstructors = (instByEmail || []).filter(i => !existingInstIds.has(i.id));
+    }
+
     const allWaters = [...(waters || []), ...extraWaters].map(w => ({
       id: w.id,
       name: w.name,
@@ -693,7 +705,7 @@ app.get('/api/user/applications', authenticateToken, async (req, res) => {
       email: w.owner_email
     }));
 
-    const allInstructors = (instructorProfiles || []).map(i => ({
+    const allInstructors = [...(instructorProfiles || []), ...extraInstructors].map(i => ({
       id: i.id,
       name: i.name,
       region: i.region,

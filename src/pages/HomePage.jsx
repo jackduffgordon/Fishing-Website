@@ -158,21 +158,22 @@ export const HomePage = ({
   return (
     <div>
       {/* ===== HERO SECTION ===== */}
-      <section className="hero-gradient text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl float" />
-          <div
-            className="absolute bottom-20 right-20 w-96 h-96 bg-brand-400 rounded-full blur-3xl float"
-            style={{ animationDelay: '2s' }}
+      <section className="text-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1504309092620-4d0ec726efa4?w=1920&q=80"
+            alt="Fishing at dawn"
+            className="w-full h-full object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-stone-900/70 via-stone-900/50 to-stone-900/80" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 relative">
+        <div className="max-w-7xl mx-auto px-4 py-20 md:py-32 relative">
           <div className="max-w-3xl mx-auto text-center mb-10">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
               Find & Book the Best Fishing in the UK
             </h1>
-            <p className="text-lg md:text-xl text-brand-100 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
               From legendary salmon beats to specimen carp lakes. Search, compare, and book — all in one place.
             </p>
           </div>
@@ -223,11 +224,11 @@ export const HomePage = ({
           <div className="flex justify-center gap-12 mt-10 text-center">
             <div>
               <span className="text-3xl font-bold">500+</span>
-              <p className="text-brand-200 text-sm">Waters to Explore</p>
+              <p className="text-white/60 text-sm">Waters to Explore</p>
             </div>
             <div>
               <span className="text-3xl font-bold">12,000+</span>
-              <p className="text-brand-200 text-sm">Bookings Made</p>
+              <p className="text-white/60 text-sm">Bookings Made</p>
             </div>
           </div>
         </div>
@@ -307,6 +308,27 @@ export const HomePage = ({
         </div>
       </section>
 
+      {/* ===== PHOTO GALLERY STRIP ===== */}
+      <section className="py-0 overflow-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+          {[
+            { src: 'https://images.unsplash.com/photo-1532015421790-5a9a14e35d28?w=600&q=80', alt: 'River fishing' },
+            { src: 'https://images.unsplash.com/photo-1559734840-f9509ee5677f?w=600&q=80', alt: 'Lake at sunrise' },
+            { src: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80', alt: 'Fly fishing' },
+            { src: 'https://images.unsplash.com/photo-1440964829947-ca3277bd37f8?w=600&q=80', alt: 'Peaceful waters' },
+          ].map((photo, i) => (
+            <div key={i} className="aspect-[4/3] overflow-hidden">
+              <img
+                src={photo.src}
+                alt={photo.alt}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ===== FEATURED INSTRUCTORS (Compact) ===== */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4">
@@ -356,6 +378,39 @@ export const HomePage = ({
               className="inline-flex items-center gap-1 text-brand-700 hover:text-brand-800 font-medium"
             >
               View All Instructors <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CTA BANNER ===== */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1516962080544-eac695c93791?w=1920&q=80"
+            alt="Scenic fishing location"
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-stone-900/70" />
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 py-20 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Own a Fishery or Guide?</h2>
+          <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
+            Join TightLines and reach thousands of anglers looking for their next adventure. List your water or offer your services today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => onNavigate && onNavigate('about')}
+              className="px-8 py-3.5 bg-white text-stone-900 rounded-xl font-semibold hover:bg-stone-100 transition"
+            >
+              List Your Water
+            </button>
+            <button
+              onClick={() => onNavigate && onNavigate('about')}
+              className="px-8 py-3.5 bg-transparent border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition"
+            >
+              Become an Instructor
             </button>
           </div>
         </div>
