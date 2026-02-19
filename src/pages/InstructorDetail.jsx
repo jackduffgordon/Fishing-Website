@@ -2,7 +2,7 @@
 // INSTRUCTOR DETAIL PAGE
 // Mirrors VenueDetail layout exactly — adapted for instructors
 // ============================================
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ChevronLeft, MapPin, Star, Check, Clock, Phone, Mail, Globe,
   Calendar, Heart, Shield, Award, Users
@@ -61,6 +61,23 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
   const [contactForm, setContactForm] = useState({
     name: '', email: '', phone: '', preferredDates: '', message: ''
   });
+  const [hasBooking, setHasBooking] = useState(false);
+
+  // Check if user has a confirmed booking with this instructor
+  useEffect(() => {
+    if (!user || !instructor.id) return;
+    const token = localStorage.getItem('tightlines_token');
+    if (!token) return;
+    fetch('/api/inquiries/user', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.inquiries) {
+          const match = data.inquiries.some(i => i.instructorId === instructor.id && i.status === 'confirmed');
+          setHasBooking(match);
+        }
+      })
+      .catch(() => {});
+  }, [user, instructor.id]);
 
   const verified = isVerified(instructor);
   const hasBookingOptions = instructor.bookingOptions && instructor.bookingOptions.length > 0;
@@ -395,7 +412,7 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                 {/* Reviews Tab — exact same as VenueDetail */}
                 {activeTab === 'reviews' && (
                   <div className="space-y-8">
-                    <ReviewForm instructorId={instructor.id} user={user} onSuccess={() => {}} />
+                    <ReviewForm instructorId={instructor.id} user={user} hasBooking={hasBooking} onSuccess={() => {}} />
                     <ReviewsList reviews={instructor.reviewsList || []} />
                   </div>
                 )}

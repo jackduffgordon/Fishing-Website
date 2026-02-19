@@ -911,6 +911,117 @@ app.get('/api/reviews/user', authenticateToken, async (req, res) => {
   }
 });
 
+// Update a review
+app.put('/api/reviews/:id', authenticateToken, async (req, res) => {
+  try {
+    const { rating, title, text } = req.body;
+
+    // Check review belongs to user
+    const { data: existing } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    const { data: review, error } = await supabase
+      .from('reviews')
+      .update({ rating, title: title || '', text, created_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: 'Failed to update review' });
+    }
+
+    // Recalculate rating for water/instructor
+    const targetTable = existing.water_id ? 'waters' : 'instructors';
+    const targetId = existing.water_id || existing.instructor_id;
+    const targetColumn = existing.water_id ? 'water_id' : 'instructor_id';
+
+    const { data: allReviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq(targetColumn, targetId);
+
+    if (allReviews && allReviews.length > 0) {
+      const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+      await supabase
+        .from(targetTable)
+        .update({ rating: Number(avgRating.toFixed(1)), review_count: allReviews.length })
+        .eq('id', targetId);
+    }
+
+    res.json({ message: 'Review updated', review });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to update review' });
+  }
+});
+
+// Delete a review
+app.delete('/api/reviews/:id', authenticateToken, async (req, res) => {
+  try {
+    // Check review belongs to user
+    const { data: existing } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('id', req.params.id)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Review not found' });
+    }
+
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', req.params.id);
+
+    if (error) {
+      return res.status(400).json({ error: 'Failed to delete review' });
+    }
+
+    // Recalculate rating for water/instructor
+    const targetTable = existing.water_id ? 'waters' : 'instructors';
+    const targetId = existing.water_id || existing.instructor_id;
+    const targetColumn = existing.water_id ? 'water_id' : 'instructor_id';
+
+    const { data: allReviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq(targetColumn, targetId);
+
+    if (allReviews && allReviews.length > 0) {
+      const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+      await supabase
+        .from(targetTable)
+        .update({ rating: Number(avgRating.toFixed(1)), review_count: allReviews.length })
+        .eq('id', targetId);
+    } else {
+      await supabase
+        .from(targetTable)
+        .update({ rating: 0, review_count: 0 })
+        .eq('id', targetId);
+    }
+
+    res.json({ message: 'Review deleted' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to delete review' });
+  }
+});
+
 // Get user's inquiries/bookings
 app.get('/api/inquiries/user', authenticateToken, async (req, res) => {
   try {
@@ -1760,7 +1871,7 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Either waterId or instructorId is required' });
     }
 
-    // Check if user has a booking for this water/instructor
+    // Check if user has a confirmed booking for this water/instructor
     const { data: bookings } = await supabase
       .from('inquiries')
       .select('*')
@@ -1768,7 +1879,22 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
       .eq('status', 'confirmed')
       .or(waterId ? `water_id.eq.${waterId}` : `instructor_id.eq.${instructorId}`);
 
-    const isVerified = bookings && bookings.length > 0;
+    const hasBooking = bookings && bookings.length > 0;
+
+    if (!hasBooking) {
+      return res.status(403).json({ error: 'You can only review after a confirmed booking' });
+    }
+
+    // Check if user already reviewed this water/instructor
+    const { data: existingReviews } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .or(waterId ? `water_id.eq.${waterId}` : `instructor_id.eq.${instructorId}`);
+
+    if (existingReviews && existingReviews.length > 0) {
+      return res.status(400).json({ error: 'You have already reviewed this. You can edit your existing review from your profile.' });
+    }
 
     // Create review
     const { data: review, error } = await supabase
@@ -1781,7 +1907,7 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
         rating,
         title: title || '',
         text,
-        verified: isVerified,
+        verified: true,
         created_at: new Date().toISOString()
       }])
       .select()
@@ -1839,7 +1965,7 @@ app.post('/api/reviews', authenticateToken, async (req, res) => {
         verified: review.verified,
         date: review.created_at
       },
-      verified: isVerified
+      verified: true
     });
   } catch (e) {
     console.error(e);
@@ -2802,7 +2928,7 @@ app.put('/api/instructor/profile', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    const allowed = ['name', 'bio', 'price', 'availability', 'specialties', 'images', 'phone', 'region', 'certifications', 'experience', 'booking_options', 'what_you_learn'];
+    const allowed = ['name', 'bio', 'price', 'availability', 'specialties', 'images', 'phone', 'region', 'certifications', 'experience', 'booking_options', 'what_you_learn', 'teaching_philosophy', 'equipment_provided'];
     const updates = {};
     allowed.forEach(k => {
       if (req.body[k] !== undefined) updates[k] = req.body[k];
@@ -2823,6 +2949,34 @@ app.put('/api/instructor/profile', authenticateToken, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+app.post('/api/instructor/profile/request-removal', authenticateToken, async (req, res) => {
+  try {
+    const { data: instructor, error: fetchError } = await supabase
+      .from('instructors')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (fetchError || !instructor) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    const { error } = await supabase
+      .from('instructors')
+      .update({ status: 'removal_requested' })
+      .eq('id', instructor.id);
+
+    if (error) {
+      return res.status(400).json({ error: 'Failed to request removal' });
+    }
+
+    res.json({ message: 'Removal requested' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to request removal' });
   }
 });
 

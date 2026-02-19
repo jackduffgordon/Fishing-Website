@@ -3,7 +3,7 @@
 // Enhanced fishery detail page with 6 tabs, map, booking variants
 // Now supports multiple booking options as selectable tiles
 // ============================================
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ChevronLeft, MapPin, Star, Check, Clock, Phone, Mail, ExternalLink,
   Car, Coffee, Fish, Accessibility, Moon, Users, Home, Calendar, Tag, Heart
@@ -68,6 +68,23 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
   const [bookingError, setBookingError] = useState('');
   const [selectedPrimary, setSelectedPrimary] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
+  const [hasBooking, setHasBooking] = useState(false);
+
+  // Check if user has a confirmed booking for this water
+  useEffect(() => {
+    if (!user || !fishery.id) return;
+    const token = localStorage.getItem('tightlines_token');
+    if (!token) return;
+    fetch('/api/inquiries/user', { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.inquiries) {
+          const match = data.inquiries.some(i => i.waterId === fishery.id && i.status === 'confirmed');
+          setHasBooking(match);
+        }
+      })
+      .catch(() => {});
+  }, [user, fishery.id]);
 
   // Derive selectedDate and numberOfDays from dateRange
   const [startDate, endDate] = dateRange;
@@ -450,7 +467,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                 {/* Reviews Tab */}
                 {activeTab === 'reviews' && (
                   <div className="space-y-8">
-                    <ReviewForm waterId={fishery.id} user={user} onSuccess={() => {
+                    <ReviewForm waterId={fishery.id} user={user} hasBooking={hasBooking} onSuccess={() => {
                       // Optionally refresh reviews here
                     }} />
                     <ReviewsList reviews={fishery.reviewsList || []} />

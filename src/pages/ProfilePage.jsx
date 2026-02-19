@@ -76,33 +76,88 @@ const ProfilePage = ({
   const [applications, setApplications] = useState({ waters: [], instructors: [] });
   const [activityLoading, setActivityLoading] = useState(true);
 
+  // Review edit/delete
+  const [editingReview, setEditingReview] = useState(null);
+  const [editReviewData, setEditReviewData] = useState({ rating: 0, title: '', text: '' });
+  const [reviewSaving, setReviewSaving] = useState(false);
+
+  const handleEditReview = (review) => {
+    setEditingReview(review.id);
+    setEditReviewData({ rating: review.rating, title: review.title || '', text: review.text || '' });
+  };
+
+  const handleSaveReview = async (reviewId) => {
+    setReviewSaving(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(editReviewData)
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed'); }
+      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, ...editReviewData } : r));
+      setEditingReview(null);
+      showMessage('Review updated');
+    } catch (err) {
+      showMessage(err.message, 'error');
+    }
+    setReviewSaving(false);
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete');
+      setReviews(prev => prev.filter(r => r.id !== reviewId));
+      showMessage('Review deleted');
+    } catch (err) {
+      showMessage('Failed to delete review', 'error');
+    }
+  };
+
   // Favourites detail data
   const [favWaterDetails, setFavWaterDetails] = useState({});
   const [favInstructorDetails, setFavInstructorDetails] = useState({});
 
-  // Fetch favourite water/instructor details
+  // Fetch favourite water/instructor details — only fetch individual items, not all
   useEffect(() => {
     const fetchFavDetails = async () => {
       if (favouriteWaters?.length > 0) {
         try {
-          const res = await fetch('/api/waters');
-          if (res.ok) {
-            const data = await res.json();
-            const map = {};
-            (data.waters || []).forEach(w => { map[w.id] = w; });
-            setFavWaterDetails(map);
-          }
+          const results = await Promise.allSettled(
+            favouriteWaters.map(id =>
+              fetch(`/api/waters/${id}`).then(r => r.ok ? r.json() : null)
+            )
+          );
+          const map = {};
+          results.forEach(r => {
+            if (r.status === 'fulfilled' && r.value?.water) {
+              map[r.value.water.id] = r.value.water;
+            }
+          });
+          setFavWaterDetails(map);
         } catch (err) { /* ignore */ }
       }
       if (favouriteInstructors?.length > 0) {
         try {
-          const res = await fetch('/api/instructors');
-          if (res.ok) {
-            const data = await res.json();
-            const map = {};
-            (data.instructors || []).forEach(i => { map[i.id] = i; });
-            setFavInstructorDetails(map);
-          }
+          const results = await Promise.allSettled(
+            favouriteInstructors.map(id =>
+              fetch(`/api/instructors/${id}`).then(r => r.ok ? r.json() : null)
+            )
+          );
+          const map = {};
+          results.forEach(r => {
+            if (r.status === 'fulfilled' && r.value?.instructor) {
+              map[r.value.instructor.id] = r.value.instructor;
+            }
+          });
+          setFavInstructorDetails(map);
         } catch (err) { /* ignore */ }
       }
     };
@@ -550,37 +605,103 @@ const ProfilePage = ({
                       key={review.id}
                       className="bg-stone-50 rounded-lg p-4 border border-stone-200"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-4 h-4 ${
-                                star <= review.rating
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'fill-stone-200 text-stone-200'
-                              }`}
-                            />
-                          ))}
+                      {editingReview === review.id ? (
+                        /* Edit mode */
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setEditReviewData(d => ({ ...d, rating: star }))}
+                                className="cursor-pointer hover:scale-110 transition"
+                              >
+                                <Star className={`w-5 h-5 ${star <= editReviewData.rating ? 'fill-amber-400 text-amber-400' : 'fill-stone-200 text-stone-200'}`} />
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="text"
+                            value={editReviewData.title}
+                            onChange={e => setEditReviewData(d => ({ ...d, title: e.target.value }))}
+                            placeholder="Review title (optional)"
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                          />
+                          <textarea
+                            rows={3}
+                            value={editReviewData.text}
+                            onChange={e => setEditReviewData(d => ({ ...d, text: e.target.value }))}
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleSaveReview(review.id)}
+                              disabled={reviewSaving}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-50"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              {reviewSaving ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => setEditingReview(null)}
+                              className="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
-                        {review.verified && (
-                          <span className="text-xs text-green-600 flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Verified
-                          </span>
-                        )}
-                      </div>
-                      {review.title && (
-                        <h4 className="font-medium text-stone-900 mb-1">{review.title}</h4>
+                      ) : (
+                        /* Display mode */
+                        <>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${
+                                    star <= review.rating
+                                      ? 'fill-amber-400 text-amber-400'
+                                      : 'fill-stone-200 text-stone-200'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {review.verified && (
+                                <span className="text-xs text-green-600 flex items-center gap-1">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Verified
+                                </span>
+                              )}
+                              <button
+                                onClick={() => handleEditReview(review)}
+                                className="p-1 text-stone-400 hover:text-brand-700 transition"
+                                title="Edit review"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReview(review.id)}
+                                className="p-1 text-stone-400 hover:text-red-500 transition"
+                                title="Delete review"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          {review.title && (
+                            <h4 className="font-medium text-stone-900 mb-1">{review.title}</h4>
+                          )}
+                          <p className="text-sm text-stone-600 mb-2">{review.text}</p>
+                          <p className="text-xs text-stone-400">
+                            {new Date(review.createdAt).toLocaleDateString('en-GB', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </>
                       )}
-                      <p className="text-sm text-stone-600 mb-2">{review.text}</p>
-                      <p className="text-xs text-stone-400">
-                        {new Date(review.createdAt).toLocaleDateString('en-GB', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </p>
                     </div>
                   ))}
                 </div>

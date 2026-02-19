@@ -33,7 +33,7 @@ const StarRating = ({ rating, setRating, readOnly = false }) => {
   );
 };
 
-export const ReviewForm = ({ waterId, instructorId, onSuccess, user }) => {
+export const ReviewForm = ({ waterId, instructorId, onSuccess, user, hasBooking = false }) => {
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
@@ -106,6 +106,15 @@ export const ReviewForm = ({ waterId, instructorId, onSuccess, user }) => {
     return (
       <div className="bg-stone-50 rounded-xl p-6 text-center">
         <p className="text-stone-600">Please sign in to leave a review</p>
+      </div>
+    );
+  }
+
+  if (!hasBooking) {
+    return (
+      <div className="bg-stone-50 rounded-xl p-6 text-center">
+        <p className="text-stone-600">You need a confirmed booking to leave a review</p>
+        <p className="text-stone-500 text-sm mt-1">Reviews can only be left after you've visited</p>
       </div>
     );
   }
@@ -199,8 +208,7 @@ export const ReviewForm = ({ waterId, instructorId, onSuccess, user }) => {
       </button>
 
       <p className="text-xs text-stone-500 mt-3 text-center">
-        {waterId && 'Reviews are verified if you have a confirmed booking at this water.'}
-        {instructorId && 'Reviews are verified if you have a confirmed booking with this instructor.'}
+        Your review will be marked as verified based on your confirmed booking.
       </p>
     </form>
   );

@@ -167,7 +167,7 @@ export const Nav = ({
                         className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50"
                       >
                         <Droplets className="w-4 h-4 text-stone-400" />
-                        My Waters
+                        My Waters Dashboard
                       </button>
                     )}
                     {(user.role === 'instructor' || user.role === 'pending_instructor' || user.hasInstructorProfile) && (
@@ -176,7 +176,7 @@ export const Nav = ({
                         className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50"
                       >
                         <Award className="w-4 h-4 text-stone-400" />
-                        Instructor Dashboard
+                        My Instructor Dashboard
                       </button>
                     )}
                     {user.role === 'admin' && (
@@ -305,7 +305,7 @@ export const Nav = ({
                   onClick={() => { setCurrentPage('water-dashboard'); setMobileOpen(false); }}
                   className="mt-2 block text-sm text-brand-700 font-medium"
                 >
-                  My Waters
+                  My Waters Dashboard
                 </button>
               )}
               {(user.role === 'instructor' || user.role === 'pending_instructor' || user.hasInstructorProfile) && (
@@ -313,7 +313,7 @@ export const Nav = ({
                   onClick={() => { setCurrentPage('instructor-dashboard'); setMobileOpen(false); }}
                   className="mt-2 block text-sm text-brand-700 font-medium"
                 >
-                  Instructor Dashboard
+                  My Instructor Dashboard
                 </button>
               )}
               {user.role === 'admin' && (

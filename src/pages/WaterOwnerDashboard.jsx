@@ -507,7 +507,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
               <ChevronLeft className="w-5 h-5" />
               <span className="font-medium">Back</span>
             </button>
-            <h1 className="text-2xl font-bold text-stone-900">Water Owner Dashboard</h1>
+            <h1 className="text-2xl font-bold text-stone-900">My Waters Dashboard</h1>
             <button
               onClick={onListWater}
               className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition"
