@@ -47,11 +47,7 @@ export const FisheryCard = ({ fishery, onClick, isFavourite, onToggleFavourite }
       className="bg-white rounded-2xl overflow-hidden shadow-sm border border-stone-200 hover:shadow-lg hover:border-stone-300 transition-all cursor-pointer group"
     >
       {/* Image */}
-      <div className="h-48 relative" style={{
-        background: (fishery.images && fishery.images.length > 0)
-          ? `url(${fishery.images[0]}) center/cover no-repeat`
-          : fishery.image || 'linear-gradient(135deg, #2d5a4a 0%, #1a3a30 100%)'
-      }}>
+      <div className="h-48 relative" style={{ background: fishery.image }}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
         {/* Badges */}
