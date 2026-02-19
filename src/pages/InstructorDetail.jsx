@@ -1,10 +1,12 @@
 // ============================================
 // INSTRUCTOR DETAIL PAGE
 // Enhanced instructor profile with gallery, badges, reviews, typical day
+// Visual polish to match VenueDetail quality
 // ============================================
 import { useState } from 'react';
 import {
-  ChevronLeft, MapPin, Star, Check, Globe, Phone, Mail, Calendar
+  ChevronLeft, MapPin, Star, Check, Globe, Phone, Mail, Calendar,
+  Award, Shield
 } from 'lucide-react';
 import { PhotoCarousel } from '../components/common/PhotoCarousel';
 import { DatePickerCalendar } from '../components/common/DatePickerCalendar';
@@ -13,29 +15,37 @@ import { TypicalDay } from '../components/sections/TypicalDay';
 import { ReviewsList } from '../components/sections/ReviewsList';
 import { ReviewForm } from '../components/forms/ReviewForm';
 
-const tabs = [
-  { id: 'about', label: 'About' },
-  { id: 'learn', label: 'What You Learn' },
-  { id: 'day', label: 'Typical Day' },
-  { id: 'reviews', label: 'Reviews' }
-];
-
-// Specialty icons (could be expanded)
-const specialtyIcons = {
-  'Atlantic Salmon': '🐟',
-  'Spey Casting': '🎣',
-  'Scottish Rivers': '🏔️',
-  'Trout': '🐟',
-  'Stillwater': '🌊',
-  'Beginners': '👋',
-  "Women's Courses": '👩',
-  'Carp': '🐟',
-  'Pike': '🐟',
-  'Wild Brown Trout': '🐟',
-  'Small Streams': '🏞️',
-  'Dry Fly': '🪰',
-  'Tenkara': '🎋'
+const specialtyColors = {
+  'Atlantic Salmon': 'bg-cyan-50 text-cyan-700',
+  'Salmon': 'bg-cyan-50 text-cyan-700',
+  'Spey Casting': 'bg-blue-50 text-blue-700',
+  'Fly Fishing': 'bg-blue-50 text-blue-700',
+  'Trout': 'bg-green-50 text-green-700',
+  'Wild Brown Trout': 'bg-green-50 text-green-700',
+  'Sea Fishing': 'bg-teal-50 text-teal-700',
+  'Sea Trout': 'bg-teal-50 text-teal-700',
+  'Carp': 'bg-amber-50 text-amber-700',
+  'Pike': 'bg-amber-50 text-amber-700',
+  'Coarse': 'bg-lime-50 text-lime-700',
+  'Stillwater': 'bg-sky-50 text-sky-700',
+  'Beginners': 'bg-purple-50 text-purple-700',
+  "Women's Courses": 'bg-pink-50 text-pink-700',
+  'Dry Fly': 'bg-emerald-50 text-emerald-700',
+  'Tenkara': 'bg-orange-50 text-orange-700',
+  'Scottish Rivers': 'bg-indigo-50 text-indigo-700',
+  'Small Streams': 'bg-teal-50 text-teal-700',
 };
+
+const specialtyIcons = {
+  'Atlantic Salmon': '🐟', 'Spey Casting': '🎣', 'Scottish Rivers': '🏔️',
+  'Trout': '🐟', 'Stillwater': '🌊', 'Beginners': '👋',
+  "Women's Courses": '👩', 'Carp': '🐟', 'Pike': '🐟',
+  'Wild Brown Trout': '🐟', 'Small Streams': '🏞️', 'Dry Fly': '🪰', 'Tenkara': '🎋'
+};
+
+const verifiedCerts = ['AAPGAI', 'GAIA', 'SGAIC', 'Angling Trust'];
+const isVerified = (inst) =>
+  (inst.certifications || []).some(c => verifiedCerts.some(vc => c.includes(vc)));
 
 export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => {
   const [activeTab, setActiveTab] = useState('about');
@@ -46,18 +56,24 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
   const [message, setMessage] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    preferredDates: '',
-    message: ''
+    name: '', email: '', phone: '', preferredDates: '', message: ''
   });
 
+  const verified = isVerified(instructor);
+
+  // Dynamic tabs — add Gallery if multiple images
+  const tabs = [
+    { id: 'about', label: 'About' },
+    { id: 'learn', label: 'What You Learn' },
+    { id: 'day', label: 'Typical Day' },
+    { id: 'reviews', label: 'Reviews' },
+    ...(instructor.gallery && instructor.gallery.length > 1
+      ? [{ id: 'gallery', label: 'Gallery' }]
+      : [])
+  ];
+
   const handleBooking = async () => {
-    if (!user) {
-      onSignIn();
-      return;
-    }
+    if (!user) { onSignIn(); return; }
     setBookingLoading(true);
     setBookingError('');
     try {
@@ -133,67 +149,52 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header */}
-      <div className="bg-brand-700 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <button
-            onClick={onBack}
-            className="flex items-center text-brand-200 hover:text-white mb-4"
+      {/* Hero Gallery */}
+      <div className="relative">
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 z-10 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg flex items-center gap-2 text-stone-700 hover:bg-white transition shadow-sm"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+        {instructor.gallery && instructor.gallery.length > 1 ? (
+          <PhotoCarousel images={instructor.gallery} alt={instructor.name} />
+        ) : (
+          <div
+            className="h-56 md:h-72 relative"
+            style={{ background: instructor.image }}
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back to Instructors</span>
-          </button>
-        </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          </div>
+        )}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 -mt-4 pb-12">
+      <div className="max-w-7xl mx-auto px-4 -mt-6 pb-12 relative z-10">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main content */}
           <div className="flex-1">
             <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-              {/* Profile header with gallery */}
-              <div className="flex flex-col">
-                {/* Gallery */}
-                {instructor.gallery && instructor.gallery.length > 1 ? (
-                  <PhotoCarousel images={instructor.gallery} alt={instructor.name} />
-                ) : (
-                  <div
-                    className="h-48 md:h-64"
-                    style={{ background: instructor.image }}
-                  />
-                )}
-
-                {/* Profile info */}
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold text-stone-900">{instructor.name}</h1>
-                  <p className="text-brand-600 font-medium mb-2">{instructor.title}</p>
-
-                  <div className="flex items-center text-stone-500 mb-4">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    <span>{instructor.location}</span>
+              {/* Profile info */}
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-1">
+                  <div>
+                    <h1 className="text-2xl font-bold text-stone-900">{instructor.name}</h1>
+                    <p className="text-brand-600 font-medium">{instructor.title}</p>
                   </div>
-
-                  {/* Specialties with icons */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {instructor.specialties.map((s) => (
-                      <span
-                        key={s}
-                        className="px-3 py-1.5 bg-brand-50 text-brand-700 text-sm rounded-full flex items-center gap-1"
-                      >
-                        {specialtyIcons[s] && <span>{specialtyIcons[s]}</span>}
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Rating and website */}
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="font-medium">{instructor.rating}</span>
-                      <span className="text-stone-400">({instructor.reviews} reviews)</span>
+                  {verified && (
+                    <span className="px-3 py-1.5 bg-green-50 text-green-700 text-xs font-medium rounded-full flex items-center gap-1 flex-shrink-0">
+                      <Shield className="w-3.5 h-3.5" /> Verified
                     </span>
-                    {instructor.website && (
+                  )}
+                </div>
+
+                <div className="flex items-center text-stone-500 mb-4 mt-2">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  <span>{instructor.location}</span>
+                  {instructor.website && (
+                    <>
+                      <span className="mx-2 text-stone-300">·</span>
                       <a
                         href={`https://${instructor.website}`}
                         target="_blank"
@@ -202,8 +203,45 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                       >
                         <Globe className="w-4 h-4" /> Website
                       </a>
-                    )}
+                    </>
+                  )}
+                </div>
+
+                {/* Quick Stats Row */}
+                <div className="grid grid-cols-3 gap-4 py-4 border-y border-stone-200 mb-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-stone-900 flex items-center justify-center gap-1">
+                      {instructor.rating}
+                      <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                    </div>
+                    <div className="text-xs text-stone-500">Rating</div>
                   </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-stone-900">{instructor.reviews}</div>
+                    <div className="text-xs text-stone-500">Reviews</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-stone-900">{instructor.certifications?.length || 0}</div>
+                    <div className="text-xs text-stone-500 flex items-center justify-center gap-1">
+                      <Award className="w-3 h-3" /> Credentials
+                    </div>
+                  </div>
+                </div>
+
+                {/* Color-coded specialties */}
+                <div className="flex flex-wrap gap-2">
+                  {instructor.specialties.map((s) => {
+                    const colorClass = specialtyColors[s] || 'bg-brand-50 text-brand-700';
+                    return (
+                      <span
+                        key={s}
+                        className={`px-3 py-1.5 ${colorClass} text-sm rounded-full flex items-center gap-1`}
+                      >
+                        {specialtyIcons[s] && <span>{specialtyIcons[s]}</span>}
+                        {s}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -232,11 +270,35 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                 {/* About Tab */}
                 {activeTab === 'about' && (
                   <div className="space-y-6">
+                    {/* Quick info cards */}
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl">
+                        <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-4 h-4 text-brand-700" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-stone-500">Location</div>
+                          <div className="text-sm font-medium text-stone-900">{instructor.location}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl">
+                        <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Calendar className="w-4 h-4 text-brand-700" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-stone-500">Booking</div>
+                          <div className="text-sm font-medium text-stone-900">
+                            {instructor.hasCalendar ? 'Calendar booking available' : 'Contact for availability'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div>
                       <h3 className="font-semibold text-lg mb-3">
                         About {instructor.name.split(' ')[0]}
                       </h3>
-                      <p className="text-stone-600 whitespace-pre-line">{instructor.fullBio}</p>
+                      <p className="text-stone-600 whitespace-pre-line leading-relaxed">{instructor.fullBio}</p>
                     </div>
 
                     {instructor.teachingPhilosophy && (
@@ -247,8 +309,10 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                     )}
 
                     {instructor.certifications && instructor.certifications.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-lg mb-3">Certifications</h3>
+                      <div className="bg-green-50 rounded-xl p-5 border border-green-200">
+                        <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                          <Shield className="w-5 h-5" /> Qualifications & Certifications
+                        </h3>
                         <CertificationBadgeList certifications={instructor.certifications} />
                       </div>
                     )}
@@ -264,8 +328,8 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                         <div className="grid md:grid-cols-2 gap-3">
                           {instructor.whatYouLearn.map((item, i) => (
                             <div key={i} className="flex items-start gap-3 p-3 bg-stone-50 rounded-xl">
-                              <div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <Check className="w-4 h-4 text-brand-700" />
+                              <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <Check className="w-4 h-4 text-green-700" />
                               </div>
                               <span className="text-stone-700">{item}</span>
                             </div>
@@ -275,13 +339,13 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                     )}
 
                     {instructor.equipmentProvided && instructor.equipmentProvided.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-lg mb-3">Equipment Provided</h3>
+                      <div className="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                        <h3 className="font-semibold text-blue-800 mb-3">Equipment Provided</h3>
                         <div className="flex flex-wrap gap-2">
                           {instructor.equipmentProvided.map((e) => (
                             <span
                               key={e}
-                              className="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full text-sm"
+                              className="px-3 py-1.5 bg-white text-blue-700 rounded-full text-sm border border-blue-200"
                             >
                               {e}
                             </span>
@@ -308,10 +372,24 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
                 {/* Reviews Tab */}
                 {activeTab === 'reviews' && (
                   <div className="space-y-8">
-                    <ReviewForm instructorId={instructor.id} user={user} onSuccess={() => {
-                      // Optionally refresh reviews here
-                    }} />
+                    <ReviewForm instructorId={instructor.id} user={user} onSuccess={() => {}} />
                     <ReviewsList reviews={instructor.reviewsList || []} />
+                  </div>
+                )}
+
+                {/* Gallery Tab */}
+                {activeTab === 'gallery' && instructor.gallery && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-4">Photos</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {instructor.gallery.map((img, i) => (
+                        <div
+                          key={i}
+                          className="aspect-[4/3] rounded-xl overflow-hidden"
+                          style={{ background: img, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -321,6 +399,14 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn }) => 
           {/* Booking sidebar */}
           <div className="w-full lg:w-96 flex-shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sticky top-24">
+              {/* Verified badge */}
+              {verified && (
+                <div className="flex items-center justify-center gap-2 mb-4 py-2.5 bg-green-50 rounded-xl border border-green-200">
+                  <Shield className="w-4 h-4 text-green-700" />
+                  <span className="text-sm font-medium text-green-700">Verified Instructor</span>
+                </div>
+              )}
+
               {/* Price */}
               <div className="text-center mb-6">
                 <span className="text-3xl font-bold text-stone-900">£{instructor.price}</span>

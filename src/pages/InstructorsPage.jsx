@@ -387,7 +387,7 @@ export const InstructorsPage = ({ onSelectInstructor, onBack, favouriteInstructo
                 <p className="text-stone-500">Loading instructors...</p>
               </div>
             ) : filteredInstructors.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-5">
                 {filteredInstructors.map(i => (
                   <InstructorCard
                     key={i.id}
