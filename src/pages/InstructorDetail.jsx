@@ -33,7 +33,7 @@ const verifiedCerts = ['AAPGAI', 'GAIA', 'SGAIC', 'Angling Trust'];
 const isVerified = (inst) =>
   (inst.certifications || []).some(c => verifiedCerts.some(vc => c.includes(vc)));
 
-const tabs = [
+const baseTabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'learn', label: 'What You Learn' },
   { id: 'day', label: 'Typical Day' },
@@ -80,6 +80,10 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
   }, [user, instructor.id]);
 
   const verified = isVerified(instructor);
+  const hasGallery = instructor.gallery && instructor.gallery.length > 1;
+  const tabs = hasGallery
+    ? [...baseTabs.slice(0, 4), { id: 'gallery', label: 'Gallery' }, baseTabs[4]]
+    : baseTabs;
   const hasBookingOptions = instructor.bookingOptions && instructor.bookingOptions.length > 0;
   const activeOption = hasBookingOptions
     ? instructor.bookingOptions.find(o => o.id === selectedOption) || instructor.bookingOptions[0]
@@ -406,6 +410,24 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                         <p className="text-amber-700">{instructor.experience} years of professional instructing experience</p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Gallery Tab — only shown if multiple images */}
+                {activeTab === 'gallery' && hasGallery && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-4">Photos</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {instructor.gallery.map((img, i) => (
+                        <div key={i} className="aspect-[4/3] rounded-xl overflow-hidden">
+                          <img
+                            src={img}
+                            alt={`${instructor.name} - Photo ${i + 1}`}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
