@@ -2800,6 +2800,8 @@ app.put('/api/owner/waters/:id', authenticateToken, async (req, res) => {
       if (req.body[snakeCaseKey] !== undefined) updates[snakeCaseKey] = req.body[snakeCaseKey];
     });
 
+    updates.last_edited_at = new Date().toISOString();
+
     const { data: updated, error: updateError } = await supabase
       .from('waters')
       .update(updates)
@@ -2933,6 +2935,8 @@ app.put('/api/instructor/profile', authenticateToken, async (req, res) => {
     allowed.forEach(k => {
       if (req.body[k] !== undefined) updates[k] = req.body[k];
     });
+
+    updates.last_edited_at = new Date().toISOString();
 
     const { data: updated, error: updateError } = await supabase
       .from('instructors')

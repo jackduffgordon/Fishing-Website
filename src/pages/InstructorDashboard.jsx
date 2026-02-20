@@ -101,7 +101,7 @@ const InstructorCard = ({ instructor, onView, onEdit, onRequestRemoval }) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-3">
             <div>
               <p className="text-stone-500">Specialties</p>
               <p className="font-medium text-stone-900">
@@ -500,7 +500,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-stone-200">
             <div className="flex items-center justify-between">
               <div>

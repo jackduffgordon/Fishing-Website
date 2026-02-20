@@ -408,10 +408,10 @@ const ProfilePage = ({
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Profile Header Banner */}
-            <div className="bg-gradient-to-r from-brand-700 to-brand-600 rounded-2xl p-8 text-white">
-              <div className="flex items-center gap-6">
+            <div className="bg-gradient-to-r from-brand-700 to-brand-600 rounded-2xl p-6 md:p-8 text-white">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <span className="text-5xl font-bold text-white">
+                  <span className="text-3xl md:text-5xl font-bold text-white">
                     {getInitial()}
                   </span>
                 </div>
@@ -931,7 +931,7 @@ const ProfilePage = ({
                   })}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl p-12 shadow-sm border border-stone-100 text-center">
+                <div className="bg-white rounded-xl p-6 md:p-12 shadow-sm border border-stone-100 text-center">
                   <Bookmark className="w-12 h-12 text-stone-300 mx-auto mb-4" />
                   <p className="text-stone-600 mb-4">
                     No favourite waters yet
@@ -1002,7 +1002,7 @@ const ProfilePage = ({
                   })}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl p-12 shadow-sm border border-stone-100 text-center">
+                <div className="bg-white rounded-xl p-6 md:p-12 shadow-sm border border-stone-100 text-center">
                   <Award className="w-12 h-12 text-stone-300 mx-auto mb-4" />
                   <p className="text-stone-600 mb-4">
                     No favourite instructors yet

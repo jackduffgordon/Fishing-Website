@@ -19,6 +19,8 @@ import { InstructorsPage } from './pages/InstructorsPage';
 import { InstructorDetailPage } from './pages/InstructorDetail';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { WaterOwnerDashboard } from './pages/WaterOwnerDashboard';
@@ -488,6 +490,14 @@ const App = () => {
 
       {currentPage === 'contact' && (
         <ContactPage />
+      )}
+
+      {currentPage === 'terms' && (
+        <TermsPage />
+      )}
+
+      {currentPage === 'privacy' && (
+        <PrivacyPage />
       )}
 
       {currentPage === 'admin' && user?.role === 'admin' && (

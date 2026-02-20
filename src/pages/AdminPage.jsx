@@ -76,6 +76,9 @@ const WaterRow = ({ water, onApprove, onReject, onPreview, onDelete, actionLoadi
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
+          {water.last_edited_at && (Date.now() - new Date(water.last_edited_at).getTime()) < 7 * 86400000 && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Edited</span>
+          )}
           <StatusBadge status={water.status} />
           {expanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
         </div>
@@ -290,6 +293,9 @@ const InstructorRow = ({ instructor, onApprove, onReject, onPreview, actionLoadi
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
+          {instructor.last_edited_at && (Date.now() - new Date(instructor.last_edited_at).getTime()) < 7 * 86400000 && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Edited</span>
+          )}
           <StatusBadge status={instructor.status} />
           {expanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
         </div>

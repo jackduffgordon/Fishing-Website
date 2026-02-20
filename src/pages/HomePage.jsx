@@ -418,7 +418,8 @@ export const HomePage = ({
               <ul className="space-y-2 text-sm">
                 <li><button onClick={() => onNavigate && onNavigate('about')} className="hover:text-white transition">About Us</button></li>
                 <li><button onClick={() => onNavigate && onNavigate('contact')} className="hover:text-white transition">Contact</button></li>
-                <li><button className="hover:text-white transition">Privacy</button></li>
+                <li><button onClick={() => onNavigate && onNavigate('privacy')} className="hover:text-white transition">Privacy Policy</button></li>
+                <li><button onClick={() => onNavigate && onNavigate('terms')} className="hover:text-white transition">Terms & Conditions</button></li>
               </ul>
             </div>
           </div>
