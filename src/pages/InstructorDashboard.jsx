@@ -8,7 +8,7 @@ import {
   CheckCircle, Clock, XCircle, Mail, Phone, Calendar, MessageSquare,
   Save, X, Trash2, Upload, Award
 } from 'lucide-react';
-import { getToken, normalizeInstructor } from '../utils/api';
+import { getToken, normalizeInstructor, uploadImage as apiUploadImage, validateImageFile } from '../utils/api';
 import { InstructorDetailPage } from './InstructorDetail';
 
 const SPECIALTIES = [
@@ -365,48 +365,25 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
     }
   };
 
-  const uploadImage = async (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const token = getToken();
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              imageData: reader.result,
-              fileName: file.name,
-              type: 'instructors'
-            })
-          });
-          if (!res.ok) throw new Error('Upload failed');
-          const data = await res.json();
-          resolve(data.url);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+
+    // Validate all files first
+    for (const file of files) {
+      const err = validateImageFile(file);
+      if (err) { setError(err); return; }
+    }
+
     setSaving(true);
     try {
-      const urls = await Promise.all(files.map(f => uploadImage(f)));
+      const urls = await Promise.all(files.map(f => apiUploadImage(f, 'instructors')));
       setEditData(prev => ({
         ...prev,
         images: [...(prev.images || []), ...urls]
       }));
     } catch (err) {
-      setError('Failed to upload image(s)');
+      setError(err.message || 'Failed to upload image(s)');
     }
     setSaving(false);
   };

@@ -439,17 +439,101 @@ export const adminAPI = {
 };
 
 // --- IMAGE UPLOAD ---
-export const uploadImage = async (file, type = 'water') => {
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('type', type);
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const COMPRESS_ABOVE = 1 * 1024 * 1024; // Compress images over 1MB
 
-  const res = await fetch(`${API_BASE}/upload`, {
-    method: 'POST',
-    headers: {
-      ...(getToken() ? { 'Authorization': `Bearer ${getToken()}` } : {})
-    },
-    body: formData
+// Client-side image compression using canvas
+const compressImage = (file, maxWidth = 1600, quality = 0.8) => {
+  return new Promise((resolve, reject) => {
+    if (file.type === 'image/gif') {
+      resolve(file); // Don't compress GIFs
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error('Compression failed')); return; }
+          resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
   });
-  return handleResponse(res);
+};
+
+// Validate file before upload
+export const validateImageFile = (file) => {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return `Invalid file type "${file.type}". Allowed: JPG, PNG, WebP, GIF`;
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    return `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum is 5MB`;
+  }
+  return null;
+};
+
+export const uploadImage = async (file, type = 'water') => {
+  // Validate
+  const validationError = validateImageFile(file);
+  if (validationError) throw new Error(validationError);
+
+  // Compress if needed
+  let processedFile = file;
+  if (file.size > COMPRESS_ABOVE && file.type !== 'image/gif') {
+    try {
+      processedFile = await compressImage(file);
+    } catch {
+      // Fall back to original if compression fails
+      processedFile = file;
+    }
+  }
+
+  // Read as base64 and upload
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const token = getToken();
+        const res = await fetch(`${API_BASE}/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            imageData: reader.result,
+            fileName: processedFile.name,
+            type
+          })
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Upload failed');
+        }
+        const data = await res.json();
+        resolve(data.url);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(processedFile);
+  });
 };

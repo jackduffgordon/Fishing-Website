@@ -393,9 +393,26 @@ const App = () => {
     setCurrentPage('home');
   };
 
-  // Scroll to top on page change and sync tab highlighting
+  // Scroll to top on page change, sync tab highlighting, and update page title
   useEffect(() => {
     window.scrollTo(0, 0);
+    const titles = {
+      home: 'TightLines - Book Fishing Across the UK',
+      search: 'Search Waters | TightLines',
+      venue: selectedFishery ? `${selectedFishery.name} | TightLines` : 'Water Details | TightLines',
+      instructors: 'Find Instructors | TightLines',
+      'instructor-detail': selectedInstructor ? `${selectedInstructor.name} | TightLines` : 'Instructor | TightLines',
+      about: 'About Us | TightLines',
+      contact: 'Contact | TightLines',
+      terms: 'Terms & Conditions | TightLines',
+      privacy: 'Privacy Policy | TightLines',
+      profile: 'My Profile | TightLines',
+      'water-dashboard': 'My Waters Dashboard | TightLines',
+      'instructor-dashboard': 'My Instructor Dashboard | TightLines',
+      admin: 'Admin Dashboard | TightLines'
+    };
+    document.title = titles[currentPage] || 'TightLines';
+
     if (currentPage === 'search' || currentPage === 'venue') {
       setCurrentTab('waters');
     } else if (currentPage === 'instructors' || currentPage === 'instructor-detail') {
@@ -407,7 +424,7 @@ const App = () => {
     } else if (currentPage === 'home') {
       setCurrentTab('');
     }
-  }, [currentPage]);
+  }, [currentPage, selectedFishery, selectedInstructor]);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -532,6 +549,23 @@ const App = () => {
           user={user}
           onBack={() => setCurrentPage('home')}
         />
+      )}
+
+      {/* 404 fallback - unknown page */}
+      {!['home', 'search', 'venue', 'instructors', 'instructor-detail', 'about', 'contact', 'terms', 'privacy', 'admin', 'profile', 'water-dashboard', 'instructor-dashboard'].includes(currentPage) && (
+        <div className="min-h-[60vh] flex items-center justify-center px-4">
+          <div className="text-center">
+            <p className="text-6xl font-bold text-brand-700 mb-4">404</p>
+            <h2 className="text-2xl font-bold text-stone-900 mb-2">Page not found</h2>
+            <p className="text-stone-500 mb-6">The page you're looking for doesn't exist or has been moved.</p>
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 transition"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Booking success overlay (after Stripe return) */}

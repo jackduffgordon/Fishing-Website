@@ -9,9 +9,172 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const rateLimit = require('express-rate-limit');
+const nodemailer = require('nodemailer');
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jackduffgordon@gmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@theanglersnet.co.uk';
+
+// Email setup (Zoho SMTP)
+const SMTP_HOST = process.env.SMTP_HOST || '';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = process.env.SMTP_PASS || '';
+
+let emailTransporter = null;
+if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+  emailTransporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  });
+  emailTransporter.verify().then(() => {
+    console.log('Email transporter ready');
+  }).catch(err => {
+    console.error('Email transporter error:', err.message);
+  });
+} else {
+  console.log('SMTP not configured — email features disabled');
+}
+
+// Send email helper (fire and forget, never throws)
+// Accepts either sendEmail({ to, subject, html }) or sendEmail(to, subject, html)
+const sendEmail = async (toOrOpts, subject, html) => {
+  let to;
+  if (typeof toOrOpts === 'object' && toOrOpts !== null) {
+    ({ to, subject, html } = toOrOpts);
+  } else {
+    to = toOrOpts;
+  }
+  if (!emailTransporter) {
+    console.log('[Email] Skipped (no transporter):', subject, '->', to);
+    return;
+  }
+  try {
+    await emailTransporter.sendMail({
+      from: `"TheAnglersNet" <${SMTP_USER}>`,
+      to,
+      subject,
+      html
+    });
+    console.log('[Email] Sent:', subject, '->', to);
+  } catch (err) {
+    console.error('[Email] Failed:', err.message);
+  }
+};
+
+// Email templates
+const emailTemplates = {
+  inquiryToOwner: ({ anglerName, anglerEmail, waterName, message, date, guests }) => ({
+    subject: `New Inquiry for ${waterName} — TheAnglersNet`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">New Booking Inquiry</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p style="margin: 0 0 16px;">You've received a new inquiry for <strong>${waterName}</strong>.</p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+            <tr><td style="padding: 8px 0; color: #78716c;">From</td><td style="padding: 8px 0; font-weight: 600;">${anglerName}</td></tr>
+            <tr><td style="padding: 8px 0; color: #78716c;">Email</td><td style="padding: 8px 0;"><a href="mailto:${anglerEmail}" style="color: #0f766e;">${anglerEmail}</a></td></tr>
+            ${date ? `<tr><td style="padding: 8px 0; color: #78716c;">Date</td><td style="padding: 8px 0;">${date}</td></tr>` : ''}
+            ${guests ? `<tr><td style="padding: 8px 0; color: #78716c;">Guests</td><td style="padding: 8px 0;">${guests}</td></tr>` : ''}
+          </table>
+          ${message ? `<div style="background: #f5f5f4; padding: 16px; border-radius: 8px; margin-bottom: 16px;"><p style="margin: 0; color: #44403c;">${message}</p></div>` : ''}
+          <p style="color: #78716c; font-size: 13px; margin: 0;">Reply directly to the angler's email to confirm or discuss the booking.</p>
+        </div>
+      </div>
+    `
+  }),
+
+  inquiryConfirmation: ({ anglerName, waterName, ownerName }) => ({
+    subject: `Inquiry Sent — ${waterName}`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Inquiry Confirmation</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${anglerName},</p>
+          <p>Your inquiry for <strong>${waterName}</strong> has been sent successfully. ${ownerName ? `${ownerName} will` : 'The fishery will'} be in touch shortly to confirm your booking.</p>
+          <p>You can track the status of your inquiries in your <strong>Profile</strong> page.</p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">— TheAnglersNet</p>
+        </div>
+      </div>
+    `
+  }),
+
+  instructorInquiry: ({ anglerName, anglerEmail, instructorName, message, date }) => ({
+    subject: `New Student Inquiry — TheAnglersNet`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">New Student Inquiry</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${instructorName},</p>
+          <p>You've received a new inquiry from <strong>${anglerName}</strong> (<a href="mailto:${anglerEmail}" style="color: #0f766e;">${anglerEmail}</a>).</p>
+          ${date ? `<p><strong>Preferred date:</strong> ${date}</p>` : ''}
+          ${message ? `<div style="background: #f5f5f4; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0; color: #44403c;">${message}</p></div>` : ''}
+          <p style="color: #78716c; font-size: 13px;">Reply directly to the student's email to discuss and confirm.</p>
+        </div>
+      </div>
+    `
+  }),
+
+  newListingAdmin: ({ type, name, ownerName, ownerEmail }) => ({
+    subject: `New ${type} Listing: ${name}`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: #f59e0b; padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">New ${type} Pending Review</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>A new ${type.toLowerCase()} listing needs your review:</p>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; color: #78716c;">Name</td><td style="padding: 8px 0; font-weight: 600;">${name}</td></tr>
+            <tr><td style="padding: 8px 0; color: #78716c;">Submitted by</td><td style="padding: 8px 0;">${ownerName} (${ownerEmail})</td></tr>
+          </table>
+          <p style="margin-top: 16px;">Log in to the admin dashboard to approve or reject.</p>
+        </div>
+      </div>
+    `
+  }),
+
+  listingApproved: ({ type, name, ownerName }) => ({
+    subject: `Your ${type} "${name}" Has Been Approved!`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Listing Approved!</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${ownerName},</p>
+          <p>Great news — your ${type.toLowerCase()} <strong>"${name}"</strong> has been approved and is now live on TheAnglersNet!</p>
+          <p>Anglers can now find and book with you. You can manage your listing from your dashboard.</p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">— TheAnglersNet</p>
+        </div>
+      </div>
+    `
+  }),
+
+  listingRejected: ({ type, name, ownerName }) => ({
+    subject: `Update on Your ${type} "${name}"`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Listing Update</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${ownerName},</p>
+          <p>Unfortunately, your ${type.toLowerCase()} <strong>"${name}"</strong> wasn't approved at this time.</p>
+          <p>This could be due to incomplete information, unclear photos, or content that doesn't meet our guidelines. Please review your listing and resubmit, or contact us if you have questions.</p>
+          <p>Email us at <a href="mailto:hello@theanglersnet.co.uk" style="color: #0f766e;">hello@theanglersnet.co.uk</a></p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">— TheAnglersNet</p>
+        </div>
+      </div>
+    `
+  })
+};
 
 // Stripe setup
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
@@ -32,40 +195,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// Helper to send emails via Resend (simple HTTP API — no SMTP needed)
-const sendEmail = async (to, subject, html) => {
-  if (!RESEND_API_KEY) {
-    console.log(`[EMAIL NOT SENT - RESEND_API_KEY not set] To: ${to}, Subject: ${subject}`);
-    return false;
-  }
-  try {
-    console.log(`[EMAIL] Sending to ${to}...`);
-    const resp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'TightLines <onboarding@resend.dev>',
-        to: [to],
-        subject,
-        html
-      })
-    });
-    const data = await resp.json();
-    if (resp.ok) {
-      console.log(`[EMAIL SENT] To: ${to}, ID: ${data.id}`);
-      return true;
-    } else {
-      console.error(`[EMAIL ERROR] ${resp.status}:`, JSON.stringify(data));
-      return false;
-    }
-  } catch (err) {
-    console.error('[EMAIL ERROR]', err.message);
-    return false;
-  }
-};
+// Old Resend email helper removed — now using nodemailer with Zoho SMTP (see top of file)
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -1515,6 +1645,13 @@ app.get('/api/waters/:id', async (req, res) => {
     if (!water) {
       return res.status(404).json({ error: 'Not found' });
     }
+
+    // Track page view (fire and forget)
+    supabase.from('page_views').insert({
+      water_id: water.id,
+      viewed_at: new Date().toISOString()
+    }).then(() => {}).catch(() => {});
+
     res.json({ water });
   } catch (e) {
     console.error(e);
@@ -2340,6 +2477,39 @@ app.post('/api/inquiries', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Failed to create inquiry' });
     }
 
+    // Send email notifications (fire and forget)
+    if (waterId) {
+      // Fetch water details for email
+      const { data: water } = await supabase.from('waters').select('name, owner_email, owner_name').eq('id', waterId).single();
+      if (water?.owner_email) {
+        const tmpl = emailTemplates.inquiryToOwner({
+          anglerName: req.user.name, anglerEmail: req.user.email,
+          waterName: water.name, message, date
+        });
+        sendEmail({ to: water.owner_email, ...tmpl });
+      }
+      // Confirmation to angler
+      const confirmTmpl = emailTemplates.inquiryConfirmation({
+        anglerName: req.user.name, waterName: water?.name || 'the water', ownerName: water?.owner_name
+      });
+      sendEmail({ to: req.user.email, ...confirmTmpl });
+    } else if (instructorId) {
+      // Fetch instructor details
+      const { data: instructor } = await supabase.from('instructors').select('name, email').eq('id', instructorId).single();
+      if (instructor?.email) {
+        const tmpl = emailTemplates.instructorInquiry({
+          anglerName: req.user.name, anglerEmail: req.user.email,
+          instructorName: instructor.name, message, date
+        });
+        sendEmail({ to: instructor.email, ...tmpl });
+      }
+      // Confirmation to angler
+      const confirmTmpl = emailTemplates.inquiryConfirmation({
+        anglerName: req.user.name, waterName: instructor?.name || 'the instructor', ownerName: instructor?.name
+      });
+      sendEmail({ to: req.user.email, ...confirmTmpl });
+    }
+
     res.json({ message: 'Inquiry submitted', inquiryId: inquiry.id });
   } catch (e) {
     console.error(e);
@@ -2666,6 +2836,15 @@ app.put('/api/admin/waters/:id', authenticateToken, requireRole('admin'), async 
       return res.status(404).json({ error: 'Not found' });
     }
 
+    // Send approval/rejection email to water owner
+    if (req.body.status === 'approved' && updated.owner_email) {
+      const tmpl = emailTemplates.listingApproved({ type: 'Water', name: updated.name, ownerName: updated.owner_name || 'there' });
+      sendEmail({ to: updated.owner_email, ...tmpl });
+    } else if (req.body.status === 'rejected' && updated.owner_email) {
+      const tmpl = emailTemplates.listingRejected({ type: 'Water', name: updated.name, ownerName: updated.owner_name || 'there' });
+      sendEmail({ to: updated.owner_email, ...tmpl });
+    }
+
     res.json({ message: 'Updated', water: updated });
   } catch (e) {
     console.error(e);
@@ -2709,6 +2888,15 @@ app.put('/api/admin/instructors/:id', authenticateToken, requireRole('admin'), a
 
     if (error || !updated) {
       return res.status(404).json({ error: 'Not found' });
+    }
+
+    // Send approval/rejection email to instructor
+    if (req.body.status === 'approved' && updated.email) {
+      const tmpl = emailTemplates.listingApproved({ type: 'Instructor Profile', name: updated.name, ownerName: updated.name || 'there' });
+      sendEmail({ to: updated.email, ...tmpl });
+    } else if (req.body.status === 'rejected' && updated.email) {
+      const tmpl = emailTemplates.listingRejected({ type: 'Instructor Profile', name: updated.name, ownerName: updated.name || 'there' });
+      sendEmail({ to: updated.email, ...tmpl });
     }
 
     res.json({ message: 'Updated', instructor: updated });
@@ -2848,6 +3036,98 @@ app.post('/api/owner/waters/:id/request-removal', authenticateToken, async (req,
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to request removal' });
+  }
+});
+
+// Analytics for water owners
+app.get('/api/owner/analytics', authenticateToken, async (req, res) => {
+  try {
+    // Get owner's water IDs
+    const { data: waters } = await supabase
+      .from('waters')
+      .select('id, name')
+      .eq('owner_id', req.user.id);
+
+    if (!waters || waters.length === 0) {
+      return res.json({ waters: [], totals: { views: 0, inquiries: 0, bookings: 0, favourites: 0 } });
+    }
+
+    const waterIds = waters.map(w => w.id);
+
+    // Get page views per water (last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+    const { data: views } = await supabase
+      .from('page_views')
+      .select('water_id, viewed_at')
+      .in('water_id', waterIds)
+      .gte('viewed_at', thirtyDaysAgo);
+
+    // Get inquiries per water
+    const { data: inquiries } = await supabase
+      .from('inquiries')
+      .select('water_id, status, created_at')
+      .in('water_id', waterIds);
+
+    // Get favourites count per water
+    const { data: favourites } = await supabase
+      .from('favourite_waters')
+      .select('water_id')
+      .in('water_id', waterIds);
+
+    // Get reviews per water
+    const { data: reviews } = await supabase
+      .from('reviews')
+      .select('water_id, rating')
+      .in('water_id', waterIds);
+
+    // Build per-water analytics
+    const waterAnalytics = waters.map(w => {
+      const waterViews = (views || []).filter(v => v.water_id === w.id);
+      const waterInquiries = (inquiries || []).filter(i => i.water_id === w.id);
+      const waterFavourites = (favourites || []).filter(f => f.water_id === w.id);
+      const waterReviews = (reviews || []).filter(r => r.water_id === w.id);
+      const confirmed = waterInquiries.filter(i => i.status === 'confirmed');
+
+      return {
+        id: w.id,
+        name: w.name,
+        views: waterViews.length,
+        inquiries: waterInquiries.length,
+        bookings: confirmed.length,
+        favourites: waterFavourites.length,
+        avgRating: waterReviews.length > 0
+          ? (waterReviews.reduce((sum, r) => sum + r.rating, 0) / waterReviews.length).toFixed(1)
+          : null,
+        reviewCount: waterReviews.length
+      };
+    });
+
+    // Build daily views for the chart (last 30 days)
+    const dailyViews = {};
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+      dailyViews[date] = 0;
+    }
+    (views || []).forEach(v => {
+      const date = v.viewed_at.split('T')[0];
+      if (dailyViews[date] !== undefined) dailyViews[date]++;
+    });
+
+    const totals = {
+      views: (views || []).length,
+      inquiries: (inquiries || []).length,
+      bookings: (inquiries || []).filter(i => i.status === 'confirmed').length,
+      favourites: (favourites || []).length
+    };
+
+    res.json({
+      waters: waterAnalytics,
+      totals,
+      dailyViews: Object.entries(dailyViews).map(([date, count]) => ({ date, count }))
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
 
@@ -3026,12 +3306,24 @@ app.post('/api/upload', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'imageData and fileName required' });
     }
 
+    // Validate file extension
+    const ext = fileName.split('.').pop().toLowerCase();
+    const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!allowedExts.includes(ext)) {
+      return res.status(400).json({ error: `Invalid file type. Allowed: ${allowedExts.join(', ')}` });
+    }
+
     // Strip data URL prefix if present
     const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
 
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (buffer.length > maxSize) {
+      return res.status(400).json({ error: 'Image too large. Maximum size is 5MB.' });
+    }
+
     // Determine content type
-    const ext = fileName.split('.').pop().toLowerCase();
     const contentTypes = {
       jpg: 'image/jpeg',
       jpeg: 'image/jpeg',

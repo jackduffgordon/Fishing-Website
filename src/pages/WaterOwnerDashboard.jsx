@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
 import {
   Droplets, ChevronLeft, Plus, Eye, Edit3, Loader, AlertTriangle,
   CheckCircle, Clock, XCircle, Mail, Phone, Calendar, MessageSquare,
-  Save, X, Trash2, Upload, Image
+  Save, X, Trash2, Upload, Image, BarChart3, TrendingUp, Heart, Star
 } from 'lucide-react';
-import { getToken } from '../utils/api';
+import { getToken, uploadImage as apiUploadImage, validateImageFile } from '../utils/api';
 import { VenueDetailPage } from './VenueDetail';
 
 const SPECIES = [
@@ -223,6 +223,8 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
   const [previewWater, setPreviewWater] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const mapWaterToFishery = (w) => ({
     id: w.id,
@@ -290,6 +292,23 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
       setError('Failed to load dashboard data');
     }
     setLoading(false);
+  };
+
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/owner/analytics', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch (err) {
+      console.error('Failed to load analytics:', err);
+    }
+    setAnalyticsLoading(false);
   };
 
   const startEditWater = (water) => {
@@ -397,48 +416,25 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
     }
   };
 
-  const uploadImage = async (file, type = 'waters') => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const token = getToken();
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              imageData: reader.result,
-              fileName: file.name,
-              type
-            })
-          });
-          if (!res.ok) throw new Error('Upload failed');
-          const data = await res.json();
-          resolve(data.url);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+
+    // Validate all files first
+    for (const file of files) {
+      const err = validateImageFile(file);
+      if (err) { setError(err); return; }
+    }
+
     setSaving(true);
     try {
-      const urls = await Promise.all(files.map(f => uploadImage(f, 'waters')));
+      const urls = await Promise.all(files.map(f => apiUploadImage(f, 'waters')));
       setEditData(prev => ({
         ...prev,
         images: [...(prev.images || []), ...urls]
       }));
     } catch (err) {
-      setError('Failed to upload image(s)');
+      setError(err.message || 'Failed to upload image(s)');
     }
     setSaving(false);
   };
@@ -458,6 +454,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
   const tabsList = [
     { id: 'waters', label: 'My Waters', count: waters.length },
     { id: 'inquiries', label: 'Inquiries', count: inquiries.length },
+    { id: 'analytics', label: 'Analytics' },
     ...(editingWater ? [{ id: 'edit', label: `Edit: ${editingWater.name}` }] : [])
   ];
 
@@ -673,6 +670,170 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {inquiries.map(inq => <InquiryCard key={inq.id} inquiry={inq} />)}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {tab === 'analytics' && (
+          <div className="space-y-6">
+            {!analytics && !analyticsLoading && (
+              <div className="text-center py-16 bg-white rounded-xl border border-stone-200">
+                <BarChart3 className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-stone-700 mb-2">View your analytics</h3>
+                <p className="text-stone-500 text-sm mb-4">See how your waters are performing over the last 30 days</p>
+                <button
+                  onClick={fetchAnalytics}
+                  className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800 transition"
+                >
+                  Load Analytics
+                </button>
+              </div>
+            )}
+
+            {analyticsLoading && (
+              <div className="text-center py-16">
+                <Loader className="w-8 h-8 text-brand-600 mx-auto mb-3 animate-spin" />
+                <p className="text-stone-500">Loading analytics...</p>
+              </div>
+            )}
+
+            {analytics && !analyticsLoading && (
+              <>
+                {/* Totals Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-xl p-5 border border-stone-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center">
+                        <Eye className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-900">{analytics.totals.views}</p>
+                        <p className="text-stone-500 text-sm">Views (30d)</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-stone-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center">
+                        <Mail className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-900">{analytics.totals.inquiries}</p>
+                        <p className="text-stone-500 text-sm">Inquiries</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-stone-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 text-green-700 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-900">{analytics.totals.bookings}</p>
+                        <p className="text-stone-500 text-sm">Bookings</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-5 border border-stone-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-red-100 text-red-700 rounded-lg flex items-center justify-center">
+                        <Heart className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-stone-900">{analytics.totals.favourites}</p>
+                        <p className="text-stone-500 text-sm">Favourites</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Views Chart (simple bar chart) */}
+                {analytics.dailyViews && analytics.dailyViews.length > 0 && (
+                  <div className="bg-white rounded-xl border border-stone-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-stone-900">Page Views — Last 30 Days</h3>
+                      <button
+                        onClick={fetchAnalytics}
+                        className="text-sm text-brand-700 hover:text-brand-800 font-medium"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="flex items-end gap-0.5 h-32">
+                      {analytics.dailyViews.map((d, i) => {
+                        const maxCount = Math.max(...analytics.dailyViews.map(v => v.count), 1);
+                        const height = d.count > 0 ? Math.max((d.count / maxCount) * 100, 4) : 2;
+                        return (
+                          <div
+                            key={i}
+                            className="flex-1 rounded-t group relative"
+                            style={{ height: `${height}%`, backgroundColor: d.count > 0 ? '#0f766e' : '#e7e5e4' }}
+                            title={`${d.date}: ${d.count} views`}
+                          >
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                              {d.count} views
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-stone-400">
+                      <span>{analytics.dailyViews[0]?.date?.slice(5)}</span>
+                      <span>{analytics.dailyViews[analytics.dailyViews.length - 1]?.date?.slice(5)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Per-Water Breakdown */}
+                <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                  <div className="p-4 border-b border-stone-200">
+                    <h3 className="font-semibold text-stone-900">Performance by Water</h3>
+                  </div>
+                  {analytics.waters.length === 0 ? (
+                    <div className="p-8 text-center text-stone-500">No waters to show analytics for</div>
+                  ) : (
+                    <div className="divide-y divide-stone-100">
+                      {analytics.waters.map(w => (
+                        <div key={w.id} className="p-4 hover:bg-stone-50">
+                          <h4 className="font-medium text-stone-900 mb-2">{w.name}</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
+                            <div>
+                              <p className="text-stone-500">Views</p>
+                              <p className="font-semibold text-stone-900">{w.views}</p>
+                            </div>
+                            <div>
+                              <p className="text-stone-500">Inquiries</p>
+                              <p className="font-semibold text-stone-900">{w.inquiries}</p>
+                            </div>
+                            <div>
+                              <p className="text-stone-500">Bookings</p>
+                              <p className="font-semibold text-stone-900">{w.bookings}</p>
+                            </div>
+                            <div>
+                              <p className="text-stone-500">Favourites</p>
+                              <p className="font-semibold text-stone-900">{w.favourites}</p>
+                            </div>
+                            <div>
+                              <p className="text-stone-500">Rating</p>
+                              <p className="font-semibold text-stone-900 flex items-center gap-1">
+                                {w.avgRating ? (
+                                  <>
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                    {w.avgRating} ({w.reviewCount})
+                                  </>
+                                ) : (
+                                  <span className="text-stone-400">No reviews</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
