@@ -16,7 +16,7 @@ export const PrivacyPage = () => {
         <div className="max-w-3xl mx-auto px-4 prose prose-stone">
           <h2 className="text-xl font-bold text-stone-900 mb-4">1. Introduction</h2>
           <p className="text-stone-700 mb-6 leading-relaxed">
-            TightLines ("we", "us", "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and share your personal data when you use our platform, in compliance with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
+            TheAnglersNet ("we", "us", "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and share your personal data when you use our platform, in compliance with the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
           </p>
 
           <h2 className="text-xl font-bold text-stone-900 mb-4">2. Data We Collect</h2>
@@ -79,7 +79,7 @@ export const PrivacyPage = () => {
             <li><strong>Objection:</strong> Object to processing based on legitimate interest.</li>
           </ul>
           <p className="text-stone-700 mb-6 leading-relaxed">
-            To exercise any of these rights, please contact us at <a href="mailto:hello@tightlines.co.uk" className="text-brand-700 hover:underline">hello@tightlines.co.uk</a>.
+            To exercise any of these rights, please contact us at <a href="mailto:hello@theanglersnet.co.uk" className="text-brand-700 hover:underline">hello@theanglersnet.co.uk</a>.
           </p>
 
           <h2 className="text-xl font-bold text-stone-900 mb-4">8. Cookies</h2>
@@ -102,7 +102,7 @@ export const PrivacyPage = () => {
             If you have questions about this Privacy Policy or wish to exercise your data rights, please contact us:
           </p>
           <p className="text-stone-700 mb-2 leading-relaxed">
-            Email: <a href="mailto:hello@tightlines.co.uk" className="text-brand-700 hover:underline">hello@tightlines.co.uk</a>
+            Email: <a href="mailto:hello@theanglersnet.co.uk" className="text-brand-700 hover:underline">hello@theanglersnet.co.uk</a>
           </p>
           <p className="text-stone-700 leading-relaxed">
             You also have the right to lodge a complaint with the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk" className="text-brand-700 hover:underline" target="_blank" rel="noopener noreferrer">ico.org.uk</a>.

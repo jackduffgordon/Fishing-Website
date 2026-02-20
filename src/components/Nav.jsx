@@ -44,7 +44,7 @@ export const Nav = ({
             className="flex items-center space-x-2 text-brand-700 hover:text-brand-800"
           >
             <Fish className="w-6 h-6" />
-            <span className="text-xl font-bold">TightLines</span>
+            <span className="text-xl font-bold">TheAnglersNet</span>
           </button>
 
           {/* Desktop Nav */}

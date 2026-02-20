@@ -674,7 +674,7 @@ export const ListWaterModal = ({ isOpen, onClose, onSuccess }) => {
               <ul className="text-sm text-stone-600 space-y-1">
                 <li>• We'll review your submission within 48 hours</li>
                 <li>• Our team may contact you for additional details</li>
-                <li>• Once approved, your water goes live on TightLines</li>
+                <li>• Once approved, your water goes live on TheAnglersNet</li>
                 <li>• You'll get a dashboard to manage bookings</li>
               </ul>
             </div>

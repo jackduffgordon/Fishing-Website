@@ -1,5 +1,5 @@
 // ============================================
-// ABOUT PAGE - TightLines Story & Mission
+// ABOUT PAGE - TheAnglersNet Story & Mission
 // ============================================
 import { Fish, Users, MapPin, Shield, Heart, TrendingUp, ArrowRight } from 'lucide-react';
 
@@ -9,7 +9,7 @@ export const AboutPage = ({ onSearch, onListWater }) => {
       {/* Hero */}
       <section className="hero-gradient text-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">About TightLines</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">About TheAnglersNet</h1>
           <p className="text-lg md:text-xl text-brand-100 max-w-2xl mx-auto">
             The UK's leading fishing booking platform — connecting anglers with the best waters, guides, and experiences across the country.
           </p>
@@ -22,7 +22,7 @@ export const AboutPage = ({ onSearch, onListWater }) => {
           <h2 className="text-2xl md:text-3xl font-bold text-stone-900 mb-6">Our Story</h2>
           <div className="prose prose-stone max-w-none space-y-4 text-stone-700 leading-relaxed">
             <p>
-              TightLines was born from a simple frustration: finding and booking quality fishing in the UK was far harder than it should be. Information was scattered across outdated websites, social media groups, and word-of-mouth. We knew there had to be a better way.
+              TheAnglersNet was born from a simple frustration: finding and booking quality fishing in the UK was far harder than it should be. Information was scattered across outdated websites, social media groups, and word-of-mouth. We knew there had to be a better way.
             </p>
             <p>
               We're a team of passionate anglers who believe that whether you're casting for your first fish or chasing specimen salmon on a legendary beat, the experience of finding, comparing, and booking your fishing should be as enjoyable as the fishing itself.
@@ -92,7 +92,7 @@ export const AboutPage = ({ onSearch, onListWater }) => {
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center text-stone-900 mb-6">For Fisheries & Instructors</h2>
           <p className="text-center text-stone-600 max-w-2xl mx-auto mb-10">
-            TightLines isn't just for anglers. We help fishery owners and qualified instructors reach a wider audience, manage bookings, and grow their business.
+            TheAnglersNet isn't just for anglers. We help fishery owners and qualified instructors reach a wider audience, manage bookings, and grow their business.
           </p>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">

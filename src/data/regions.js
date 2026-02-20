@@ -30,7 +30,7 @@ export const ukSpecies = [
 
 // TESTIMONIALS
 export const testimonials = [
-  { name: "David Hughes", location: "Manchester", text: "Found my dream salmon beat through TightLines. The booking was seamless and the beat exceeded expectations. Already planning my return!", rating: 5, fishery: "River Wye" },
-  { name: "Emma Richardson", location: "Bristol", text: "As a beginner, I was nervous about booking. TightLines made it easy to find beginner-friendly waters. Now I'm hooked!", rating: 5, fishery: "Chew Valley Lake" },
+  { name: "David Hughes", location: "Manchester", text: "Found my dream salmon beat through TheAnglersNet. The booking was seamless and the beat exceeded expectations. Already planning my return!", rating: 5, fishery: "River Wye" },
+  { name: "Emma Richardson", location: "Bristol", text: "As a beginner, I was nervous about booking. TheAnglersNet made it easy to find beginner-friendly waters. Now I'm hooked!", rating: 5, fishery: "Chew Valley Lake" },
   { name: "James Cooper", location: "London", text: "The instructor booking feature is brilliant. Sarah's course transformed my casting in just one day.", rating: 5, instructor: "Sarah Thornton" },
 ];

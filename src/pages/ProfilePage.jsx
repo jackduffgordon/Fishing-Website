@@ -168,7 +168,7 @@ const ProfilePage = ({
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this catch report?')) return;
     try {
-      const token = localStorage.getItem('tightlines_token');
+      const token = localStorage.getItem('anglersnet_token');
       const res = await fetch(`/api/catches/${catchId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }

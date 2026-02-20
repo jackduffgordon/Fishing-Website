@@ -73,7 +73,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
   // Check if user has a confirmed booking for this water
   useEffect(() => {
     if (!user || !fishery.id) return;
-    const token = localStorage.getItem('tightlines_token');
+    const token = localStorage.getItem('anglersnet_token');
     if (!token) return;
     fetch('/api/inquiries/user', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
@@ -123,7 +123,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
       ? activeOption?.bookingType === 'instant'
       : fishery.bookingType === 'instant';
 
-    const token = localStorage.getItem('tightlines_token');
+    const token = localStorage.getItem('anglersnet_token');
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})

@@ -1,4 +1,4 @@
-// TightLines Backend Server – Supabase Version
+// TheAnglersNet Backend Server – Supabase Version
 
 // Express + Supabase + JWT Auth + Role-Based Access
 
@@ -202,7 +202,7 @@ const PORT = process.env.PORT || 3001;
 if (!process.env.JWT_SECRET) {
   console.error('WARNING: JWT_SECRET not set in environment. Using fallback (not safe for production).');
 }
-const JWT_SECRET = process.env.JWT_SECRET || 'tightlines-dev-fallback-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'anglersnet-dev-fallback-key';
 
 // Middleware
 app.use(cors({ origin: '*', credentials: false, methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
@@ -270,7 +270,7 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
         await sendEmail(booking.user_email, `Booking Confirmed - ${locationName}`, `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+              <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
             </div>
             <div style="padding: 32px 24px; background: #fff;">
               <h2 style="color: #1a1a1a;">Payment Received & Booking Confirmed!</h2>
@@ -584,7 +584,7 @@ const ensureAdminUser = async () => {
     const { data: admin } = await supabase
       .from('users')
       .select('*')
-      .eq('email', 'admin@tightlines.co.uk')
+      .eq('email', 'admin@theanglersnet.co.uk')
       .single();
 
     if (!admin) {
@@ -593,13 +593,13 @@ const ensureAdminUser = async () => {
       await supabase
         .from('users')
         .insert([{
-          email: 'admin@tightlines.co.uk',
+          email: 'admin@theanglersnet.co.uk',
           password: hashedPwd,
           name: 'Admin',
           role: 'admin',
           created_at: new Date().toISOString()
         }]);
-      console.log('Admin account created: admin@tightlines.co.uk');
+      console.log('Admin account created: admin@theanglersnet.co.uk');
     }
   } catch (e) {
     console.error('Admin user check error:', e);
@@ -1249,10 +1249,10 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     console.log(`=====================\n`);
 
     // Send email then respond
-    const emailResult = await sendEmail(email, 'TightLines - Your Password Has Been Reset', `
+    const emailResult = await sendEmail(email, 'TheAnglersNet - Your Password Has Been Reset', `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #0d9488, #059669); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
           <p style="color: #99f6e4; margin: 8px 0 0;">Password Reset</p>
         </div>
         <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 12px 12px;">
@@ -1268,7 +1268,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
     `);
 
     // Notify admin in background
-    sendEmail(ADMIN_EMAIL, `[TightLines] Password reset for ${email}`, `<p>User <strong>${email}</strong> requested a password reset.</p>`).catch(() => {});
+    sendEmail(ADMIN_EMAIL, `[TheAnglersNet] Password reset for ${email}`, `<p>User <strong>${email}</strong> requested a password reset.</p>`).catch(() => {});
 
     res.json({ message: emailResult ? 'A new password has been sent to your email.' : 'Password has been reset. Check your email.' });
   } catch (e) {
@@ -1323,7 +1323,7 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
     await sendEmail(anglerEmail, `Booking Confirmed - ${locationName}`, `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
         </div>
         <div style="padding: 32px 24px; background: #fff;">
           <h2 style="color: #1a1a1a;">Booking Confirmed!</h2>
@@ -1369,7 +1369,7 @@ app.post('/api/create-checkout-session', optionalAuth, async (req, res) => {
     if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
     if (!anglerEmail) return res.status(400).json({ error: 'Email required' });
 
-    const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://tightlines.co.uk';
+    const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://theanglersnet.co.uk';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -1444,12 +1444,12 @@ app.post('/api/contact', async (req, res) => {
     // Send confirmation to the enquirer
     const waterName = waterId ? (await supabase.from('waters').select('name').eq('id', waterId).single())?.data?.name : null;
     const instructorName = instructorId ? (await supabase.from('instructors').select('name').eq('id', instructorId).single())?.data?.name : null;
-    const locationName = waterName || instructorName || 'TightLines';
+    const locationName = waterName || instructorName || 'TheAnglersNet';
 
     await sendEmail(email, `Enquiry Received - ${locationName}`, `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
         </div>
         <div style="padding: 32px 24px; background: #fff;">
           <h2 style="color: #1a1a1a;">Enquiry Received</h2>
@@ -2271,12 +2271,12 @@ app.post('/api/register/water', async (req, res) => {
     await sendEmail(ownerEmail, `Water Listing Submitted - ${waterName}`, `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
         </div>
         <div style="padding: 32px 24px; background: #fff;">
           <h2 style="color: #1a1a1a;">Listing Submitted!</h2>
           <p style="color: #555;">Hi ${ownerName},</p>
-          <p style="color: #555;">Thanks for submitting <strong>${waterName}</strong> to TightLines. Our team will review your listing within 48 hours.</p>
+          <p style="color: #555;">Thanks for submitting <strong>${waterName}</strong> to TheAnglersNet. Our team will review your listing within 48 hours.</p>
           <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
             <p style="margin: 4px 0;"><strong>Water:</strong> ${waterName}</p>
             <p style="margin: 4px 0;"><strong>Type:</strong> ${waterType}</p>
@@ -2395,12 +2395,12 @@ app.post('/api/register/instructor', async (req, res) => {
     await sendEmail(email, `Instructor Profile Submitted - ${name}`, `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TightLines</h1>
+          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
         </div>
         <div style="padding: 32px 24px; background: #fff;">
           <h2 style="color: #1a1a1a;">Profile Submitted!</h2>
           <p style="color: #555;">Hi ${name},</p>
-          <p style="color: #555;">Thanks for registering as an instructor on TightLines. Our team will review your profile within 48 hours.</p>
+          <p style="color: #555;">Thanks for registering as an instructor on TheAnglersNet. Our team will review your profile within 48 hours.</p>
           <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
             <p style="margin: 4px 0;"><strong>Name:</strong> ${name}</p>
             <p style="margin: 4px 0;"><strong>Region:</strong> ${region}</p>
@@ -3378,14 +3378,14 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`
 =====================================================
-   TightLines Backend Server Running on Port ${PORT}
+   TheAnglersNet Backend Server Running on Port ${PORT}
 =====================================================
 
 Using Supabase Database:
   URL: ${SUPABASE_URL}
 
 Admin Login:
-  Email: admin@tightlines.co.uk
+  Email: admin@theanglersnet.co.uk
 
 API Endpoints:
   Auth:    POST /api/auth/register, /api/auth/login

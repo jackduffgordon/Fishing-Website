@@ -9,7 +9,7 @@ let authToken = null;
 
 export const getToken = () => {
   if (!authToken) {
-    authToken = localStorage.getItem('tightlines_token');
+    authToken = localStorage.getItem('anglersnet_token');
   }
   return authToken;
 };
@@ -17,9 +17,9 @@ export const getToken = () => {
 export const setToken = (token) => {
   authToken = token;
   if (token) {
-    localStorage.setItem('tightlines_token', token);
+    localStorage.setItem('anglersnet_token', token);
   } else {
-    localStorage.removeItem('tightlines_token');
+    localStorage.removeItem('anglersnet_token');
   }
 };
 

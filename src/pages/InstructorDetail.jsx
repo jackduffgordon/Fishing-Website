@@ -66,7 +66,7 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
   // Check if user has a confirmed booking with this instructor
   useEffect(() => {
     if (!user || !instructor.id) return;
-    const token = localStorage.getItem('tightlines_token');
+    const token = localStorage.getItem('anglersnet_token');
     if (!token) return;
     fetch('/api/inquiries/user', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
@@ -100,7 +100,7 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
     setBookingLoading(true);
     setBookingError('');
     try {
-      const token = localStorage.getItem('tightlines_token');
+      const token = localStorage.getItem('anglersnet_token');
       const msgParts = [];
       if (experienceLevel) msgParts.push(`Experience: ${experienceLevel}`);
       if (enquiryMessage) msgParts.push(enquiryMessage);

@@ -93,7 +93,7 @@ export const ContactPage = () => {
                   </div>
                   <div>
                     <p className="font-medium text-stone-900 text-sm">Email</p>
-                    <p className="text-stone-600 text-sm">hello@tightlines.co.uk</p>
+                    <p className="text-stone-600 text-sm">hello@theanglersnet.co.uk</p>
                   </div>
                 </div>
 
@@ -123,7 +123,7 @@ export const ContactPage = () => {
                 <ul className="space-y-2 text-sm text-stone-600">
                   <li className="flex items-start gap-2">
                     <Fish className="w-4 h-4 text-brand-600 mt-0.5 flex-shrink-0" />
-                    <span>How do I list my fishery on TightLines?</span>
+                    <span>How do I list my fishery on TheAnglersNet?</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Fish className="w-4 h-4 text-brand-600 mt-0.5 flex-shrink-0" />

@@ -273,7 +273,7 @@ export const HomePage = ({
       {/* ===== HOW IT WORKS ===== */}
       <section className="py-16 bg-stone-50">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-stone-900 mb-12">How TightLines Works</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-stone-900 mb-12">How TheAnglersNet Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
@@ -391,7 +391,7 @@ export const HomePage = ({
             <div>
               <div className="flex items-center gap-2 text-white mb-4">
                 <Fish className="w-6 h-6" />
-                <span className="text-xl font-bold">TightLines</span>
+                <span className="text-xl font-bold">TheAnglersNet</span>
               </div>
               <p className="text-sm leading-relaxed">
                 The UK's premier fishing booking platform. Find and book your perfect day on the water.
@@ -424,7 +424,7 @@ export const HomePage = ({
             </div>
           </div>
           <div className="border-t border-stone-800 pt-8 text-sm text-center">
-            © 2026 TightLines. All rights reserved.
+            © 2026 TheAnglersNet. All rights reserved.
           </div>
         </div>
       </footer>

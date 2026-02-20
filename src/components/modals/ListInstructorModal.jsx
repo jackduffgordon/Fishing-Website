@@ -130,7 +130,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
           <h2 className="text-2xl font-bold mb-2">Submission Received!</h2>
           <p className="text-stone-600 mb-2">
-            Thank you for registering as an instructor on TightLines. Our team will review your
+            Thank you for registering as an instructor on TheAnglersNet. Our team will review your
             profile and be in touch within 48 hours.
           </p>
           <p className="text-stone-500 text-sm mb-6">
@@ -461,7 +461,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
               <ul className="text-sm text-stone-600 space-y-1">
                 <li>• We'll review your profile within 48 hours</li>
                 <li>• Our team may contact you for additional details</li>
-                <li>• Once approved, your profile goes live on TightLines</li>
+                <li>• Once approved, your profile goes live on TheAnglersNet</li>
                 <li>• You'll get a dashboard to manage bookings and availability</li>
               </ul>
             </div>

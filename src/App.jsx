@@ -62,7 +62,7 @@ const App = () => {
   // Favourites state - load from localStorage initially for guest users
   const [favouriteWaters, setFavouriteWaters] = useState(() => {
     try {
-      const saved = localStorage.getItem('tightlines_guest_fav_waters');
+      const saved = localStorage.getItem('anglersnet_guest_fav_waters');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -70,7 +70,7 @@ const App = () => {
   });
   const [favouriteInstructors, setFavouriteInstructors] = useState(() => {
     try {
-      const saved = localStorage.getItem('tightlines_guest_fav_instructors');
+      const saved = localStorage.getItem('anglersnet_guest_fav_instructors');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -80,8 +80,8 @@ const App = () => {
   // Sync guest favorites to localStorage
   useEffect(() => {
     if (!user) {
-      localStorage.setItem('tightlines_guest_fav_waters', JSON.stringify(favouriteWaters));
-      localStorage.setItem('tightlines_guest_fav_instructors', JSON.stringify(favouriteInstructors));
+      localStorage.setItem('anglersnet_guest_fav_waters', JSON.stringify(favouriteWaters));
+      localStorage.setItem('anglersnet_guest_fav_instructors', JSON.stringify(favouriteInstructors));
     }
   }, [favouriteWaters, favouriteInstructors, user]);
 
@@ -99,14 +99,14 @@ const App = () => {
     let guestInstructors = [];
 
     try {
-      const savedWaters = localStorage.getItem('tightlines_guest_fav_waters');
+      const savedWaters = localStorage.getItem('anglersnet_guest_fav_waters');
       guestWaters = savedWaters ? JSON.parse(savedWaters) : [];
     } catch (e) {
       console.error('[Favorites] Failed to read guest waters from localStorage:', e);
     }
 
     try {
-      const savedInstructors = localStorage.getItem('tightlines_guest_fav_instructors');
+      const savedInstructors = localStorage.getItem('anglersnet_guest_fav_instructors');
       guestInstructors = savedInstructors ? JSON.parse(savedInstructors) : [];
     } catch (e) {
       console.error('[Favorites] Failed to read guest instructors from localStorage:', e);
@@ -167,8 +167,8 @@ const App = () => {
 
     // Clear guest favorites from localStorage only after successful sync
     if (watersSynced === guestWaters.length && instructorsSynced === guestInstructors.length) {
-      localStorage.removeItem('tightlines_guest_fav_waters');
-      localStorage.removeItem('tightlines_guest_fav_instructors');
+      localStorage.removeItem('anglersnet_guest_fav_waters');
+      localStorage.removeItem('anglersnet_guest_fav_instructors');
       console.log('[Favorites] Cleared guest favorites from localStorage');
     } else {
       console.warn('[Favorites] Not all favorites synced successfully, keeping localStorage data');
@@ -344,7 +344,7 @@ const App = () => {
           const data = await authAPI.me();
           setUser(data.user);
         } catch (error) {
-          console.error('[TightLines] Auth failed:', error.message);
+          console.error('[TheAnglersNet] Auth failed:', error.message);
           clearToken();
         } finally {
           setAuthLoading(false);
@@ -397,21 +397,21 @@ const App = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
     const titles = {
-      home: 'TightLines - Book Fishing Across the UK',
-      search: 'Search Waters | TightLines',
-      venue: selectedFishery ? `${selectedFishery.name} | TightLines` : 'Water Details | TightLines',
-      instructors: 'Find Instructors | TightLines',
-      'instructor-detail': selectedInstructor ? `${selectedInstructor.name} | TightLines` : 'Instructor | TightLines',
-      about: 'About Us | TightLines',
-      contact: 'Contact | TightLines',
-      terms: 'Terms & Conditions | TightLines',
-      privacy: 'Privacy Policy | TightLines',
-      profile: 'My Profile | TightLines',
-      'water-dashboard': 'My Waters Dashboard | TightLines',
-      'instructor-dashboard': 'My Instructor Dashboard | TightLines',
-      admin: 'Admin Dashboard | TightLines'
+      home: 'TheAnglersNet - Book Fishing Across the UK',
+      search: 'Search Waters | TheAnglersNet',
+      venue: selectedFishery ? `${selectedFishery.name} | TheAnglersNet` : 'Water Details | TheAnglersNet',
+      instructors: 'Find Instructors | TheAnglersNet',
+      'instructor-detail': selectedInstructor ? `${selectedInstructor.name} | TheAnglersNet` : 'Instructor | TheAnglersNet',
+      about: 'About Us | TheAnglersNet',
+      contact: 'Contact | TheAnglersNet',
+      terms: 'Terms & Conditions | TheAnglersNet',
+      privacy: 'Privacy Policy | TheAnglersNet',
+      profile: 'My Profile | TheAnglersNet',
+      'water-dashboard': 'My Waters Dashboard | TheAnglersNet',
+      'instructor-dashboard': 'My Instructor Dashboard | TheAnglersNet',
+      admin: 'Admin Dashboard | TheAnglersNet'
     };
-    document.title = titles[currentPage] || 'TightLines';
+    document.title = titles[currentPage] || 'TheAnglersNet';
 
     if (currentPage === 'search' || currentPage === 'venue') {
       setCurrentTab('waters');
