@@ -26,7 +26,12 @@ export const SignInModal = ({ isOpen, onClose, onSignIn }) => {
       return;
     }
 
-    if (mode === 'register' && !name) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (mode === 'register' && !name.trim()) {
       setError('Please enter your name');
       return;
     }
@@ -56,6 +61,10 @@ export const SignInModal = ({ isOpen, onClose, onSignIn }) => {
     e.preventDefault();
     if (!email) {
       setError('Please enter your email address');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address');
       return;
     }
     setLoading(true);

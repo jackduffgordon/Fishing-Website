@@ -76,6 +76,20 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async () => {
     setError(null);
+    if (!formData.name.trim() || !formData.email.trim()) {
+      setError('Please fill in your name and email address.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    const validOptions = formData.booking_options.filter(o => o.name.trim() && o.price);
+    const invalidPrice = validOptions.some(opt => isNaN(opt.price) || parseFloat(opt.price) <= 0);
+    if (invalidPrice) {
+      setError('Please enter valid prices for all booking options.');
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -490,6 +504,10 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                   if (!canProceed) {
                     if (step === 1) setValidationMsg('Please fill in your name and email to continue.');
                     if (step === 2) setValidationMsg('Please select at least one specialty to continue.');
+                    return;
+                  }
+                  if (step === 1 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                    setValidationMsg('Please enter a valid email address.');
                     return;
                   }
                   setValidationMsg(null);

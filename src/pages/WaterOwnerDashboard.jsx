@@ -154,7 +154,35 @@ const WaterCard = ({ water, onView, onEdit, onRequestRemoval }) => {
 };
 
 // --- Inquiry Card ---
-const InquiryCard = ({ inquiry }) => {
+const InquiryCard = ({ inquiry, onRespond }) => {
+  const [responding, setResponding] = useState(false);
+  const [responseMessage, setResponseMessage] = useState('');
+  const [showDecline, setShowDecline] = useState(false);
+
+  const handleRespond = async (status) => {
+    setResponding(true);
+    try {
+      const res = await fetch(`/api/owner/inquiries/${inquiry.id}/respond`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ status, message: responseMessage })
+      });
+      if (res.ok) {
+        onRespond?.(inquiry.id, status);
+      }
+    } catch (err) {
+      console.error('Failed to respond:', err);
+    }
+    setResponding(false);
+    setShowDecline(false);
+  };
+
+  const statusColors = {
+    confirmed: 'bg-green-100 text-green-700',
+    declined: 'bg-red-100 text-red-700',
+    pending: 'bg-amber-100 text-amber-700'
+  };
+
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-4">
       <div className="flex items-start justify-between mb-3">
@@ -168,9 +196,7 @@ const InquiryCard = ({ inquiry }) => {
             })}
           </p>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-          inquiry.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-        }`}>
+        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[inquiry.status] || statusColors.pending}`}>
           {inquiry.status}
         </span>
       </div>
@@ -201,11 +227,62 @@ const InquiryCard = ({ inquiry }) => {
       </div>
 
       {inquiry.message && (
-        <div className="bg-stone-50 rounded-lg p-3 text-sm text-stone-700">
+        <div className="bg-stone-50 rounded-lg p-3 text-sm text-stone-700 mb-3">
           <div className="flex items-start gap-2">
             <MessageSquare className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
             <p>{inquiry.message}</p>
           </div>
+        </div>
+      )}
+
+      {inquiry.status === 'pending' && (
+        <div className="border-t border-stone-100 pt-3 mt-3">
+          {showDecline ? (
+            <div className="space-y-2">
+              <textarea
+                value={responseMessage}
+                onChange={(e) => setResponseMessage(e.target.value)}
+                placeholder="Optional message to the angler..."
+                rows={2}
+                className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-brand-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleRespond('declined')}
+                  disabled={responding}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
+                >
+                  <XCircle className="w-4 h-4" />
+                  {responding ? 'Declining...' : 'Confirm Decline'}
+                </button>
+                <button
+                  onClick={() => { setShowDecline(false); setResponseMessage(''); }}
+                  className="px-3 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleRespond('confirmed')}
+                disabled={responding}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {responding ? 'Confirming...' : 'Confirm'}
+              </button>
+              <button
+                onClick={() => setShowDecline(true)}
+                disabled={responding}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 disabled:opacity-50 transition"
+              >
+                <XCircle className="w-4 h-4" />
+                Decline
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -668,7 +745,9 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {inquiries.map(inq => <InquiryCard key={inq.id} inquiry={inq} />)}
+                {inquiries.map(inq => <InquiryCard key={inq.id} inquiry={inq} onRespond={(id, status) => {
+                  setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+                }} />)}
               </div>
             )}
           </div>

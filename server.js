@@ -173,6 +173,67 @@ const emailTemplates = {
         </div>
       </div>
     `
+  }),
+
+  bookingConfirmation: ({ anglerName, locationName, date, numberOfDays, message }) => ({
+    subject: `Booking Confirmed — ${locationName}`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Booking Confirmed!</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${anglerName},</p>
+          <p>Your booking has been confirmed. Here are the details:</p>
+          <div style="background: #f5f5f4; border-radius: 8px; padding: 16px; margin: 16px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 6px 0; color: #78716c;">Location</td><td style="padding: 6px 0; font-weight: 600;">${locationName}</td></tr>
+              <tr><td style="padding: 6px 0; color: #78716c;">Date</td><td style="padding: 6px 0;">${date}</td></tr>
+              ${numberOfDays > 1 ? `<tr><td style="padding: 6px 0; color: #78716c;">Duration</td><td style="padding: 6px 0;">${numberOfDays} days</td></tr>` : ''}
+            </table>
+          </div>
+          ${message ? `<div style="background: #f5f5f4; padding: 16px; border-radius: 8px; margin-bottom: 16px;"><p style="margin: 0; color: #44403c;"><strong>Your notes:</strong> ${message}</p></div>` : ''}
+          <p>If you have any questions, reply to this email or contact the venue directly.</p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">Tight Lines! — TheAnglersNet</p>
+        </div>
+      </div>
+    `
+  }),
+
+  inquiryConfirmed: ({ anglerName, locationName, ownerMessage, date }) => ({
+    subject: `Great News — Your Inquiry for ${locationName} Has Been Confirmed!`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Inquiry Confirmed!</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${anglerName},</p>
+          <p>Great news — your inquiry for <strong>${locationName}</strong>${date ? ` on <strong>${date}</strong>` : ''} has been confirmed!</p>
+          ${ownerMessage ? `<div style="background: #f5f5f4; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0 0 4px; color: #78716c; font-size: 13px;">Message from the host:</p><p style="margin: 0; color: #44403c;">${ownerMessage}</p></div>` : ''}
+          <p>You can view the status of all your bookings in your <strong>Profile</strong> page on TheAnglersNet.</p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">Tight Lines! — TheAnglersNet</p>
+        </div>
+      </div>
+    `
+  }),
+
+  inquiryDeclined: ({ anglerName, locationName, ownerMessage }) => ({
+    subject: `Update on Your Inquiry for ${locationName}`,
+    html: `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Inquiry Update</h1>
+        </div>
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${anglerName},</p>
+          <p>Unfortunately, your inquiry for <strong>${locationName}</strong> was not confirmed at this time.</p>
+          ${ownerMessage ? `<div style="background: #f5f5f4; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0 0 4px; color: #78716c; font-size: 13px;">Message from the host:</p><p style="margin: 0; color: #44403c;">${ownerMessage}</p></div>` : ''}
+          <p>Don't worry — there are plenty of great waters and instructors on TheAnglersNet. Browse our listings to find another perfect spot.</p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">— TheAnglersNet</p>
+        </div>
+      </div>
+    `
   })
 };
 
@@ -1320,26 +1381,10 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
     const instructorName = instructorId ? (await supabase.from('instructors').select('name').eq('id', instructorId).single())?.data?.name : null;
     const locationName = waterName || instructorName || 'your booking';
 
-    await sendEmail(anglerEmail, `Booking Confirmed - ${locationName}`, `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
-        </div>
-        <div style="padding: 32px 24px; background: #fff;">
-          <h2 style="color: #1a1a1a;">Booking Confirmed!</h2>
-          <p style="color: #555;">Hi ${anglerName},</p>
-          <p style="color: #555;">Your booking has been confirmed. Here are the details:</p>
-          <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
-            <p style="margin: 4px 0;"><strong>Location:</strong> ${locationName}</p>
-            <p style="margin: 4px 0;"><strong>Date:</strong> ${date || startDate}</p>
-            ${numberOfDays > 1 ? `<p style="margin: 4px 0;"><strong>Duration:</strong> ${numberOfDays} days</p>` : ''}
-            ${message ? `<p style="margin: 4px 0;"><strong>Notes:</strong> ${message}</p>` : ''}
-          </div>
-          <p style="color: #555;">If you have any questions, reply to this email or contact the venue directly.</p>
-          <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
-        </div>
-      </div>
-    `);
+    const bookingTmpl = emailTemplates.bookingConfirmation({
+      anglerName, locationName, date: date || startDate, numberOfDays: numberOfDays || 1, message
+    });
+    await sendEmail({ to: anglerEmail, ...bookingTmpl });
 
     // Notify admin
     await sendEmail(ADMIN_EMAIL, `New Booking - ${locationName}`, `
@@ -3162,6 +3207,99 @@ app.get('/api/owner/inquiries', authenticateToken, requireRole('water_owner', 'a
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch inquiries' });
+  }
+});
+
+// --- Owner: Respond to inquiry (confirm / decline) ---
+app.put('/api/owner/inquiries/:id/respond', authenticateToken, requireRole('water_owner', 'admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, message: ownerMessage } = req.body;
+    if (!['confirmed', 'declined'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be confirmed or declined' });
+    }
+
+    // Verify this inquiry belongs to one of the owner's waters
+    const { data: waters } = await supabase.from('waters').select('id, name').eq('owner_id', req.user.id);
+    const waterIds = waters?.map(w => w.id) || [];
+
+    const { data: inquiry, error: fetchErr } = await supabase
+      .from('inquiries').select('*').eq('id', id).single();
+
+    if (fetchErr || !inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+    if (!waterIds.includes(inquiry.water_id)) return res.status(403).json({ error: 'Not authorised' });
+
+    const { error: updateErr } = await supabase
+      .from('inquiries').update({ status }).eq('id', id);
+
+    if (updateErr) return res.status(400).json({ error: 'Failed to update inquiry' });
+
+    // Email the angler
+    const waterName = waters.find(w => w.id === inquiry.water_id)?.name || 'the water';
+    const anglerEmail = inquiry.user_email;
+    const anglerName = inquiry.user_name || 'there';
+
+    if (anglerEmail) {
+      if (status === 'confirmed') {
+        const tmpl = emailTemplates.inquiryConfirmed({ anglerName, locationName: waterName, ownerMessage, date: inquiry.date });
+        sendEmail({ to: anglerEmail, ...tmpl });
+      } else {
+        const tmpl = emailTemplates.inquiryDeclined({ anglerName, locationName: waterName, ownerMessage });
+        sendEmail({ to: anglerEmail, ...tmpl });
+      }
+    }
+
+    res.json({ message: `Inquiry ${status}` });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to respond to inquiry' });
+  }
+});
+
+// --- Instructor: Respond to inquiry (confirm / decline) ---
+app.put('/api/instructor/inquiries/:id/respond', authenticateToken, requireRole('instructor', 'admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, message: instructorMessage } = req.body;
+    if (!['confirmed', 'declined'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be confirmed or declined' });
+    }
+
+    // Verify this inquiry belongs to the instructor
+    const { data: instructor } = await supabase
+      .from('instructors').select('id, name').eq('user_id', req.user.id).single();
+
+    if (!instructor) return res.status(404).json({ error: 'Instructor not found' });
+
+    const { data: inquiry, error: fetchErr } = await supabase
+      .from('inquiries').select('*').eq('id', id).single();
+
+    if (fetchErr || !inquiry) return res.status(404).json({ error: 'Inquiry not found' });
+    if (inquiry.instructor_id !== instructor.id) return res.status(403).json({ error: 'Not authorised' });
+
+    const { error: updateErr } = await supabase
+      .from('inquiries').update({ status }).eq('id', id);
+
+    if (updateErr) return res.status(400).json({ error: 'Failed to update inquiry' });
+
+    // Email the angler
+    const anglerEmail = inquiry.user_email;
+    const anglerName = inquiry.user_name || 'there';
+
+    if (anglerEmail) {
+      if (status === 'confirmed') {
+        const tmpl = emailTemplates.inquiryConfirmed({ anglerName, locationName: instructor.name, ownerMessage: instructorMessage, date: inquiry.date });
+        sendEmail({ to: anglerEmail, ...tmpl });
+      } else {
+        const tmpl = emailTemplates.inquiryDeclined({ anglerName, locationName: instructor.name, ownerMessage: instructorMessage });
+        sendEmail({ to: anglerEmail, ...tmpl });
+      }
+    }
+
+    res.json({ message: `Inquiry ${status}` });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to respond to inquiry' });
   }
 });
 

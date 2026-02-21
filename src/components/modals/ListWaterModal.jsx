@@ -141,6 +141,19 @@ export const ListWaterModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async () => {
     setError(null);
+    if (!formData.contactName.trim() || !formData.contactEmail.trim()) {
+      setError('Please fill in your name and email address.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    const invalidPrice = formData.bookingOptions.some(opt => opt.price && (isNaN(opt.price) || parseFloat(opt.price) <= 0));
+    if (invalidPrice) {
+      setError('Please enter valid prices for all booking options.');
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
