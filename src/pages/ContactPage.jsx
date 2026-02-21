@@ -24,6 +24,8 @@ export const ContactPage = () => {
     setSending(true);
     setError('');
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,15 +34,21 @@ export const ContactPage = () => {
           email: form.email,
           message: `[${form.subject || 'General Enquiry'}] ${form.message}`,
           type: 'enquiry'
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
       if (res.ok) {
         setSubmitted(true);
       } else {
         setError('Failed to send message. Please try again or email us directly.');
       }
     } catch (err) {
-      setError('Failed to send message. Please try again or email us directly.');
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again or email us at hello@theanglersnet.co.uk');
+      } else {
+        setError('Failed to send message. Please try again or email us directly.');
+      }
     }
     setSending(false);
   };

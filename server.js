@@ -25,7 +25,10 @@ if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS }
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
   emailTransporter.verify().then(() => {
     console.log('Email transporter ready');
@@ -1376,7 +1379,10 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
       return res.status(400).json({ error: 'Booking failed' });
     }
 
-    // Send confirmation email to the angler
+    // Respond immediately — don't wait for emails
+    res.json({ message: 'Booking confirmed!', bookingId: newBooking.id, booking: newBooking });
+
+    // Send emails in background (fire and forget)
     const waterName = waterId ? (await supabase.from('waters').select('name').eq('id', waterId).single())?.data?.name : null;
     const instructorName = instructorId ? (await supabase.from('instructors').select('name').eq('id', instructorId).single())?.data?.name : null;
     const locationName = waterName || instructorName || 'your booking';
@@ -1384,10 +1390,9 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
     const bookingTmpl = emailTemplates.bookingConfirmation({
       anglerName, locationName, date: date || startDate, numberOfDays: numberOfDays || 1, message
     });
-    await sendEmail({ to: anglerEmail, ...bookingTmpl });
+    sendEmail({ to: anglerEmail, ...bookingTmpl }).catch(() => {});
 
-    // Notify admin
-    await sendEmail(ADMIN_EMAIL, `New Booking - ${locationName}`, `
+    sendEmail(ADMIN_EMAIL, `New Booking - ${locationName}`, `
       <p>New booking received:</p>
       <ul>
         <li><strong>Customer:</strong> ${anglerName} (${anglerEmail})</li>
@@ -1396,9 +1401,7 @@ app.post('/api/bookings', optionalAuth, async (req, res) => {
         <li><strong>Days:</strong> ${numberOfDays || 1}</li>
         ${message ? `<li><strong>Message:</strong> ${message}</li>` : ''}
       </ul>
-    `);
-
-    res.json({ message: 'Booking confirmed!', bookingId: newBooking.id, booking: newBooking });
+    `).catch(() => {});
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Booking failed' });
@@ -1486,31 +1489,32 @@ app.post('/api/contact', async (req, res) => {
       return res.status(400).json({ error: 'Submission failed' });
     }
 
-    // Send confirmation to the enquirer
+    // Respond immediately — don't wait for emails
+    res.json({ message: 'Enquiry submitted! We\'ll be in touch soon.', inquiryId: newInquiry.id });
+
+    // Send emails in background (fire and forget)
     const waterName = waterId ? (await supabase.from('waters').select('name').eq('id', waterId).single())?.data?.name : null;
     const instructorName = instructorId ? (await supabase.from('instructors').select('name').eq('id', instructorId).single())?.data?.name : null;
     const locationName = waterName || instructorName || 'TheAnglersNet';
 
-    await sendEmail(email, `Enquiry Received - ${locationName}`, `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1B5E3B; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">TheAnglersNet</h1>
+    sendEmail(email, `Enquiry Received - ${locationName}`, `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1c1917;">
+        <div style="background: linear-gradient(135deg, #0f766e, #134e4a); padding: 24px; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Enquiry Received</h1>
         </div>
-        <div style="padding: 32px 24px; background: #fff;">
-          <h2 style="color: #1a1a1a;">Enquiry Received</h2>
-          <p style="color: #555;">Hi ${name},</p>
-          <p style="color: #555;">Thanks for your enquiry about <strong>${locationName}</strong>. We've passed it on and you should hear back within 24-48 hours.</p>
-          <div style="background: #f5f5f4; border-radius: 12px; padding: 20px; margin: 16px 0;">
+        <div style="background: white; padding: 24px; border: 1px solid #e7e5e4; border-top: none; border-radius: 0 0 12px 12px;">
+          <p>Hi ${name},</p>
+          <p>Thanks for your enquiry about <strong>${locationName}</strong>. We've passed it on and you should hear back within 24-48 hours.</p>
+          <div style="background: #f5f5f4; border-radius: 8px; padding: 16px; margin: 16px 0;">
             ${date ? `<p style="margin: 4px 0;"><strong>Preferred date:</strong> ${date}</p>` : ''}
             <p style="margin: 4px 0;"><strong>Your message:</strong> ${message}</p>
           </div>
-          <p style="color: #888; font-size: 12px; margin-top: 32px;">Tight Lines & Happy Fishing!</p>
+          <p style="color: #78716c; font-size: 13px; margin-top: 24px;">Tight Lines! — TheAnglersNet</p>
         </div>
       </div>
-    `);
+    `).catch(() => {});
 
-    // Notify admin
-    await sendEmail(ADMIN_EMAIL, `New Enquiry - ${locationName}`, `
+    sendEmail(ADMIN_EMAIL, `New Enquiry - ${locationName}`, `
       <p>New enquiry received:</p>
       <ul>
         <li><strong>From:</strong> ${name} (${email})</li>
@@ -1518,9 +1522,7 @@ app.post('/api/contact', async (req, res) => {
         ${date ? `<li><strong>Date:</strong> ${date}</li>` : ''}
         <li><strong>Message:</strong> ${message}</li>
       </ul>
-    `);
-
-    res.json({ message: 'Enquiry submitted! We\'ll be in touch soon.', inquiryId: newInquiry.id });
+    `).catch(() => {});
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Contact submission failed' });
