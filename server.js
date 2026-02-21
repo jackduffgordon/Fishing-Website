@@ -20,6 +20,7 @@ const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 
 let emailTransporter = null;
+console.log(`SMTP config: host=${SMTP_HOST ? 'SET' : 'EMPTY'}, user=${SMTP_USER ? 'SET' : 'EMPTY'}, pass=${SMTP_PASS ? 'SET' : 'EMPTY'}, port=${SMTP_PORT}`);
 if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
   emailTransporter = nodemailer.createTransport({
     host: SMTP_HOST,
