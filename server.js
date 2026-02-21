@@ -9,35 +9,17 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const rateLimit = require('express-rate-limit');
-const nodemailer = require('nodemailer');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@theanglersnet.co.uk';
 
-// Email setup (Zoho SMTP)
-const SMTP_HOST = process.env.SMTP_HOST || '';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
-const SMTP_USER = process.env.SMTP_USER || '';
-const SMTP_PASS = process.env.SMTP_PASS || '';
+// Email setup (Resend HTTP API — works on all cloud platforms including Render)
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const EMAIL_FROM = process.env.SMTP_USER || 'hello@theanglersnet.co.uk';
 
-let emailTransporter = null;
-console.log(`SMTP config: host=${SMTP_HOST ? 'SET' : 'EMPTY'}, user=${SMTP_USER ? 'SET' : 'EMPTY'}, pass=${SMTP_PASS ? 'SET' : 'EMPTY'}, port=${SMTP_PORT}`);
-if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-  emailTransporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000
-  });
-  emailTransporter.verify().then(() => {
-    console.log('Email transporter ready');
-  }).catch(err => {
-    console.error('Email transporter error:', err.message);
-  });
+if (RESEND_API_KEY) {
+  console.log('Email ready (Resend API)');
 } else {
-  console.log('SMTP not configured — email features disabled');
+  console.log('RESEND_API_KEY not set — email features disabled');
 }
 
 // Send email helper (fire and forget, never throws)
@@ -49,18 +31,30 @@ const sendEmail = async (toOrOpts, subject, html) => {
   } else {
     to = toOrOpts;
   }
-  if (!emailTransporter) {
-    console.log('[Email] Skipped (no transporter):', subject, '->', to);
+  if (!RESEND_API_KEY) {
+    console.log('[Email] Skipped (no API key):', subject, '->', to);
     return;
   }
   try {
-    await emailTransporter.sendMail({
-      from: `"TheAnglersNet" <${SMTP_USER}>`,
-      to,
-      subject,
-      html
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `TheAnglersNet <${EMAIL_FROM}>`,
+        to: [to],
+        subject,
+        html
+      })
     });
-    console.log('[Email] Sent:', subject, '->', to);
+    if (res.ok) {
+      console.log('[Email] Sent:', subject, '->', to);
+    } else {
+      const err = await res.json();
+      console.error('[Email] Failed:', err.message || JSON.stringify(err));
+    }
   } catch (err) {
     console.error('[Email] Failed:', err.message);
   }
