@@ -219,20 +219,19 @@ const App = () => {
 
   // Toggle favourite water
   const toggleFavouriteWater = async (waterId) => {
-    const isFav = favouriteWaters.includes(waterId);
-    console.log(`[Favorites] Toggle water ${waterId}:`, isFav ? 'REMOVING' : 'ADDING', `(User: ${user ? 'logged in' : 'guest'})`);
+    // Prompt sign-in if not logged in
+    if (!user) {
+      setShowSignIn(true);
+      return;
+    }
 
-    // Optimistic update for both guest and logged-in users
+    const isFav = favouriteWaters.includes(waterId);
+
+    // Optimistic update
     if (isFav) {
       setFavouriteWaters(prev => prev.filter(id => id !== waterId));
     } else {
       setFavouriteWaters(prev => [...prev, waterId]);
-    }
-
-    // If not logged in, store in localStorage only
-    if (!user) {
-      console.log('[Favorites] Guest mode - will sync after login');
-      return;
     }
 
     // If logged in, sync to database
@@ -278,20 +277,19 @@ const App = () => {
 
   // Toggle favourite instructor
   const toggleFavouriteInstructor = async (instructorId) => {
-    const isFav = favouriteInstructors.includes(instructorId);
-    console.log(`[Favorites] Toggle instructor ${instructorId}:`, isFav ? 'REMOVING' : 'ADDING', `(User: ${user ? 'logged in' : 'guest'})`);
+    // Prompt sign-in if not logged in
+    if (!user) {
+      setShowSignIn(true);
+      return;
+    }
 
-    // Optimistic update for both guest and logged-in users
+    const isFav = favouriteInstructors.includes(instructorId);
+
+    // Optimistic update
     if (isFav) {
       setFavouriteInstructors(prev => prev.filter(id => id !== instructorId));
     } else {
       setFavouriteInstructors(prev => [...prev, instructorId]);
-    }
-
-    // If not logged in, store in localStorage only
-    if (!user) {
-      console.log('[Favorites] Guest mode - will sync after login');
-      return;
     }
 
     // If logged in, sync to database
