@@ -41,6 +41,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
     whatYouLearn: '',
     teachingPhilosophy: '',
     equipmentProvided: '',
+    typicalDay: [{ time: '', activity: '' }],
     booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
   });
   const [submitted, setSubmitted] = useState(false);
@@ -72,6 +73,20 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
 
   const removeBookingOption = (index) => {
     updateForm('booking_options', formData.booking_options.filter((_, i) => i !== index));
+  };
+
+  const updateTypicalDay = (index, key, value) => {
+    const items = [...formData.typicalDay];
+    items[index] = { ...items[index], [key]: value };
+    updateForm('typicalDay', items);
+  };
+
+  const addTypicalDayItem = () => {
+    updateForm('typicalDay', [...formData.typicalDay, { time: '', activity: '' }]);
+  };
+
+  const removeTypicalDayItem = (index) => {
+    updateForm('typicalDay', formData.typicalDay.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -106,6 +121,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
         whatYouLearn: formData.whatYouLearn,
         teachingPhilosophy: formData.teachingPhilosophy,
         equipmentProvided: formData.equipmentProvided,
+        typicalDay: formData.typicalDay.filter(t => t.time.trim() && t.activity.trim()),
         booking_options: formData.booking_options.filter(o => o.name.trim() && o.price)
       };
 
@@ -128,6 +144,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
       name: '', email: '', phone: '', region: '', experience: '',
       specialties: [], certifications: [], availability: [],
       price: '', bio: '', whatYouLearn: '', teachingPhilosophy: '', equipmentProvided: '',
+      typicalDay: [{ time: '', activity: '' }],
       booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
     });
   };
@@ -382,11 +399,11 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
                     <div className="col-span-2">
                       <label className="block text-xs text-stone-500 mb-1">Description</label>
-                      <input
-                        type="text"
+                      <textarea
+                        rows={3}
                         value={opt.description}
                         onChange={e => updateBookingOption(i, 'description', e.target.value)}
-                        placeholder="What's included in this session..."
+                        placeholder="What's included in this session, duration, what students should bring..."
                         className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
                       />
                     </div>
@@ -456,6 +473,44 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
                 placeholder="List equipment you provide for students (one per line)..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Typical Day Schedule
+              </label>
+              <p className="text-xs text-stone-500 mb-2">Outline what a typical session looks like</p>
+              <div className="space-y-2">
+                {formData.typicalDay.map((item, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <input
+                      type="text"
+                      value={item.time}
+                      onChange={e => updateTypicalDay(i, 'time', e.target.value)}
+                      placeholder="9:00 AM"
+                      className="w-24 px-3 py-2 border border-stone-300 rounded-lg text-sm flex-shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={item.activity}
+                      onChange={e => updateTypicalDay(i, 'activity', e.target.value)}
+                      placeholder="Introduction & tackle setup"
+                      className="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                    />
+                    {formData.typicalDay.length > 1 && (
+                      <button onClick={() => removeTypicalDayItem(i)} className="p-2 text-stone-400 hover:text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addTypicalDayItem}
+                  className="w-full py-2 border-2 border-dashed border-stone-300 rounded-lg text-xs font-medium text-stone-600 hover:border-brand-400 hover:text-brand-700 transition flex items-center justify-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> Add Time Slot
+                </button>
+              </div>
             </div>
 
             {/* Summary */}

@@ -2369,7 +2369,7 @@ app.post('/api/register/water', async (req, res) => {
 
 app.post('/api/register/instructor', async (req, res) => {
   try {
-    const { name, email, phone, specialties, region, experience, bio, price, certifications, availability, booking_options, whatYouLearn, teachingPhilosophy, equipmentProvided } = req.body;
+    const { name, email, phone, specialties, region, experience, bio, price, certifications, availability, booking_options, whatYouLearn, teachingPhilosophy, equipmentProvided, typicalDay } = req.body;
 
     let { data: user } = await supabase
       .from('users')
@@ -2417,6 +2417,7 @@ app.post('/api/register/instructor', async (req, res) => {
       what_you_learn: whatYouLearn || '',
       teaching_philosophy: teachingPhilosophy || '',
       equipment_provided: equipmentProvided ? (Array.isArray(equipmentProvided) ? equipmentProvided : equipmentProvided.split('\n').map(s => s.trim()).filter(Boolean)) : [],
+      typical_day: typicalDay || [],
       images: [],
       status: 'pending',
       created_at: new Date().toISOString()

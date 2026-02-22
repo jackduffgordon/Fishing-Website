@@ -84,9 +84,14 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
   const tabs = hasGallery
     ? [...baseTabs.slice(0, 4), { id: 'gallery', label: 'Gallery' }, baseTabs[4]]
     : baseTabs;
-  const hasBookingOptions = instructor.bookingOptions && instructor.bookingOptions.length > 0;
+  // Ensure booking options have IDs for selection
+  const bookingOptions = (instructor.bookingOptions || []).map((o, i) => ({
+    ...o,
+    id: o.id || `opt-${i}`
+  }));
+  const hasBookingOptions = bookingOptions.length > 0;
   const activeOption = hasBookingOptions
-    ? instructor.bookingOptions.find(o => o.id === selectedOption) || instructor.bookingOptions[0]
+    ? bookingOptions.find(o => o.id === selectedOption) || bookingOptions[0]
     : null;
 
   const getLowestPrice = () => {
@@ -107,24 +112,49 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
       if (contactForm.message) msgParts.push(contactForm.message);
       if (contactForm.preferredDates) msgParts.push(`Preferred dates: ${contactForm.preferredDates}`);
 
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
+      const bookingData = {
+        instructorId: instructor.id,
+        bookingOptionId: activeOption?.id || null,
+        date: selectedDate ? selectedDate.toISOString().split('T')[0] : contactForm.preferredDates || new Date().toISOString().split('T')[0],
+        startDate: selectedDate ? selectedDate.toISOString().split('T')[0] : null,
+        numberOfDays: 1,
+        anglerName: contactForm.name || user.fullName || user.name || user.email,
+        anglerEmail: contactForm.email || user.email,
+        anglerPhone: contactForm.phone || user.phone || '',
+        message: msgParts.join('. '),
+        type: hasBookingOptions ? 'booking' : 'enquiry'
+      };
+
+      // If has booking options, try Stripe checkout first
+      if (hasBookingOptions && activeOption) {
+        const total = parseInt(activeOption.price) || 0;
+        const description = `${instructor.name} — ${activeOption.name}`;
+
+        const stripeRes = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...bookingData, amount: total, description })
+        });
+
+        if (stripeRes.ok) {
+          const { url } = await stripeRes.json();
+          if (url) {
+            window.location.href = url;
+            return;
+          }
+        }
+        // Fallback to regular booking if Stripe unavailable
+      }
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          instructorId: instructor.id,
-          bookingOptionId: activeOption?.id || null,
-          date: selectedDate ? selectedDate.toISOString().split('T')[0] : contactForm.preferredDates || new Date().toISOString().split('T')[0],
-          startDate: selectedDate ? selectedDate.toISOString().split('T')[0] : null,
-          numberOfDays: 1,
-          anglerName: contactForm.name || user.fullName || user.name || user.email,
-          anglerEmail: contactForm.email || user.email,
-          anglerPhone: contactForm.phone || user.phone || '',
-          message: msgParts.join('. '),
-          type: instructor.hasCalendar ? 'booking' : 'enquiry'
-        })
+        headers,
+        body: JSON.stringify(bookingData)
       });
       if (res.ok) {
         setBookingSubmitted(true);
@@ -446,6 +476,14 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
           <div className="w-full lg:w-96 flex-shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sticky top-24">
 
+              {/* Verified badge */}
+              {verified && (
+                <div className="flex items-center justify-center gap-2 mb-4 py-2.5 bg-green-50 rounded-xl border border-green-200">
+                  <Shield className="w-4 h-4 text-green-700" />
+                  <span className="text-sm font-medium text-green-700">Verified Instructor</span>
+                </div>
+              )}
+
               {/* Multi-option booking (if instructor has booking_options) */}
               {hasBookingOptions ? (
                 <div className="space-y-4">
@@ -454,24 +492,18 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                     <span className="text-sm text-stone-500">From</span>
                     <span className="text-3xl font-bold text-stone-900 ml-2">£{getLowestPrice()}</span>
                     <span className="text-stone-500 ml-1">
-                      /{instructor.bookingOptions.find(o => parseInt(o.price) === getLowestPrice())?.priceType || 'session'}
+                      /{bookingOptions.find(o => parseInt(o.price) === getLowestPrice())?.priceType || 'session'}
                     </span>
                   </div>
 
-                  {verified && (
-                    <div className="flex items-center justify-center gap-2 py-2 bg-green-50 rounded-lg border border-green-200">
-                      <Shield className="w-4 h-4 text-green-700" />
-                      <span className="text-sm font-medium text-green-700">Verified Instructor</span>
-                    </div>
-                  )}
-
-                  {/* Option tiles — same pattern as VenueDetail */}
+                  {/* Option tiles — radio style, only one selected at a time */}
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-stone-700">Choose a session:</p>
-                    {instructor.bookingOptions.map((opt) => {
+                    {bookingOptions.map((opt) => {
                       const colors = categoryColors[opt.priceType] || categoryColors['session'];
-                      const isSelected = selectedOption === opt.id ||
-                        (!selectedOption && instructor.bookingOptions[0]?.id === opt.id);
+                      const isSelected = selectedOption
+                        ? selectedOption === opt.id
+                        : opt.id === bookingOptions[0]?.id;
 
                       return (
                         <button
@@ -485,9 +517,16 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1 min-w-0">
-                              <span className="font-semibold text-stone-900 text-sm">{opt.name}</span>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected ? 'border-brand-600' : 'border-stone-300'
+                                }`}>
+                                  {isSelected && <div className="w-2 h-2 rounded-full bg-brand-600" />}
+                                </div>
+                                <span className="font-semibold text-stone-900 text-sm">{opt.name}</span>
+                              </div>
                               {opt.description && (
-                                <p className="text-xs text-stone-500 mt-0.5 truncate">{opt.description}</p>
+                                <p className="text-xs text-stone-500 mt-1 ml-6">{opt.description}</p>
                               )}
                             </div>
                             <div className="text-right flex-shrink-0 ml-3">
@@ -495,12 +534,6 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                               <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType || 'session'}</span>
                             </div>
                           </div>
-                          {isSelected && (
-                            <div className="mt-1 flex items-center gap-1">
-                              <Check className="w-3.5 h-3.5 text-brand-600" />
-                              <span className="text-xs text-brand-600 font-medium">Selected</span>
-                            </div>
-                          )}
                         </button>
                       );
                     })}
@@ -509,16 +542,30 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                   {/* Calendar & booking form */}
                   {activeOption && (
                     <div className="space-y-3 pt-2">
-                      {instructor.hasCalendar && (
-                        <div>
-                          <label className="block text-sm font-medium text-stone-700 mb-2">Select Date</label>
-                          <DatePickerCalendar
-                            selected={selectedDate}
-                            onChange={setSelectedDate}
-                            availability={availabilityObject}
-                            placeholder="Choose your session date"
-                            showPrice={false}
-                          />
+                      {/* Calendar — always shown for instructors with booking options */}
+                      <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Select Date</label>
+                        <DatePickerCalendar
+                          selected={selectedDate}
+                          onChange={setSelectedDate}
+                          availability={availabilityObject}
+                          placeholder="Choose your session date"
+                          showPrice={false}
+                          inline={true}
+                        />
+                      </div>
+
+                      {/* Price summary */}
+                      {selectedDate && (
+                        <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
+                          <div className="flex justify-between text-sm text-stone-600">
+                            <span>{activeOption.name}</span>
+                            <span className="font-medium">£{activeOption.price}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-stone-900 mt-2 pt-2 border-t border-stone-300">
+                            <span>Total</span>
+                            <span>£{activeOption.price}</span>
+                          </div>
                         </div>
                       )}
 
@@ -540,7 +587,7 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                       <div>
                         <label className="block text-sm font-medium text-stone-700 mb-1">Message (optional)</label>
                         <textarea
-                          rows={3}
+                          rows={2}
                           value={enquiryMessage}
                           onChange={(e) => setEnquiryMessage(e.target.value)}
                           className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
@@ -551,119 +598,62 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                       {bookingError && <p className="text-red-600 text-sm">{bookingError}</p>}
                       <button
                         onClick={handleBooking}
-                        disabled={bookingLoading || (instructor.hasCalendar && !selectedDate)}
+                        disabled={bookingLoading || !selectedDate}
                         className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                       >
-                        {bookingLoading ? 'Submitting...' : !user ? 'Sign In to Book' : `Book ${activeOption.name}`}
+                        {bookingLoading ? 'Processing...'
+                          : !user ? 'Sign In to Book'
+                          : !selectedDate ? 'Select a Date'
+                          : `Book ${activeOption.name} — £${activeOption.price}`}
                       </button>
+                      <p className="text-center text-xs text-stone-500">Secure payment via Stripe</p>
                     </div>
                   )}
                 </div>
               ) : (
-                /* Single price / contact form — fallback */
+                /* Single price / contact form — fallback for instructors without booking options */
                 <>
-                  {/* Verified badge */}
-                  {verified && (
-                    <div className="flex items-center justify-center gap-2 mb-4 py-2.5 bg-green-50 rounded-xl border border-green-200">
-                      <Shield className="w-4 h-4 text-green-700" />
-                      <span className="text-sm font-medium text-green-700">Verified Instructor</span>
-                    </div>
-                  )}
-
                   {/* Price */}
                   <div className="text-center mb-6">
                     <span className="text-3xl font-bold text-stone-900">£{instructor.price}</span>
                     <span className="text-stone-500 ml-1">/{instructor.priceType}</span>
                   </div>
 
-                  {/* Calendar booking */}
-                  {instructor.hasCalendar ? (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-2">Select Date</label>
-                        <DatePickerCalendar
-                          selected={selectedDate}
-                          onChange={setSelectedDate}
-                          availability={availabilityObject}
-                          placeholder="Choose your session date"
-                          showPrice={false}
-                        />
-                      </div>
+                  <div className="space-y-4">
+                    <p className="text-sm text-stone-600 text-center">
+                      Contact {instructor.name.split(' ')[0]} to discuss availability and book your session.
+                    </p>
 
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Experience Level</label>
-                        <select
-                          value={experienceLevel}
-                          onChange={(e) => setExperienceLevel(e.target.value)}
-                          className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                        >
-                          <option value="">Select level</option>
-                          <option value="beginner">Complete Beginner</option>
-                          <option value="some">Some Experience</option>
-                          <option value="intermediate">Intermediate</option>
-                          <option value="advanced">Advanced</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Message (optional)</label>
-                        <textarea
-                          rows={3}
-                          value={enquiryMessage}
-                          onChange={(e) => setEnquiryMessage(e.target.value)}
-                          className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
-                          placeholder="What would you like to focus on?"
-                        />
-                      </div>
-
-                      {bookingError && <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">{bookingError}</div>}
-                      <button
-                        onClick={handleBooking}
-                        disabled={!selectedDate || bookingLoading}
-                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                      >
-                        {bookingLoading ? 'Sending...' : user ? 'Request Booking' : 'Sign In to Book'}
-                      </button>
-                      <p className="text-center text-sm text-stone-500">You won't be charged yet</p>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Your Name *</label>
+                      <input type="text" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="John Smith" />
                     </div>
-                  ) : (
-                    /* Contact-only form */
-                    <div className="space-y-4">
-                      <p className="text-sm text-stone-600 text-center">
-                        Contact {instructor.name.split(' ')[0]} to discuss availability and book your session.
-                      </p>
-
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Your Name *</label>
-                        <input type="text" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="John Smith" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Email *</label>
-                        <input type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="john@example.com" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Phone</label>
-                        <input type="tel" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="07123 456789" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Preferred Dates</label>
-                        <input type="text" value={contactForm.preferredDates} onChange={(e) => setContactForm({ ...contactForm, preferredDates: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="e.g. Weekends in March" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-stone-700 mb-1">Message *</label>
-                        <textarea rows={3} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="Tell them about your experience level and what you'd like to learn..." />
-                      </div>
-
-                      {bookingError && <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">{bookingError}</div>}
-                      <button
-                        onClick={handleBooking}
-                        disabled={bookingLoading}
-                        className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 transition"
-                      >
-                        {bookingLoading ? 'Sending...' : 'Send Message'}
-                      </button>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Email *</label>
+                      <input type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="john@example.com" />
                     </div>
-                  )}
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Phone</label>
+                      <input type="tel" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="07123 456789" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Preferred Dates</label>
+                      <input type="text" value={contactForm.preferredDates} onChange={(e) => setContactForm({ ...contactForm, preferredDates: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="e.g. Weekends in March" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Message *</label>
+                      <textarea rows={3} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} className="w-full px-4 py-2.5 border border-stone-300 rounded-xl" placeholder="Tell them about your experience level and what you'd like to learn..." />
+                    </div>
+
+                    {bookingError && <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">{bookingError}</div>}
+                    <button
+                      onClick={handleBooking}
+                      disabled={bookingLoading}
+                      className="w-full py-3 bg-brand-700 text-white rounded-xl font-semibold hover:bg-brand-800 disabled:opacity-50 transition"
+                    >
+                      {bookingLoading ? 'Sending...' : 'Send Message'}
+                    </button>
+                  </div>
                 </>
               )}
 
