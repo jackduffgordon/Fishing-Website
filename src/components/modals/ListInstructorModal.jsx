@@ -163,9 +163,9 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 my-8">
+      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 my-8 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold">Register as an Instructor</h2>
             <p className="text-stone-500 text-sm">Step {step} of 4</p>
@@ -176,12 +176,14 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         {/* Progress bar */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-shrink-0">
           {[1, 2, 3, 4].map((s) => (
             <div key={s} className={`flex-1 h-2 rounded-full ${s <= step ? 'bg-brand-600' : 'bg-stone-200'}`} />
           ))}
         </div>
 
+        {/* Scrollable content area */}
+        <div className="overflow-y-auto flex-1 min-h-0">
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-sm text-red-700">
             {error}
@@ -409,7 +411,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1">Bio</label>
               <textarea
-                rows={4}
+                rows={3}
                 value={formData.bio}
                 onChange={(e) => updateForm('bio', e.target.value)}
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
@@ -422,7 +424,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 What Students Will Learn
               </label>
               <textarea
-                rows={4}
+                rows={3}
                 value={formData.whatYouLearn}
                 onChange={(e) => updateForm('whatYouLearn', e.target.value)}
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
@@ -435,7 +437,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 Teaching Philosophy
               </label>
               <textarea
-                rows={3}
+                rows={2}
                 value={formData.teachingPhilosophy}
                 onChange={(e) => updateForm('teachingPhilosophy', e.target.value)}
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
@@ -448,7 +450,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                 Equipment Provided
               </label>
               <textarea
-                rows={3}
+                rows={2}
                 value={formData.equipmentProvided}
                 onChange={(e) => updateForm('equipmentProvided', e.target.value)}
                 className="w-full px-4 py-2.5 border border-stone-300 rounded-xl"
@@ -482,8 +484,11 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         )}
 
+        </div>
+        {/* End scrollable content */}
+
         {/* Footer */}
-        <div className="flex justify-between mt-6 pt-6 border-t border-stone-200">
+        <div className="flex justify-between mt-6 pt-6 border-t border-stone-200 flex-shrink-0">
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}

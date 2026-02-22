@@ -2399,30 +2399,32 @@ app.post('/api/register/instructor', async (req, res) => {
       isNewUser = true;
     }
 
+    const instructorData = {
+      user_id: user.id,
+      name,
+      email,
+      phone,
+      specialties: specialties || [],
+      region,
+      experience,
+      bio,
+      price: parseInt(price) || 0,
+      rating: 0,
+      review_count: 0,
+      certifications: certifications || [],
+      availablity: availability || [],
+      booking_options: booking_options || [],
+      what_you_learn: whatYouLearn || '',
+      teaching_philosophy: teachingPhilosophy || '',
+      equipment_provided: equipmentProvided ? (Array.isArray(equipmentProvided) ? equipmentProvided : equipmentProvided.split('\n').map(s => s.trim()).filter(Boolean)) : [],
+      images: [],
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+
     const { data: instructor, error } = await supabase
       .from('instructors')
-      .insert([{
-        user_id: user.id,
-        name,
-        email,
-        phone,
-        specialties: specialties || [],
-        region,
-        experience,
-        bio,
-        price: parseInt(price) || 0,
-        rating: 0,
-        review_count: 0,
-        certifications: certifications || [],
-        availability: availability || [],
-        booking_options: booking_options || [],
-        what_you_learn: whatYouLearn || '',
-        teaching_philosophy: teachingPhilosophy || '',
-        equipment_provided: equipmentProvided || '',
-        images: [],
-        status: 'pending',
-        created_at: new Date().toISOString()
-      }])
+      .insert([instructorData])
       .select()
       .single();
 
