@@ -2412,7 +2412,7 @@ app.post('/api/register/instructor', async (req, res) => {
       rating: 0,
       review_count: 0,
       certifications: certifications || [],
-      availablity: availability || [],
+      availability: availability || [],
       booking_options: booking_options || [],
       what_you_learn: whatYouLearn || '',
       teaching_philosophy: teachingPhilosophy || '',
