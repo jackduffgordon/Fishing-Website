@@ -2429,7 +2429,8 @@ app.post('/api/register/instructor', async (req, res) => {
       .single();
 
     if (error) {
-      console.error('[Register Instructor] Insert error:', error);
+      console.error('[Register Instructor] Insert error:', JSON.stringify(error));
+      console.error('[Register Instructor] Attempted data keys:', Object.keys(instructorData));
       return res.status(400).json({ error: 'Failed to create instructor', details: error.message });
     }
 

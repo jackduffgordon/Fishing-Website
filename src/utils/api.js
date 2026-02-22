@@ -47,7 +47,7 @@ const headers = (auth = false) => {
 const handleResponse = async (res) => {
   try {
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    if (!res.ok) throw new Error(data.details ? `${data.error}: ${data.details}` : (data.error || 'Request failed'));
     return data;
   } catch (error) {
     console.error('[API Error]', error);
