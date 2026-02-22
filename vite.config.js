@@ -6,7 +6,16 @@ export default defineConfig({
     root: './',
     build: {
           outDir: 'dist',
-          sourcemap: false
+          sourcemap: false,
+          chunkSizeWarningLimit: 600,
+          rollupOptions: {
+              output: {
+                  manualChunks: {
+                      icons: ['lucide-react'],
+                      maps: ['leaflet', 'react-leaflet']
+                  }
+              }
+          }
     },
     server: {
           port: 5173,

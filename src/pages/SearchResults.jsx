@@ -114,6 +114,10 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
           return (b.price || 0) - (a.price || 0);
         case 'reviews':
           return (b.reviews || 0) - (a.reviews || 0);
+        case 'newest':
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        case 'name-az':
+          return (a.name || '').localeCompare(b.name || '');
         default:
           return 0;
       }
@@ -227,6 +231,8 @@ export const SearchResultsPage = ({ onSelectFishery, onBack, favouriteWaters = [
                 <option value="rating">Top Rated</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
+                <option value="newest">Newest</option>
+                <option value="name-az">Name: A-Z</option>
                 <option value="reviews">Most Reviews</option>
               </select>
             </div>

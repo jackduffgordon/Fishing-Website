@@ -725,36 +725,48 @@ const ProfilePage = ({
                   {bookings.slice(0, 5).map((booking) => (
                     <div
                       key={booking.id}
-                      className="bg-stone-50 rounded-lg p-4 border border-stone-200 flex items-center justify-between"
+                      className="bg-stone-50 rounded-lg p-4 border border-stone-200"
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-stone-900">
-                            {booking.waterName || booking.instructorName || 'Booking'}
-                          </h4>
-                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                            booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                            booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                            'bg-stone-100 text-stone-700'
-                          }`}>
-                            {booking.status}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-stone-600">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {new Date(booking.preferredDate || booking.createdAt).toLocaleDateString('en-GB', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </span>
-                          {booking.numberOfPeople && (
-                            <span>{booking.numberOfPeople} people</span>
-                          )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-stone-900">
+                              {booking.waterName || booking.instructorName || 'Booking'}
+                            </h4>
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                              booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                              booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              booking.status === 'declined' ? 'bg-red-100 text-red-700' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                              'bg-stone-100 text-stone-700'
+                            }`}>
+                              {booking.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-stone-600">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {new Date(booking.preferredDate || booking.date || booking.createdAt).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </span>
+                            {booking.numberOfPeople && (
+                              <span>{booking.numberOfPeople} people</span>
+                            )}
+                            {booking.type && (
+                              <span className="text-stone-400 capitalize">{booking.type}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      {booking.message && (
+                        <p className="text-sm text-stone-500 mt-2 line-clamp-1">
+                          <MessageSquare className="w-3.5 h-3.5 inline mr-1" />
+                          {booking.message}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

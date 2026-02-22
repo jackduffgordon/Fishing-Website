@@ -49,12 +49,14 @@ const App = () => {
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   // Handle Stripe return
+  const [bookingCancelled, setBookingCancelled] = useState(false);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('booking') === 'success') {
       setBookingSuccess(true);
       window.history.replaceState({}, '', window.location.pathname);
     } else if (params.get('booking') === 'cancelled') {
+      setBookingCancelled(true);
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -579,6 +581,27 @@ const App = () => {
             </p>
             <button
               onClick={() => setBookingSuccess(false)}
+              className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800"
+            >
+              Continue Browsing
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Booking cancelled overlay (after Stripe return) */}
+      {bookingCancelled && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-lg">
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Payment Cancelled</h2>
+            <p className="text-stone-600 mb-6">
+              Your payment was cancelled. No charges were made. You can try again or send an enquiry instead.
+            </p>
+            <button
+              onClick={() => setBookingCancelled(false)}
               className="px-6 py-2.5 bg-brand-700 text-white rounded-xl font-medium hover:bg-brand-800"
             >
               Continue Browsing
