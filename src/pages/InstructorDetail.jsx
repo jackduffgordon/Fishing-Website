@@ -127,11 +127,11 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
         anglerEmail: contactForm.email || user.email,
         anglerPhone: contactForm.phone || user.phone || '',
         message: msgParts.join('. '),
-        type: hasBookingOptions ? 'booking' : 'enquiry'
+        type: (hasBookingOptions && activeOption?.bookingType !== 'enquiry') ? 'booking' : 'enquiry'
       };
 
-      // If has booking options, try Stripe checkout first
-      if (hasBookingOptions && activeOption) {
+      // If has booking options with payment, try Stripe checkout first
+      if (hasBookingOptions && activeOption && activeOption.bookingType !== 'enquiry') {
         const total = parseInt(activeOption.price) || 0;
         const description = `${instructor.name} — ${activeOption.name}`;
 
@@ -530,8 +530,14 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                               )}
                             </div>
                             <div className="text-right flex-shrink-0 ml-3">
-                              <span className="font-bold text-stone-900">£{opt.price}</span>
-                              <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType || 'session'}</span>
+                              {opt.bookingType === 'enquiry' ? (
+                                <span className="text-sm font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">Enquiry</span>
+                              ) : (
+                                <>
+                                  <span className="font-bold text-stone-900">£{opt.price}</span>
+                                  <span className="text-stone-500 text-xs ml-0.5">/{opt.priceType || 'session'}</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </button>
@@ -555,8 +561,8 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                         />
                       </div>
 
-                      {/* Price summary */}
-                      {selectedDate && (
+                      {/* Price summary — only for paid options */}
+                      {selectedDate && activeOption.bookingType !== 'enquiry' && (
                         <div className="bg-stone-50 rounded-xl p-4 border border-stone-200">
                           <div className="flex justify-between text-sm text-stone-600">
                             <span>{activeOption.name}</span>
@@ -604,9 +610,15 @@ export const InstructorDetailPage = ({ instructor, onBack, user, onSignIn, isFav
                         {bookingLoading ? 'Processing...'
                           : !user ? 'Sign In to Book'
                           : !selectedDate ? 'Select a Date'
-                          : `Book ${activeOption.name} — £${activeOption.price}`}
+                          : activeOption.bookingType === 'enquiry'
+                            ? `Send Enquiry — ${activeOption.name}`
+                            : `Book ${activeOption.name} — £${activeOption.price}`}
                       </button>
-                      <p className="text-center text-xs text-stone-500">Secure payment via Stripe</p>
+                      {activeOption.bookingType === 'enquiry' ? (
+                        <p className="text-center text-xs text-stone-500">The instructor will respond within 48 hours</p>
+                      ) : (
+                        <p className="text-center text-xs text-stone-500">Secure payment via Stripe</p>
+                      )}
                     </div>
                   )}
                 </div>

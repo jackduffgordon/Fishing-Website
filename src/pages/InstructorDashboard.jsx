@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { getToken, normalizeInstructor, uploadImage as apiUploadImage, validateImageFile } from '../utils/api';
 import { InstructorDetailPage } from './InstructorDetail';
+import DragDropUpload from '../components/common/DragDropUpload';
 
 const SPECIALTIES = [
   'Fly Fishing', 'Salmon', 'Trout', 'Sea Fishing', 'Bass', 'Shore Fishing',
@@ -293,6 +294,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
   const [editingInstructor, setEditingInstructor] = useState(null);
   const [editData, setEditData] = useState({});
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [previewInstructor, setPreviewInstructor] = useState(null);
 
   useEffect(() => {
@@ -347,6 +349,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
         price: opt.price || '',
         priceType: opt.priceType || opt.price_type || 'session',
         description: opt.description || '',
+        bookingType: opt.bookingType || 'instant',
       })),
       what_you_learn: instructor.what_you_learn || '',
       teaching_philosophy: instructor.teaching_philosophy || '',
@@ -415,7 +418,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
     setEditData(prev => ({
       ...prev,
       booking_options: [...prev.booking_options, {
-        name: '', price: '', priceType: 'session', description: ''
+        name: '', price: '', priceType: 'session', description: '', bookingType: 'instant'
       }]
     }));
   };
@@ -442,17 +445,15 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  const handleImageUpload = async (files) => {
+    if (!files || files.length === 0) return;
 
-    // Validate all files first
     for (const file of files) {
       const err = validateImageFile(file);
       if (err) { setError(err); return; }
     }
 
-    setSaving(true);
+    setImageUploading(true);
     try {
       const urls = await Promise.all(files.map(f => apiUploadImage(f, 'instructors')));
       setEditData(prev => ({
@@ -462,14 +463,11 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
     } catch (err) {
       setError(err.message || 'Failed to upload image(s)');
     }
-    setSaving(false);
+    setImageUploading(false);
   };
 
-  const removeImage = (index) => {
-    setEditData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+  const setImages = (newImages) => {
+    setEditData(prev => ({ ...prev, images: newImages }));
   };
 
   const pendingInstructors = instructors.filter(i => i.status === 'pending');
@@ -887,6 +885,16 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+                    <div className="flex gap-3 mb-3">
+                      <label className={`flex-1 flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${opt.bookingType !== 'enquiry' ? 'border-brand-500 bg-brand-50' : 'border-stone-200'}`}>
+                        <input type="radio" name={`bookingType-${i}`} checked={opt.bookingType !== 'enquiry'} onChange={() => updateBookingOption(i, 'bookingType', 'instant')} />
+                        <span className="text-sm font-medium">Instant Book (Payment)</span>
+                      </label>
+                      <label className={`flex-1 flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition ${opt.bookingType === 'enquiry' ? 'border-amber-500 bg-amber-50' : 'border-stone-200'}`}>
+                        <input type="radio" name={`bookingType-${i}`} checked={opt.bookingType === 'enquiry'} onChange={() => updateBookingOption(i, 'bookingType', 'enquiry')} />
+                        <span className="text-sm font-medium">Enquiry Only</span>
+                      </label>
+                    </div>
                     <div className="grid md:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs text-stone-500 mb-1">Session Name</label>
@@ -898,6 +906,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
                           className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
                         />
                       </div>
+                      {opt.bookingType !== 'enquiry' && (
                       <div>
                         <label className="block text-xs text-stone-500 mb-1">Price (£)</label>
                         <input
@@ -907,6 +916,8 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
                           className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
                         />
                       </div>
+                      )}
+                      {opt.bookingType !== 'enquiry' && (
                       <div>
                         <label className="block text-xs text-stone-500 mb-1">Price Type</label>
                         <select
@@ -920,6 +931,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
                           <option value="person">Per Person</option>
                         </select>
                       </div>
+                      )}
                       <div>
                         <label className="block text-xs text-stone-500 mb-1">Description</label>
                         <input
@@ -945,31 +957,14 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
             {/* Images */}
             <div className="bg-white rounded-xl border border-stone-200 p-6">
               <h4 className="font-semibold text-stone-900 mb-3">Photos</h4>
-              <div className="flex flex-wrap gap-3 mb-4">
-                {(editData.images || []).map((img, i) => (
-                  <div key={i} className="relative group">
-                    <img src={img} alt={`Photo ${i + 1}`} className="w-24 h-24 rounded-lg object-cover border border-stone-200" />
-                    <button
-                      onClick={() => removeImage(i)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                <label className="w-24 h-24 rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition">
-                  <Upload className="w-5 h-5 text-stone-400 mb-1" />
-                  <span className="text-xs text-stone-500">Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-stone-500">Upload photos of yourself or your sessions. JPG, PNG or WebP.</p>
+              <DragDropUpload
+                images={editData.images || []}
+                onImagesChange={setImages}
+                onUpload={handleImageUpload}
+                uploading={imageUploading}
+                label="Upload photos of yourself or your sessions"
+                hint="JPG, PNG or WebP"
+              />
             </div>
 
             {/* Bottom save bar */}

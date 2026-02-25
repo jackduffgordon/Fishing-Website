@@ -2214,20 +2214,35 @@ app.get('/api/reviews/instructor/:id', async (req, res) => {
 // REGISTRATION FORMS - List Water / Register Instructor
 // ============================================================================
 
-app.post('/api/register/water', async (req, res) => {
+app.post('/api/register/water', optionalAuth, async (req, res) => {
   try {
     const { ownerName, ownerEmail, ownerPhone, waterName, waterType, region, description, species, price, bookingType, facilities, rules, bookingOptions } = req.body;
 
-    // Create or find user
-    let { data: user } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', ownerEmail?.toLowerCase())
-      .single();
-
+    let user = null;
     let isNewUser = false;
     let tempPassword = null;
 
+    // If user is already logged in, use their account
+    if (req.user) {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', req.user.id)
+        .single();
+      user = existingUser;
+    }
+
+    // Otherwise look up by email
+    if (!user) {
+      const { data: emailUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', ownerEmail?.toLowerCase())
+        .single();
+      user = emailUser;
+    }
+
+    // Create new user if neither found
     if (!user) {
       tempPassword = Math.random().toString(36).slice(-8);
       const hashedPwd = await bcrypt.hash(tempPassword, 10);
@@ -2367,19 +2382,35 @@ app.post('/api/register/water', async (req, res) => {
   }
 });
 
-app.post('/api/register/instructor', async (req, res) => {
+app.post('/api/register/instructor', optionalAuth, async (req, res) => {
   try {
     const { name, email, phone, specialties, region, experience, bio, price, certifications, availability, booking_options, whatYouLearn, teachingPhilosophy, equipmentProvided, typicalDay } = req.body;
 
-    let { data: user } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email?.toLowerCase())
-      .single();
-
+    let user = null;
     let isNewUser = false;
     let tempPassword = null;
 
+    // If user is already logged in, use their account
+    if (req.user) {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', req.user.id)
+        .single();
+      user = existingUser;
+    }
+
+    // Otherwise look up by email
+    if (!user) {
+      const { data: emailUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email?.toLowerCase())
+        .single();
+      user = emailUser;
+    }
+
+    // Create new user if neither found
     if (!user) {
       tempPassword = Math.random().toString(36).slice(-8);
       const hashedPwd = await bcrypt.hash(tempPassword, 10);
@@ -3204,7 +3235,28 @@ app.get('/api/owner/inquiries', authenticateToken, requireRole('water_owner', 'a
       return res.status(500).json({ error: 'Failed to fetch inquiries' });
     }
 
-    res.json({ inquiries });
+    // Convert snake_case to camelCase for frontend
+    const formatted = (inquiries || []).map(i => ({
+      id: i.id,
+      userId: i.user_id,
+      userName: i.user_name || i.name || 'Guest',
+      userEmail: i.user_email || i.email || '',
+      userPhone: i.user_phone || i.phone || '',
+      waterId: i.water_id,
+      instructorId: i.instructor_id,
+      bookingOptionId: i.booking_option_id,
+      date: i.date,
+      startDate: i.start_date,
+      endDate: i.end_date,
+      numberOfDays: i.number_of_days,
+      message: i.message,
+      status: i.status,
+      type: i.type,
+      createdAt: i.created_at,
+      amountPaid: i.amount_paid || null
+    }));
+
+    res.json({ inquiries: formatted });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch inquiries' });
@@ -3424,7 +3476,28 @@ app.get('/api/instructor/inquiries', authenticateToken, requireRole('instructor'
       return res.status(500).json({ error: 'Failed to fetch inquiries' });
     }
 
-    res.json({ inquiries });
+    // Convert snake_case to camelCase for frontend
+    const formatted = (inquiries || []).map(i => ({
+      id: i.id,
+      userId: i.user_id,
+      userName: i.user_name || i.name || 'Guest',
+      userEmail: i.user_email || i.email || '',
+      userPhone: i.user_phone || i.phone || '',
+      waterId: i.water_id,
+      instructorId: i.instructor_id,
+      bookingOptionId: i.booking_option_id,
+      date: i.date,
+      startDate: i.start_date,
+      endDate: i.end_date,
+      numberOfDays: i.number_of_days,
+      message: i.message,
+      status: i.status,
+      type: i.type,
+      createdAt: i.created_at,
+      amountPaid: i.amount_paid || null
+    }));
+
+    res.json({ inquiries: formatted });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to fetch inquiries' });

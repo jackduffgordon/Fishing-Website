@@ -345,7 +345,7 @@ export const registerAPI = {
   water: async (waterData) => {
     const res = await fetch(`${API_BASE}/register/water`, {
       method: 'POST',
-      headers: headers(),
+      headers: headers(true),
       body: JSON.stringify(waterData)
     });
     return handleResponse(res);
@@ -354,7 +354,7 @@ export const registerAPI = {
   instructor: async (instructorData) => {
     const res = await fetch(`${API_BASE}/register/instructor`, {
       method: 'POST',
-      headers: headers(),
+      headers: headers(true),
       body: JSON.stringify(instructorData)
     });
     return handleResponse(res);

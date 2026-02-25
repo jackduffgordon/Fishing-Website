@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { getToken, uploadImage as apiUploadImage, validateImageFile } from '../utils/api';
 import { VenueDetailPage } from './VenueDetail';
+import DragDropUpload from '../components/common/DragDropUpload';
 
 const SPECIES = [
   'Brown Trout', 'Rainbow Trout', 'Salmon', 'Sea Trout', 'Grayling',

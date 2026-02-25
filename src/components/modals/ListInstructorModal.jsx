@@ -42,7 +42,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
     teachingPhilosophy: '',
     equipmentProvided: '',
     typicalDay: [{ time: '', activity: '' }],
-    booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
+    booking_options: [{ name: '', price: '', priceType: 'session', description: '', bookingType: 'instant' }]
   });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(null);
@@ -68,7 +68,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const addBookingOption = () => {
-    updateForm('booking_options', [...formData.booking_options, { name: '', price: '', priceType: 'session', description: '' }]);
+    updateForm('booking_options', [...formData.booking_options, { name: '', price: '', priceType: 'session', description: '', bookingType: 'instant' }]);
   };
 
   const removeBookingOption = (index) => {
@@ -99,10 +99,10 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
       setError('Please enter a valid email address.');
       return;
     }
-    const validOptions = formData.booking_options.filter(o => o.name.trim() && o.price);
-    const invalidPrice = validOptions.some(opt => isNaN(opt.price) || parseFloat(opt.price) <= 0);
+    const validOptions = formData.booking_options.filter(o => o.name.trim() && (o.price || o.bookingType === 'enquiry'));
+    const invalidPrice = validOptions.some(opt => opt.bookingType !== 'enquiry' && (isNaN(opt.price) || parseFloat(opt.price) <= 0));
     if (invalidPrice) {
-      setError('Please enter valid prices for all booking options.');
+      setError('Please enter valid prices for all paid booking options.');
       return;
     }
     setLoading(true);
@@ -122,7 +122,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
         teachingPhilosophy: formData.teachingPhilosophy,
         equipmentProvided: formData.equipmentProvided,
         typicalDay: formData.typicalDay.filter(t => t.time.trim() && t.activity.trim()),
-        booking_options: formData.booking_options.filter(o => o.name.trim() && o.price)
+        booking_options: formData.booking_options.filter(o => o.name.trim() && (o.price || o.bookingType === 'enquiry'))
       };
 
       await registerAPI.instructor(payload);
@@ -145,7 +145,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
       specialties: [], certifications: [], availability: [],
       price: '', bio: '', whatYouLearn: '', teachingPhilosophy: '', equipmentProvided: '',
       typicalDay: [{ time: '', activity: '' }],
-      booking_options: [{ name: '', price: '', priceType: 'session', description: '' }]
+      booking_options: [{ name: '', price: '', priceType: 'session', description: '', bookingType: 'instant' }]
     });
   };
 
@@ -374,6 +374,32 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                         className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
                       />
                     </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs text-stone-500 mb-1">Booking Type</label>
+                      <div className="flex gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`bookingType-${i}`}
+                            checked={opt.bookingType !== 'enquiry'}
+                            onChange={() => updateBookingOption(i, 'bookingType', 'instant')}
+                            className="text-brand-600"
+                          />
+                          <span className="text-sm text-stone-700">Instant Book (with payment)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`bookingType-${i}`}
+                            checked={opt.bookingType === 'enquiry'}
+                            onChange={() => updateBookingOption(i, 'bookingType', 'enquiry')}
+                            className="text-brand-600"
+                          />
+                          <span className="text-sm text-stone-700">Enquiry Only</span>
+                        </label>
+                      </div>
+                    </div>
+                    {opt.bookingType !== 'enquiry' && (
                     <div>
                       <label className="block text-xs text-stone-500 mb-1">Price (£) *</label>
                       <input
@@ -384,6 +410,8 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                         className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
                       />
                     </div>
+                    )}
+                    {opt.bookingType !== 'enquiry' && (
                     <div>
                       <label className="block text-xs text-stone-500 mb-1">Price Type</label>
                       <select
@@ -397,6 +425,7 @@ export const ListInstructorModal = ({ isOpen, onClose, onSuccess }) => {
                         <option value="person">Per Person</option>
                       </select>
                     </div>
+                    )}
                     <div className="col-span-2">
                       <label className="block text-xs text-stone-500 mb-1">Description</label>
                       <textarea
