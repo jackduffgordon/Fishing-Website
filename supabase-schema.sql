@@ -81,7 +81,8 @@ CREATE TABLE IF NOT EXISTS booking_options (
   name TEXT NOT NULL,
   description TEXT,
   price INTEGER NOT NULL DEFAULT 0,
-  price_type TEXT NOT NULL DEFAULT 'day' CHECK (price_type IN ('day', 'half-day', 'session', 'night', 'person', 'season', 'year')),
+  -- allow any price unit so owners can type custom values
+  price_type TEXT DEFAULT '' /* not strictly required */, -- formerly had NOT NULL and a restrictive CHECK
   booking_type TEXT NOT NULL DEFAULT 'enquiry' CHECK (booking_type IN ('instant', 'enquiry')),
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -203,6 +204,9 @@ CREATE INDEX IF NOT EXISTS idx_waters_type ON waters(type);
 CREATE INDEX IF NOT EXISTS idx_waters_region ON waters(region);
 CREATE INDEX IF NOT EXISTS idx_waters_owner ON waters(owner_id);
 CREATE INDEX IF NOT EXISTS idx_booking_options_water ON booking_options(water_id);
+
+-- remove old constraint if it exists (migration script)
+ALTER TABLE booking_options DROP CONSTRAINT IF EXISTS booking_options_price_type_check;
 CREATE INDEX IF NOT EXISTS idx_instructors_status ON instructors(status);
 CREATE INDEX IF NOT EXISTS idx_instructors_region ON instructors(region);
 CREATE INDEX IF NOT EXISTS idx_favourite_waters_user ON favourite_waters(user_id);

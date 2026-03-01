@@ -345,7 +345,7 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
       booking_options: (instructor.booking_options || []).map(opt => ({
         name: opt.name || '',
         price: opt.price || '',
-        priceType: opt.priceType || opt.price_type || 'session',
+        priceType: opt.priceType || opt.price_type || '',
         description: opt.description || '',
       })),
       what_you_learn: instructor.what_you_learn || '',
@@ -908,17 +908,37 @@ export const InstructorDashboard = ({ user, onBack, onListInstructor }) => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-stone-500 mb-1">Price Type</label>
-                        <select
-                          value={opt.priceType}
-                          onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
-                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
-                        >
-                          <option value="session">Per Session</option>
-                          <option value="day">Per Day</option>
-                          <option value="hour">Per Hour</option>
-                          <option value="person">Per Person</option>
-                        </select>
+                        <label className="block text-xs text-stone-500 mb-1">Price Unit</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={opt.priceType || ''}
+                            onChange={e => {
+                              const v = e.target.value;
+                              if (v === 'custom') {
+                                updateBookingOption(i, 'priceType', '');
+                              } else {
+                                updateBookingOption(i, 'priceType', v);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                          >
+                            <option value="">-- choose --</option>
+                            <option value="session">Per Session</option>
+                            <option value="day">Per Day</option>
+                            <option value="hour">Per Hour</option>
+                            <option value="person">Per Person</option>
+                            <option value="custom">Custom…</option>
+                          </select>
+                          {opt.priceType === '' && (
+                            <input
+                              type="text"
+                              value={opt.priceType}
+                              onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
+                              placeholder="e.g. per rod / per boat"
+                              className="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                            />
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs text-stone-500 mb-1">Description</label>

@@ -50,7 +50,7 @@ const emptyOption = () => ({
   name: '',
   description: '',
   price: '',
-  priceType: 'day',
+  priceType: '', // owner must specify unit
   bookingType: 'instant'
 });
 
@@ -208,7 +208,7 @@ export const ListWaterModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const canProceedStep3 = formData.bookingOptions.length > 0 &&
-    formData.bookingOptions.every(opt => opt.name && opt.price);
+    formData.bookingOptions.every(opt => opt.name && opt.price /* priceType may be blank, that's ok */);
 
   // Success state
   if (submitted) {
@@ -438,7 +438,7 @@ export const ListWaterModal = ({ isOpen, onClose, onSuccess }) => {
                         </span>
                         {opt.price && (
                           <span className="text-stone-500 text-sm">
-                            £{opt.price}/{opt.priceType}
+                            £{opt.price}{opt.priceType ? `/${opt.priceType}` : ''}
                           </span>
                         )}
                       </div>
@@ -521,20 +521,40 @@ export const ListWaterModal = ({ isOpen, onClose, onSuccess }) => {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-stone-600 mb-1">Price Per</label>
-                            <select
-                              value={opt.priceType}
-                              onChange={(e) => updateOption(opt.id, 'priceType', e.target.value)}
-                              className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
-                            >
-                              <option value="day">Per Day</option>
-                              <option value="half-day">Per Half Day</option>
-                              <option value="session">Per Session</option>
-                              <option value="night">Per Night</option>
-                              <option value="person">Per Person</option>
-                              <option value="season">Per Season</option>
-                              <option value="year">Per Year</option>
-                            </select>
+                            <label className="block text-xs font-medium text-stone-600 mb-1">Price Unit</label>
+                            <div className="flex gap-2">
+                              <select
+                                value={opt.priceType || ''}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === 'custom') {
+                                    updateOption(opt.id, 'priceType', '');
+                                  } else {
+                                    updateOption(opt.id, 'priceType', v);
+                                  }
+                                }}
+                                className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                              >
+                                <option value="">-- choose --</option>
+                                <option value="day">Per Day</option>
+                                <option value="half-day">Per Half Day</option>
+                                <option value="session">Per Session</option>
+                                <option value="night">Per Night</option>
+                                <option value="person">Per Person</option>
+                                <option value="season">Per Season</option>
+                                <option value="year">Per Year</option>
+                                <option value="custom">Custom…</option>
+                              </select>
+                              {opt.priceType === '' && (
+                                <input
+                                  type="text"
+                                  value={opt.priceType}
+                                  onChange={(e) => updateOption(opt.id, 'priceType', e.target.value)}
+                                  placeholder="e.g. per rod / per boat"
+                                  className="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm"
+                                />
+                              )}
+                            </div>
                           </div>
                         </div>
 

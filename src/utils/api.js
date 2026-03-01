@@ -145,8 +145,8 @@ export const normalizeWater = (w, index = 0) => {
     // Reviews count (hardcoded uses `reviews`, API uses `reviewCount`)
     reviews: w.reviews || w.reviewCount || 0,
     reviewCount: w.reviewCount || w.reviews || 0,
-    // Price type display
-    priceType: w.priceType || 'day',
+    // Price type display (empty if not provided)
+    priceType: w.priceType || '',
     // Season info
     season: w.season || (w.seasonInfo ? { info: w.seasonInfo } : null),
     // Expectations

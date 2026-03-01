@@ -28,10 +28,10 @@ export const FisheryCard = ({ fishery, onClick, isFavourite, onToggleFavourite }
   };
 
   const getPriceType = () => {
-    if (!hasBookingOptions) return fishery.priceType;
+    if (!hasBookingOptions) return fishery.priceType || '';
     const lowestPrice = getLowestPrice();
     const cheapestOption = fishery.bookingOptions.find(o => parseInt(o.price) === lowestPrice);
-    return cheapestOption?.priceType || 'day';
+    return cheapestOption?.priceType || fishery.priceType || '';
   };
 
   const optionCount = hasBookingOptions ? fishery.bookingOptions.length : 0;

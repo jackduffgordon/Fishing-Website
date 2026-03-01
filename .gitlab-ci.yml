@@ -1,0 +1,64 @@
+# .gitlab-ci.yml
+image: node:20-alpine
+
+stages:
+  - install
+  - build
+  - deploy
+
+variables:
+  # make sure npm does not write to home
+  NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+  NODE_ENV: production
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .npm
+    - node_modules/
+
+before_script:
+  - apk add --no-cache openssh-client rsync # only if you deploy via ssh
+
+install:
+  stage: install
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day
+  needs:
+    - install
+
+# example deploy via SSH to a generic server
+deploy:
+  stage: deploy
+  only:
+    - main            # or whatever branch you deploy from
+  environment:
+    name: production
+    url: https://www.theanglersnet.co.uk
+  script:
+    # set up ssh key from CI/CD variable
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan your.server.example.com >> ~/.ssh/known_hosts
+    # copy built files
+    - rsync -avz --delete dist/ user@your.server.example.com:/var/www/anglersnet
+    # restart remote service if needed, e.g. pm2, systemd, etc.
+    - ssh user@your.server.example.com 'cd /var/www/anglersnet && pm2 reload all'
+  dependencies:
+    - build
+
+# you could add a job to run supabase migrations, run tests, etc.

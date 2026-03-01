@@ -74,7 +74,7 @@ const WaterCard = ({ water, onView, onEdit, onRequestRemoval }) => {
             <div className="min-w-0">
               <h3 className="font-semibold text-stone-900 truncate">{water.name}</h3>
               <p className="text-sm text-stone-500">
-                {water.type} • {water.region} • £{water.price}/{water.priceType || 'day'}
+                {water.type} • {water.region} • £{water.price}{water.priceType ? `/${water.priceType}` : ''}
               </p>
             </div>
             <StatusBadge status={water.status} />
@@ -315,7 +315,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
     description: w.description || '',
     fullDescription: w.description || '',
     price: w.price || 0,
-    priceType: w.price_type || w.priceType || 'day',
+    priceType: w.price_type || w.priceType || '',
     bookingType: w.booking_type || w.bookingType || 'enquiry',
     image: w.images?.[0] || '',
     gallery: w.images || [],
@@ -466,7 +466,7 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
     setEditData(prev => ({
       ...prev,
       booking_options: [...prev.booking_options, {
-        name: '', price: '', priceType: 'day', category: 'day-tickets', bookingType: 'enquiry', description: ''
+        name: '', price: '', priceType: '', category: 'day-tickets', bookingType: 'enquiry', description: ''
       }]
     }));
   };
@@ -1132,17 +1132,37 @@ export const WaterOwnerDashboard = ({ user, onBack, onListWater }) => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-stone-500 mb-1">Price Type</label>
-                        <select
-                          value={opt.priceType}
-                          onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
-                          className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
-                        >
-                          <option value="day">Per Day</option>
-                          <option value="session">Per Session</option>
-                          <option value="rod">Per Rod</option>
-                          <option value="night">Per Night</option>
-                        </select>
+                        <label className="block text-xs text-stone-500 mb-1">Price Unit</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={opt.priceType || ''}
+                            onChange={e => {
+                              const v = e.target.value;
+                              if (v === 'custom') {
+                                updateBookingOption(i, 'priceType', '');
+                              } else {
+                                updateBookingOption(i, 'priceType', v);
+                              }
+                            }}
+                            className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                          >
+                            <option value="">-- choose --</option>
+                            <option value="day">Per Day</option>
+                            <option value="session">Per Session</option>
+                            <option value="rod">Per Rod</option>
+                            <option value="night">Per Night</option>
+                            <option value="custom">Custom…</option>
+                          </select>
+                          {opt.priceType === '' && (
+                            <input
+                              type="text"
+                              value={opt.priceType}
+                              onChange={e => updateBookingOption(i, 'priceType', e.target.value)}
+                              placeholder="e.g. per rod / per boat"
+                              className="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500"
+                            />
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs text-stone-500 mb-1">Description</label>

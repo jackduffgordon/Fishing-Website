@@ -527,7 +527,7 @@ export const VenueDetailPage = ({ fishery, onBack, user, onSignIn, isFavourite, 
                       £{getLowestPrice()}
                     </span>
                     <span className="text-stone-500 ml-1">
-                      /{fishery.bookingOptions.find(o => parseInt(o.price) === getLowestPrice())?.priceType || 'day'}
+                      {fishery.bookingOptions.find(o => parseInt(o.price) === getLowestPrice())?.priceType ? '/' + fishery.bookingOptions.find(o => parseInt(o.price) === getLowestPrice())?.priceType : ''}
                     </span>
                   </div>
 

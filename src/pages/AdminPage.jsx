@@ -168,7 +168,7 @@ const WaterRow = ({ water, onApprove, onReject, onPreview, onDelete, actionLoadi
                         </span>
                       </div>
                       <span className="font-bold text-stone-900">
-                        £{opt.price}/{opt.price_type || opt.priceType || 'day'}
+                        £{opt.price}{opt.price_type || opt.priceType ? '/' + (opt.price_type || opt.priceType) : ''}
                       </span>
                     </div>
                     {opt.description && (
@@ -554,7 +554,7 @@ export const AdminPage = ({ user }) => {
     description: w.description || '',
     fullDescription: w.description || '',
     price: w.price || 0,
-    priceType: w.price_type || w.priceType || 'day',
+    priceType: w.price_type || w.priceType || '',
     bookingType: w.booking_type || w.bookingType || 'enquiry',
     image: w.images?.[0] || '',
     gallery: w.images || [],
@@ -564,7 +564,7 @@ export const AdminPage = ({ user }) => {
       ...opt,
       id: opt.id || `opt-${i}`,
       bookingType: opt.booking_type || opt.bookingType || 'enquiry',
-      priceType: opt.price_type || opt.priceType || 'day',
+      priceType: opt.price_type || opt.priceType || '',
     })),
     contact: {
       name: w.ownerName || w.owner_name || '',

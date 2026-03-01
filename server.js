@@ -264,7 +264,29 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET || 'anglersnet-dev-fallback-key';
 
 // Middleware
-app.use(cors({ origin: '*', credentials: false, methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
+// restrict CORS origins based on env var (comma-separated list)
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : ['https://theanglersnet.co.uk'];
+app.use(cors({ origin: allowedOrigins, credentials: true, methods: ['GET','POST','DELETE','PUT'] }));
+
+// redirect http→https in production
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && !req.secure && req.get('x-forwarded-proto') !== 'https') {
+    return res.redirect(301, 'https://' + req.get('host') + req.originalUrl);
+  }
+  next();
+});
+
+// basic security headers
+try {
+  const helmet = require('helmet');
+  app.use(helmet());
+  // enable HSTS for one year
+  app.use(helmet.hsts({ maxAge: 31536000, includeSubDomains: true }));
+} catch (e) {
+  console.warn('helmet not installed; install it for better security');
+}
 
 // Stripe webhook needs raw body — must come before express.json()
 app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
